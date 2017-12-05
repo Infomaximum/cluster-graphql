@@ -1,0 +1,44 @@
+group 'com.infomaximum.cluster'
+version '0.0.1'
+
+repositories {
+    mavenCentral()
+    maven { url "http://maven.office.infomaximum.com/content/repositories/releases/" }
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+if (file('publish.gradle').exists()) {
+    apply from: 'publish.gradle'
+}
+
+sourceCompatibility = 1.8
+compileJava.options.encoding = 'UTF-8'
+
+sourceSets {
+    main {
+        java.srcDir 'src/main/java'
+        resources {
+            srcDirs "src/main/resources"
+        }
+    }
+    test {
+        java.srcDir 'src/test/java'
+    }
+    test_integration {
+        java.srcDir 'src/test_integration/java'
+        resources.srcDir 'src/test_integration/resources'
+        compileClasspath += main.output + test.output
+        runtimeClasspath += main.output + test.output
+    }
+}
+
+
+dependencies {
+    compile 'com.infomaximum:cluster:0.0.28'
+
+    compile 'com.graphql-java:graphql-java:5.0'
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
