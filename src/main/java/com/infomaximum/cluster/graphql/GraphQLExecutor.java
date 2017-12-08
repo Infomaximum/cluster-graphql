@@ -62,6 +62,10 @@ public class GraphQLExecutor {
         private Map<String, MergeGraphQLTypeOutObjectUnion> waitBuildGraphQLTypeOutObjectUnions = new HashMap<String, MergeGraphQLTypeOutObjectUnion>();
         private Map<String, Set<RGraphQLInputObjectTypeField>> waitBuildGraphQLTypeInObjects = new HashMap<String, Set<RGraphQLInputObjectTypeField>>();
 
+        public Builder(Component component) {
+            this(component, null);
+        }
+
         public Builder(Component component, Package environmentPackage) {
             this.component = component;
             this.environmentPackage = environmentPackage;
@@ -83,8 +87,10 @@ public class GraphQLExecutor {
         public GraphQLExecutor build() throws GraphQLExecutorException {
             try {
                 //Собираем встроенные
-                for (RGraphQLType rGraphQLType : BuildTypeGraphQLUtils.findTypeGraphQL(environmentPackage.getName()).values()) {
-                    mergeGraphQLType(rGraphQLType);
+                if (environmentPackage!=null) {
+                    for (RGraphQLType rGraphQLType : BuildTypeGraphQLUtils.findTypeGraphQL(environmentPackage.getName()).values()) {
+                        mergeGraphQLType(rGraphQLType);
+                    }
                 }
 
                 //Запрашиваем у подсистем
