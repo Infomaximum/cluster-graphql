@@ -1,4 +1,4 @@
-group 'com.infomaximum.cluster'
+group 'com.infomaximum'
 version '0.0.1'
 
 repositories {
