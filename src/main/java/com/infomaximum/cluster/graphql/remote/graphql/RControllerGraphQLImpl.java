@@ -6,7 +6,7 @@ import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.anotation.GraphQLName;
 import com.infomaximum.cluster.graphql.anotation.GraphQLSource;
 import com.infomaximum.cluster.graphql.anotation.GraphQLTypeInput;
-import com.infomaximum.cluster.graphql.env.CustomEnvironment;
+import com.infomaximum.cluster.graphql.customtype.CustomEnvType;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.schema.utils.BuildTypeGraphQLUtils;
@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -30,7 +29,7 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
 
     private final static Logger log = LoggerFactory.getLogger(RControllerGraphQLImpl.class);
 
-    private final Set<CustomEnvironment> customEnvironments;
+    private final Set<CustomEnvType> customEnvTypes;
 
     private final List<RGraphQLType> rTypeGraphQLs;
     private final Map<String, Class> classSchemas;
@@ -39,9 +38,9 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
         this(component, null);
     }
 
-    public RControllerGraphQLImpl(T component, Set<CustomEnvironment> customEnvironments) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
+    public RControllerGraphQLImpl(T component, Set<CustomEnvType> customEnvTypes) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
         super(component);
-        this.customEnvironments=customEnvironments;
+        this.customEnvTypes = customEnvTypes;
 
         Map<Class, RGraphQLType> rTypeGraphQLItems = BuildTypeGraphQLUtils.findTypeGraphQL(component.getInfo().getUuid());
         rTypeGraphQLs = Collections.unmodifiableList(new ArrayList<>(rTypeGraphQLItems.values()));
@@ -113,10 +112,10 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
                         argumentValue = request;
                     } else {
                         boolean isSuccessFindEnvironment = false;
-                        if (customEnvironments!=null) {
-                            for (CustomEnvironment customEnvironment: customEnvironments) {
+                        if (customEnvTypes !=null) {
+                            for (CustomEnvType customEnvironment: customEnvTypes) {
                                 if (customEnvironment.isSupport(classType)) {
-                                    argumentValue = customEnvironment.getValue(request);
+                                    argumentValue = customEnvironment.getValue(request, classType);
                                     isSuccessFindEnvironment = true;
                                 }
                             }
