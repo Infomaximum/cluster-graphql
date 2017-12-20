@@ -44,11 +44,6 @@ public class ComponentDataFetcher implements DataFetcher {
         GRequest gRequest = environment.getContext();
 
         try {
-//            GRequest1 gEnvironment = new GRequest1(
-//                    environment.getSource(),
-//                    getReceivedArguments(rTypeGraphQLField, environment, gContext.getVariables()),
-//                    gContext
-//            );
             GRequestItem gRequestItem = new GRequestItem(
                     environment.getSource(),
                     getReceivedArguments(rTypeGraphQLField, environment, gRequest.getExternalNameVariables())
@@ -84,7 +79,7 @@ public class ComponentDataFetcher implements DataFetcher {
         Set<String> receivedArguments = new HashSet<String>();
         for (Argument argument: field.getArguments()) {
             if (argument.getValue() instanceof VariableReference) {
-                //Проверем хитрую ситуацию, если аргумент в методе был зарезервирован под переменную из variables
+                //Проверим хитрую ситуацию, если аргумент в методе был зарезервирован под переменную из variables
                 //но этот variable не был передан, то считаем, что этот агрумент и не собирались отправлять
                 VariableReference variableReference = (VariableReference) argument.getValue();
                 if (!variables.contains(variableReference.getName())) continue;
