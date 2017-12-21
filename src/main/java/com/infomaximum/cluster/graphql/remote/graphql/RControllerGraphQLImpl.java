@@ -67,14 +67,10 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
             if (classSchema == null) throw new RuntimeException("not support scheme: " + classSchema);
 
             Object object;
-            if (RemoteObject.instanceOf(classSchema)) {
-                if (gRequestItem.source.getClass() == classSchema) {
-                    object = gRequestItem.source;
-                } else {
-                    //TODO Ulitin.V Адовый пизпец срочно переписать способ построения схем
-                    Constructor constructor = classSchema.getConstructor();
-                    object = constructor.newInstance();
-                }
+            if (RemoteObject.instanceOf(classSchema)
+                    &&
+                    classSchemas.get(graphQLTypeName).isAssignableFrom(gRequestItem.source.getClass())) {
+                object = gRequestItem.source;
             } else {
                 Constructor constructor = classSchema.getConstructor();
                 object = constructor.newInstance();
