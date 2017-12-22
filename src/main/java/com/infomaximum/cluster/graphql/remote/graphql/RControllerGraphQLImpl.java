@@ -204,7 +204,7 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
     //TODO Ulitin V. Если когда нибудь у нас появится перегрузка методов, переписать
     private static Method getMethod(Class classSchema, String methodName) {
         Method findMethod=null;
-        for (Method method: classSchema.getDeclaredMethods()) {
+        for (Method method: classSchema.getMethods()) {
             if (method.isSynthetic()) continue; //Игнорируем генерируемые методы
             if (method.getName().equals(methodName)) {
                 if (findMethod==null) {
