@@ -272,7 +272,7 @@ public class BuildTypeGraphQLUtils {
 			unionGraphQLTypeNames.add(aGraphQLTypeOutObjectUnion.value());
 		}
 
-		for (Class iClass : classRTypeGraphQL.getClasses()) {
+		for (Class iClass : classRTypeGraphQL.getInterfaces()) {
 			GraphQLTypeOutObjectUnion iAGraphQLTypeOutObjectUnion = (GraphQLTypeOutObjectUnion) iClass.getAnnotation(GraphQLTypeOutObjectUnion.class);
 			if (iAGraphQLTypeOutObjectUnion == null) continue;
 			unionGraphQLTypeNames.add(iAGraphQLTypeOutObjectUnion.value());
