@@ -175,13 +175,7 @@ public class BuildTypeGraphQLUtils {
 				}
 			}
 			if (aGraphQLTarget != null) continue;//В эту переменную будет передаваться объект для которого вызывается
-			if (aGraphQLName == null) {
-				if (parameterTypes[index] == GRequest.class)
-					continue;//В эту переменную будет передаваться окружение
-				if (Component.class.isAssignableFrom(parameterTypes[index]))
-					continue;//В эту переменную будет передаваться компонент
-				throw new RuntimeException("Not support argument, class: " + classRTypeGraphQL + ", method: " + nameMethod + ", argument index: " + index);
-			}
+            if (aGraphQLName == null) continue;//В эту переменную будет передаваться внешняя переменная
 
 			String typeArgument = getGraphQLType(parameterTypes[index], method.getGenericParameterTypes()[index]);
 			String nameArgument = aGraphQLName.value();
