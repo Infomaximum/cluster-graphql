@@ -30,7 +30,7 @@ public class GRequest implements RemoteObject {
         this.requestContext = requestContext;
 
         this.externalNameVariables = externalNameVariables;
-        this.uploadFiles = Collections.unmodifiableMap(uploadFiles);
+        this.uploadFiles = (uploadFiles==null)?null:Collections.unmodifiableMap(uploadFiles);
     }
 
     public String getFrontendComponentKey() {
