@@ -15,12 +15,12 @@ import java.util.*;
 public class GRequest implements RemoteObject {
 
     public static class UploadFile {
-        public final String field;
+        public final String fieldname;
         public final String filename;
         public final URI uri;
 
-        public UploadFile(String field, String filename, URI uri) {
-            this.field = field;
+        public UploadFile(String fieldname, String filename, URI uri) {
+            this.fieldname = fieldname;
             this.filename = filename;
             this.uri = uri;
         }
@@ -81,7 +81,7 @@ public class GRequest implements RemoteObject {
             JSONArray outUploadFiles = new JSONArray();
             for (UploadFile uploadFile: uploadFiles){
                 JSONObject outUploadFile = new JSONObject();
-                outUploadFile.put("field", uploadFile.field);
+                outUploadFile.put("fieldname", uploadFile.fieldname);
                 outUploadFile.put("filename", uploadFile.filename);
                 outUploadFile.put("uri", uploadFile.uri.toString());
                 outUploadFiles.add(outUploadFile);
@@ -116,7 +116,7 @@ public class GRequest implements RemoteObject {
                 try {
                     uploadFiles.add(
                             new UploadFile(
-                                    jUploadFile.getAsString("field"),
+                                    jUploadFile.getAsString("fieldname"),
                                     jUploadFile.getAsString("filename"),
                                     new URI(jUploadFile.getAsString("uri"))
                             )
