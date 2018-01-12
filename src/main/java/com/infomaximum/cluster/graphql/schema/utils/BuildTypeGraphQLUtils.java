@@ -215,10 +215,10 @@ public class BuildTypeGraphQLUtils {
 			return "string";
 		} else if (clazz == Date.class) {
 			return "date";
-		} else if (clazz == List.class) {
+		} else if (clazz == List.class || clazz == Set.class) {
 			String genericTypeName = ((ParameterizedType) genericType).getActualTypeArguments()[0].getTypeName();
 			Class clazzGenericType = Class.forName(genericTypeName, true, Thread.currentThread().getContextClassLoader());
-			return "list:" + getGraphQLType(clazzGenericType, null);
+			return "collection:" + getGraphQLType(clazzGenericType, null);
 		} else if (clazz == GOptional.class) {
 			Type iGenericType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
 			if (iGenericType instanceof ParameterizedType) {
