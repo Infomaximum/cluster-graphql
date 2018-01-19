@@ -27,6 +27,7 @@ public class GRequest implements RemoteObject {
     }
 
     private final String frontendComponentKey;
+    private final String remoteAddress;
     private final RemoteObject requestContext;
 
     private Set<String> externalNameVariables;
@@ -34,11 +35,13 @@ public class GRequest implements RemoteObject {
 
     public GRequest(
             String frontendComponentKey,
+            String remoteAddress,
             RemoteObject requestContext,
             Set<String> externalNameVariables,
             List<UploadFile> uploadFiles
     ) {
         this.frontendComponentKey = frontendComponentKey;
+        this.remoteAddress = remoteAddress;
         this.requestContext = requestContext;
 
         this.externalNameVariables = externalNameVariables;
@@ -47,6 +50,10 @@ public class GRequest implements RemoteObject {
 
     public String getFrontendComponentKey() {
         return frontendComponentKey;
+    }
+
+    public String getRemoteAddress() {
+        return remoteAddress;
     }
 
     public RemoteObject getRequestContext() {
@@ -65,6 +72,7 @@ public class GRequest implements RemoteObject {
     public JSONObject serialize(Component component) {
         JSONObject out = new JSONObject();
         out.put("key", frontendComponentKey);
+        out.put("remote_address", remoteAddress);
 
         JSONObject outContext = new JSONObject();
         outContext.put("type", requestContext.getClass().getName());
@@ -94,6 +102,7 @@ public class GRequest implements RemoteObject {
 
     public static GRequest deserialize(Component component, Class classType, JSONObject json) throws ReflectiveOperationException {
         String frontendComponentKey = json.getAsString("key");
+        String remoteAddress = json.getAsString("remote_address");
 
         JSONObject jsonContext = (JSONObject) json.get("context");
         Class classTypeContext = Class.forName(jsonContext.getAsString("type"));
@@ -127,6 +136,6 @@ public class GRequest implements RemoteObject {
             }
         }
 
-        return new GRequest(frontendComponentKey, requestContext, externalVariables, uploadFiles);
+        return new GRequest(frontendComponentKey, remoteAddress, requestContext, externalVariables, uploadFiles);
     }
 }
