@@ -53,7 +53,7 @@ public class GraphQLExecutor {
     public static class Builder {
 
         private Component component;
-        private Package environmentPackage;
+        private String environmentPackageName;
         private Constructor customComponentDataFetcher;
 
         //Собираем какие типы у нас вообще есть
@@ -63,12 +63,17 @@ public class GraphQLExecutor {
         private Map<String, Set<RGraphQLInputObjectTypeField>> waitBuildGraphQLTypeInObjects = new HashMap<String, Set<RGraphQLInputObjectTypeField>>();
 
         public Builder(Component component) {
-            this(component, null);
+            this(component, (String) null);
         }
 
         public Builder(Component component, Package environmentPackage) {
             this.component = component;
-            this.environmentPackage = environmentPackage;
+            this.environmentPackageName = environmentPackage.getName();
+        }
+
+        public Builder(Component component, String environmentPackageName) {
+            this.component = component;
+            this.environmentPackageName = environmentPackageName;
         }
 
         public Builder withDataFetcher(Class<? extends ComponentDataFetcher> clazzComponentDataFetcher) throws GraphQLExecutorException {
@@ -87,8 +92,8 @@ public class GraphQLExecutor {
         public GraphQLExecutor build() throws GraphQLExecutorException {
             try {
                 //Собираем встроенные
-                if (environmentPackage!=null) {
-                    for (RGraphQLType rGraphQLType : BuildTypeGraphQLUtils.findTypeGraphQL(environmentPackage.getName()).values()) {
+                if (environmentPackageName!=null) {
+                    for (RGraphQLType rGraphQLType : BuildTypeGraphQLUtils.findTypeGraphQL(environmentPackageName).values()) {
                         mergeGraphQLType(rGraphQLType);
                     }
                 }
