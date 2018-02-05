@@ -8,12 +8,11 @@ import java.lang.annotation.Target;
 /**
  * Created by kris on 29.12.16.
  */
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface GraphQLField {
 
     String value() default "";
-    TypeAuthControl auth() default TypeAuthControl.AUTH;
     String deprecated() default "";
 
 }

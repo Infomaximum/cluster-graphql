@@ -1,6 +1,7 @@
 package com.infomaximum.cluster.graphql.schema.struct.output;
 
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
+import com.infomaximum.cluster.struct.Component;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 
@@ -37,7 +38,7 @@ public class RGraphQLTypeOutObject extends RGraphQLType {
     }
 
     @Override
-    public void serializeNative(JSONObject out) {
+    public void serializeNative(Component component, JSONObject out) {
         out.put("class_name", className);
 
         JSONArray outUnions = new JSONArray();
@@ -46,34 +47,6 @@ public class RGraphQLTypeOutObject extends RGraphQLType {
         }
         out.put("unions", outUnions);
 
-        out.put("fields", serializeFields(fields));
-    }
-
-    public static JSONArray serializeFields(Set<RGraphQLObjectTypeField> fields) {
-        JSONArray outFields =new JSONArray();
-        for (RGraphQLObjectTypeField field: fields) {
-            JSONObject outField = new JSONObject();
-            outField.put("subsystem", field.subsystem);
-            outField.put("auth", field.typeAuthControl.name());
-            outField.put("is_field", field.isField);
-            outField.put("type", field.type);
-            outField.put("name", field.name);
-            outField.put("ext_name", field.externalName);
-            if (field.deprecated!=null) outField.put("deprecated", field.deprecated);
-            if (field.arguments!=null) {
-                JSONArray outArguments =new JSONArray();
-                for (RGraphQLObjectTypeMethodArgument argument: field.arguments) {
-                    JSONObject outArgument = new JSONObject();
-                    outArgument.put("type", argument.type);
-                    outArgument.put("name", argument.name);
-                    outArgument.put("ext_name", argument.externalName);
-                    outArgument.put("is_not_null", argument.isNotNull);
-                    outArguments.add(outArgument);
-                }
-                outField.put("arguments", outArguments);
-            }
-            outFields.add(outField);
-        }
-        return outFields;
+        out.put("fields", serializeFields(component, fields));
     }
 }

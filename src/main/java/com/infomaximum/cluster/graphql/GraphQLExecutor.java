@@ -8,6 +8,7 @@ import com.infomaximum.cluster.graphql.scalartype.GraphQLScalarTypeCustom;
 import com.infomaximum.cluster.graphql.schema.TypeSchema;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObjectUnion;
+import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ExtPropertyDataFetcher;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
@@ -18,7 +19,7 @@ import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObjectUn
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeMethodArgument;
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLTypeOutObject;
-import com.infomaximum.cluster.graphql.schema.utils.BuildTypeGraphQLUtils;
+import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLBuilder;
 import com.infomaximum.cluster.struct.Component;
 import graphql.GraphQL;
 import graphql.Scalars;
@@ -55,6 +56,7 @@ public class GraphQLExecutor {
         private Component component;
         private String environmentPackageName;
         private Constructor customComponentDataFetcher;
+        private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
         //Собираем какие типы у нас вообще есть
         private List<RGraphQLTypeEnum> waitBuildGraphQLTypeEnums = new ArrayList<RGraphQLTypeEnum>();
@@ -89,11 +91,21 @@ public class GraphQLExecutor {
             return this;
         }
 
+        public Builder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder){
+            this.fieldConfigurationBuilder=fieldConfigurationBuilder;
+            return this;
+        }
+
         public GraphQLExecutor build() throws GraphQLExecutorException {
             try {
                 //Собираем встроенные
                 if (environmentPackageName!=null) {
-                    for (RGraphQLType rGraphQLType : BuildTypeGraphQLUtils.findTypeGraphQL(environmentPackageName).values()) {
+                    TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(environmentPackageName);
+                    if (fieldConfigurationBuilder != null) {
+                        typeGraphQLBuilder.withFieldConfigurationBuilder(fieldConfigurationBuilder);
+                    }
+
+                    for (RGraphQLType rGraphQLType : typeGraphQLBuilder.build().values()) {
                         mergeGraphQLType(rGraphQLType);
                     }
                 }

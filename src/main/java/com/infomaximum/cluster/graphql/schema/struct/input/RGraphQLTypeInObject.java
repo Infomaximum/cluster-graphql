@@ -1,6 +1,7 @@
 package com.infomaximum.cluster.graphql.schema.struct.input;
 
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
+import com.infomaximum.cluster.struct.Component;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 
@@ -24,7 +25,7 @@ public class RGraphQLTypeInObject extends RGraphQLType {
     }
 
     @Override
-    public void serializeNative(JSONObject out) {
+    public void serializeNative(Component component, JSONObject out) {
         JSONArray outFields =new JSONArray();
         for (RGraphQLInputObjectTypeField field: fields) {
             JSONObject outField = new JSONObject();
