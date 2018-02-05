@@ -8,8 +8,10 @@ import com.infomaximum.cluster.graphql.anotation.GraphQLSource;
 import com.infomaximum.cluster.graphql.anotation.GraphQLTypeInput;
 import com.infomaximum.cluster.graphql.customtype.CustomEnvType;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
+import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
+import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
-import com.infomaximum.cluster.graphql.schema.utils.BuildTypeGraphQLUtils;
+import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLBuilder;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.graphql.struct.GRequestItem;
@@ -35,15 +37,20 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
     private final Map<String, Class> classSchemas;
 
     public RControllerGraphQLImpl(T component) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
-        this(component, null);
+        this(component, null, null);
     }
 
-    public RControllerGraphQLImpl(T component, Set<CustomEnvType> customEnvTypes) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
+    public RControllerGraphQLImpl(T component, Set<CustomEnvType> customEnvTypes, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
         super(component);
         this.customEnvTypes = customEnvTypes;
 
-        Map<Class, RGraphQLType> rTypeGraphQLItems = BuildTypeGraphQLUtils.findTypeGraphQL(component.getInfo().getUuid());
-        rTypeGraphQLs = Collections.unmodifiableList(new ArrayList<>(rTypeGraphQLItems.values()));
+        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(component.getInfo().getUuid());
+        if (fieldConfigurationBuilder != null) {
+            typeGraphQLBuilder.withFieldConfigurationBuilder(fieldConfigurationBuilder);
+        }
+
+        Map<Class, RGraphQLType> rTypeGraphQLItems = typeGraphQLBuilder.build();
+        rTypeGraphQLs = Collections.unmodifiableList(new ArrayList<>(typeGraphQLBuilder.build().values()));
 
         classSchemas = new HashMap<String, Class>();
         for (Map.Entry<Class, RGraphQLType> entryTypeGraphQL: rTypeGraphQLItems.entrySet()) {

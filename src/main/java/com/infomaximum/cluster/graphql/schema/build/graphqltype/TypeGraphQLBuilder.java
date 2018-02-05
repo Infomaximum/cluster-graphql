@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.graphql.schema.utils;
+package com.infomaximum.cluster.graphql.schema.build.graphqltype;
 
 import com.google.common.base.CaseFormat;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
@@ -12,14 +12,11 @@ import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeFi
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeMethodArgument;
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.struct.GOptional;
-import com.infomaximum.cluster.graphql.struct.GRequest;
-import com.infomaximum.cluster.struct.Component;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.validation.constraints.NotNull;
-import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
@@ -27,11 +24,23 @@ import java.util.*;
 /**
  * Created by kris on 30.12.16.
  */
-public class BuildTypeGraphQLUtils {
+public class TypeGraphQLBuilder {
 
-	private final static Logger log = LoggerFactory.getLogger(BuildTypeGraphQLUtils.class);
+	private final static Logger log = LoggerFactory.getLogger(TypeGraphQLBuilder.class);
 
-	public static Map<Class, RGraphQLType> findTypeGraphQL(String subsystem) throws ClassNotFoundException {
+	private String subsystem;
+	private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
+
+	public TypeGraphQLBuilder(String subsystem) {
+		this.subsystem = subsystem;
+	}
+
+	public TypeGraphQLBuilder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder){
+		this.fieldConfigurationBuilder=fieldConfigurationBuilder;
+		return this;
+	}
+
+	public Map<Class, RGraphQLType> build() throws ClassNotFoundException {
 		Reflections reflections = new Reflections(subsystem);
 
 		Map<Class, RGraphQLType> rTypeGraphQLItems = new HashMap<Class, RGraphQLType>();
@@ -58,10 +67,10 @@ public class BuildTypeGraphQLUtils {
 				//Собираем поля
 				Set<RGraphQLObjectTypeField> fields = new HashSet<RGraphQLObjectTypeField>();
 
-                //Обрабытываем поля
-                for (Field field: classRTypeGraphQL.getDeclaredFields()) {
-                    GraphQLField aGraphQLField = field.getAnnotation(GraphQLField.class);
-                    if (aGraphQLField ==null) continue;
+				//Обрабытываем поля
+				for (Field field: classRTypeGraphQL.getDeclaredFields()) {
+					GraphQLField aGraphQLField = field.getAnnotation(GraphQLField.class);
+					if (aGraphQLField ==null) continue;
 
 					String typeField = getGraphQLType(field.getType(), field.getGenericType());
 
@@ -70,17 +79,22 @@ public class BuildTypeGraphQLUtils {
 					String externalNameField = aGraphQLField.value();
 					if (externalNameField.trim().length() == 0) externalNameField = getExternalName(nameField);
 
-					fields.add(new RGraphQLObjectTypeField(subsystem, aGraphQLField.auth(), true, typeField, nameField, externalNameField, aGraphQLField.deprecated()));
+					RemoteObject fieldConfiguration = null;
+					if (fieldConfigurationBuilder!=null) {
+						fieldConfiguration = fieldConfigurationBuilder.build(field);
+					}
+
+					fields.add(new RGraphQLObjectTypeField(subsystem, fieldConfiguration, true, typeField, nameField, externalNameField, aGraphQLField.deprecated()));
 				}
 
 				//Обрабатываем методы
 				for (Method method : classRTypeGraphQL.getMethods()) {
 					if (method.isSynthetic()) continue;//Игнорируем генерируемые методы
 
-					GraphQLTypeMethod aGraphQLTypeMethod = method.getAnnotation(GraphQLTypeMethod.class);
+					GraphQLField aGraphQLTypeMethod = method.getAnnotation(GraphQLField.class);
 					if (aGraphQLTypeMethod == null) continue;
 
-					fields.add(buildRGraphQLObjectTypeField(subsystem, classRTypeGraphQL, method, aGraphQLTypeMethod));
+					fields.add(buildRGraphQLObjectTypeField(subsystem, method, aGraphQLTypeMethod));
 				}
 
 				rGraphQLType = new RGraphQLTypeOutObject(name, classRTypeGraphQL.getName(), unionGraphQLTypeNames, fields);
@@ -104,10 +118,10 @@ public class BuildTypeGraphQLUtils {
 			for (Method method : classRTypeGraphQL.getMethods()) {
 				if (method.isSynthetic()) continue;//Игнорируем генерируемые методы
 
-				GraphQLTypeMethod aGraphQLTypeMethod = method.getAnnotation(GraphQLTypeMethod.class);
+				GraphQLField aGraphQLTypeMethod = method.getAnnotation(GraphQLField.class);
 				if (aGraphQLTypeMethod == null) continue;
 
-				fields.add(buildRGraphQLObjectTypeField(subsystem, classRTypeGraphQL, method, aGraphQLTypeMethod));
+				fields.add(buildRGraphQLObjectTypeField(subsystem, method, aGraphQLTypeMethod));
 			}
 
 
@@ -121,10 +135,10 @@ public class BuildTypeGraphQLUtils {
 			String name = aGraphQLTypeInput.value();
 			Set<RGraphQLInputObjectTypeField> fields = new HashSet<RGraphQLInputObjectTypeField>();
 
-            //Обрабытываем поля
-            for (Field field : classRTypeGraphQL.getDeclaredFields()) {
-                GraphQLTypeInput aGraphQLTypeInputField = field.getAnnotation(GraphQLTypeInput.class);
-                if (aGraphQLTypeInputField == null) continue;
+			//Обрабытываем поля
+			for (Field field : classRTypeGraphQL.getDeclaredFields()) {
+				GraphQLTypeInput aGraphQLTypeInputField = field.getAnnotation(GraphQLTypeInput.class);
+				if (aGraphQLTypeInputField == null) continue;
 
 				String typeField = getGraphQLType(field.getType(), field.getGenericType());
 
@@ -145,7 +159,7 @@ public class BuildTypeGraphQLUtils {
 		return rTypeGraphQLItems;
 	}
 
-	private static RGraphQLObjectTypeField buildRGraphQLObjectTypeField(String subsystem, Class classRTypeGraphQL, Method method, GraphQLTypeMethod aGraphQLTypeMethod) throws ClassNotFoundException {
+	private RGraphQLObjectTypeField buildRGraphQLObjectTypeField(String subsystem, Method method, GraphQLField aGraphQLTypeMethod) throws ClassNotFoundException {
 		String typeField = getGraphQLType(method.getReturnType(), method.getGenericReturnType());
 
 		String nameMethod = method.getName();
@@ -175,7 +189,7 @@ public class BuildTypeGraphQLUtils {
 				}
 			}
 			if (aGraphQLTarget != null) continue;//В эту переменную будет передаваться объект для которого вызывается
-            if (aGraphQLName == null) continue;//В эту переменную будет передаваться внешняя переменная
+			if (aGraphQLName == null) continue;//В эту переменную будет передаваться внешняя переменная
 
 			String typeArgument = getGraphQLType(parameterTypes[index], method.getGenericParameterTypes()[index]);
 			String nameArgument = aGraphQLName.value();
@@ -183,7 +197,12 @@ public class BuildTypeGraphQLUtils {
 			arguments.add(new RGraphQLObjectTypeMethodArgument(typeArgument, nameArgument, nameArgument, isNotNull));
 		}
 
-		return new RGraphQLObjectTypeField(subsystem, aGraphQLTypeMethod.auth(), false, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
+		RemoteObject fieldConfiguration = null;
+		if (fieldConfigurationBuilder!=null) {
+			fieldConfiguration = fieldConfigurationBuilder.build(method);
+		}
+
+		return new RGraphQLObjectTypeField(subsystem, fieldConfiguration, false, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
 	}
 
 	private static String getExternalName(Method method) {
