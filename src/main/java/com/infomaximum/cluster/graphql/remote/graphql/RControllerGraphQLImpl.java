@@ -79,7 +79,8 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
                     classSchemas.get(graphQLTypeName).isAssignableFrom(gRequestItem.source.getClass())) {
                 object = gRequestItem.source;
             } else {
-                Constructor constructor = classSchema.getConstructor();
+                Constructor constructor = classSchema.getDeclaredConstructor();
+                constructor.setAccessible(true);
                 object = constructor.newInstance();
             }
 
