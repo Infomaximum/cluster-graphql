@@ -21,6 +21,8 @@ import java.util.Set;
  */
 public abstract class RGraphQLType implements RemoteObject {
 
+    protected static String FIELD_COMPONENT_UUID="component_uuid";
+
     private final String name;
 
     public RGraphQLType(String name) {
@@ -118,7 +120,7 @@ public abstract class RGraphQLType implements RemoteObject {
             }
 
             RGraphQLObjectTypeField field = new RGraphQLObjectTypeField(
-                    jField.getAsString("subsystem"),
+                    jField.getAsString(FIELD_COMPONENT_UUID),
                     fieldConfiguration,
                     (boolean) jField.get("is_field"),
                     jField.getAsString("type"),
@@ -137,7 +139,9 @@ public abstract class RGraphQLType implements RemoteObject {
         JSONArray outFields =new JSONArray();
         for (RGraphQLObjectTypeField field: fields) {
             JSONObject outField = new JSONObject();
-            outField.put("subsystem", field.subsystem);
+            if (field.componentUuid!=null) {
+                outField.put(FIELD_COMPONENT_UUID, field.componentUuid);
+            }
             if (field.configuration!=null) {
                 JSONObject outFieldConfiguration = new JSONObject();
                 outFieldConfiguration.put("type", field.configuration.getClass().getName());

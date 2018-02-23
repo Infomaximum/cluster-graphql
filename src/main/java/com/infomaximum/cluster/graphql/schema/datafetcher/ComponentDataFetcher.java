@@ -2,6 +2,7 @@ package com.infomaximum.cluster.graphql.schema.datafetcher;
 
 import com.infomaximum.cluster.core.remote.Remotes;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
+import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.datafetcher.utils.ExtResult;
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.struct.GRequest;
@@ -28,12 +29,14 @@ public class ComponentDataFetcher implements DataFetcher {
     protected final static Logger log = LoggerFactory.getLogger(ComponentDataFetcher.class);
 
     protected final Remotes remotes;
+    protected final GraphQLComponentExecutor sdkGraphQLItemExecutor;
 
     protected final String graphQLTypeName;
     protected final RGraphQLObjectTypeField rTypeGraphQLField;
 
-    public ComponentDataFetcher(Remotes remotes, String graphQLTypeName, RGraphQLObjectTypeField rTypeGraphQLField) {
+    public ComponentDataFetcher(Remotes remotes, GraphQLComponentExecutor sdkGraphQLItemExecutor, String graphQLTypeName, RGraphQLObjectTypeField rTypeGraphQLField) {
         this.remotes = remotes;
+        this.sdkGraphQLItemExecutor = sdkGraphQLItemExecutor;
 
         this.graphQLTypeName = graphQLTypeName;
         this.rTypeGraphQLField = rTypeGraphQLField;
@@ -49,9 +52,16 @@ public class ComponentDataFetcher implements DataFetcher {
                     getReceivedArguments(rTypeGraphQLField, environment, gRequest.getExternalNameVariables())
             );
 
-            RControllerGraphQL rControllerGraphQL = remotes.getFromSSUuid(rTypeGraphQLField.subsystem, RControllerGraphQL.class);
-            Object result = rControllerGraphQL.execute(gRequest, gRequestItem, graphQLTypeName, rTypeGraphQLField.name, environment.getArguments());
-            return ExtResult.get(result);
+            if (rTypeGraphQLField.componentUuid==null) {
+                //У этого объекта нет родительской подсистемы - вызываем прямо тут
+                Object result = sdkGraphQLItemExecutor.execute(gRequest, gRequestItem, graphQLTypeName, rTypeGraphQLField.name, environment.getArguments());
+                return ExtResult.get(result);
+            } else {
+                //Этот объект принадлежит определенной подсистеме - необходимо вызывать метод удаленно именно не родительской подсистеме
+                RControllerGraphQL rControllerGraphQL = remotes.getFromSSUuid(rTypeGraphQLField.componentUuid, RControllerGraphQL.class);
+                Object result = rControllerGraphQL.execute(gRequest, gRequestItem, graphQLTypeName, rTypeGraphQLField.name, environment.getArguments());
+                return ExtResult.get(result);
+            }
         } catch (Throwable t) {
             Throwable e;
             if (t instanceof InvocationTargetException) {

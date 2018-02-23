@@ -12,6 +12,7 @@ import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeFi
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeMethodArgument;
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.struct.GOptional;
+import com.infomaximum.cluster.struct.Component;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,11 +29,19 @@ public class TypeGraphQLBuilder {
 
 	private final static Logger log = LoggerFactory.getLogger(TypeGraphQLBuilder.class);
 
-	private String subsystem;
+	private final String componentUuid;
+	private final String packageName;
+
 	private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
-	public TypeGraphQLBuilder(String subsystem) {
-		this.subsystem = subsystem;
+	public TypeGraphQLBuilder(Component component) {
+		this.componentUuid = component.getInfo().getUuid();
+		this.packageName = componentUuid;
+	}
+
+	public TypeGraphQLBuilder(String packageName) {
+		this.componentUuid = null;
+		this.packageName = packageName;
 	}
 
 	public TypeGraphQLBuilder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder){
@@ -41,7 +50,7 @@ public class TypeGraphQLBuilder {
 	}
 
 	public Map<Class, RGraphQLType> build() throws ClassNotFoundException {
-		Reflections reflections = new Reflections(subsystem);
+		Reflections reflections = new Reflections(packageName);
 
 		Map<Class, RGraphQLType> rTypeGraphQLItems = new HashMap<Class, RGraphQLType>();
 		for (Class classRTypeGraphQL : reflections.getTypesAnnotatedWith(GraphQLTypeOutObject.class, true)) {
@@ -84,7 +93,7 @@ public class TypeGraphQLBuilder {
 						fieldConfiguration = fieldConfigurationBuilder.build(field);
 					}
 
-					fields.add(new RGraphQLObjectTypeField(subsystem, fieldConfiguration, true, typeField, nameField, externalNameField, aGraphQLField.deprecated()));
+					fields.add(new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, true, typeField, nameField, externalNameField, aGraphQLField.deprecated()));
 				}
 
 				//Обрабатываем методы
@@ -94,7 +103,7 @@ public class TypeGraphQLBuilder {
 					GraphQLField aGraphQLTypeMethod = method.getAnnotation(GraphQLField.class);
 					if (aGraphQLTypeMethod == null) continue;
 
-					fields.add(buildRGraphQLObjectTypeField(subsystem, method, aGraphQLTypeMethod));
+					fields.add(buildRGraphQLObjectTypeField(componentUuid, method, aGraphQLTypeMethod));
 				}
 
 				rGraphQLType = new RGraphQLTypeOutObject(name, classRTypeGraphQL.getName(), unionGraphQLTypeNames, fields);
@@ -121,7 +130,7 @@ public class TypeGraphQLBuilder {
 				GraphQLField aGraphQLTypeMethod = method.getAnnotation(GraphQLField.class);
 				if (aGraphQLTypeMethod == null) continue;
 
-				fields.add(buildRGraphQLObjectTypeField(subsystem, method, aGraphQLTypeMethod));
+				fields.add(buildRGraphQLObjectTypeField(componentUuid, method, aGraphQLTypeMethod));
 			}
 
 
@@ -159,7 +168,7 @@ public class TypeGraphQLBuilder {
 		return rTypeGraphQLItems;
 	}
 
-	private RGraphQLObjectTypeField buildRGraphQLObjectTypeField(String subsystem, Method method, GraphQLField aGraphQLTypeMethod) throws ClassNotFoundException {
+	private RGraphQLObjectTypeField buildRGraphQLObjectTypeField(String componentUuid, Method method, GraphQLField aGraphQLTypeMethod) throws ClassNotFoundException {
 		String typeField = getGraphQLType(method.getReturnType(), method.getGenericReturnType());
 
 		String nameMethod = method.getName();
@@ -202,7 +211,7 @@ public class TypeGraphQLBuilder {
 			fieldConfiguration = fieldConfigurationBuilder.build(method);
 		}
 
-		return new RGraphQLObjectTypeField(subsystem, fieldConfiguration, false, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
+		return new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, false, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
 	}
 
 	private static String getExternalName(Method method) {
