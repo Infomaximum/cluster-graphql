@@ -5,9 +5,11 @@ import com.infomaximum.cluster.core.remote.Remotes;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.scalartype.GraphQLScalarTypeCustom;
+import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.TypeSchema;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObjectUnion;
+import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ExtPropertyDataFetcher;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
@@ -18,7 +20,6 @@ import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObjectUn
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeMethodArgument;
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLTypeOutObject;
-import com.infomaximum.cluster.graphql.schema.utils.BuildTypeGraphQLUtils;
 import com.infomaximum.cluster.struct.Component;
 import graphql.GraphQL;
 import graphql.Scalars;
@@ -53,18 +54,29 @@ public class GraphQLExecutor {
     public static class Builder {
 
         private Component component;
-        private Package environmentPackage;
-        private Constructor customComponentDataFetcher;
+        private String environmentPackageName;
+        private Constructor customRemoteDataFetcher;
+        private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
         //Собираем какие типы у нас вообще есть
+        private GraphQLComponentExecutor sdkGraphQLItemExecutor;
         private List<RGraphQLTypeEnum> waitBuildGraphQLTypeEnums = new ArrayList<RGraphQLTypeEnum>();
         private Map<String, MergeGraphQLTypeOutObject> waitBuildGraphQLTypeOutObjects = new HashMap<String, MergeGraphQLTypeOutObject>();
         private Map<String, MergeGraphQLTypeOutObjectUnion> waitBuildGraphQLTypeOutObjectUnions = new HashMap<String, MergeGraphQLTypeOutObjectUnion>();
         private Map<String, Set<RGraphQLInputObjectTypeField>> waitBuildGraphQLTypeInObjects = new HashMap<String, Set<RGraphQLInputObjectTypeField>>();
 
+        public Builder(Component component) {
+            this(component, (String) null);
+        }
+
         public Builder(Component component, Package environmentPackage) {
             this.component = component;
-            this.environmentPackage = environmentPackage;
+            this.environmentPackageName = environmentPackage.getName();
+        }
+
+        public Builder(Component component, String environmentPackageName) {
+            this.component = component;
+            this.environmentPackageName = environmentPackageName;
         }
 
         public Builder withDataFetcher(Class<? extends ComponentDataFetcher> clazzComponentDataFetcher) throws GraphQLExecutorException {
@@ -76,15 +88,23 @@ public class GraphQLExecutor {
             }
             constructor.setAccessible(true);
 
-            customComponentDataFetcher = constructor;
+            customRemoteDataFetcher = constructor;
+            return this;
+        }
+
+        public Builder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder){
+            this.fieldConfigurationBuilder=fieldConfigurationBuilder;
             return this;
         }
 
         public GraphQLExecutor build() throws GraphQLExecutorException {
             try {
                 //Собираем встроенные
-                for (RGraphQLType rGraphQLType : BuildTypeGraphQLUtils.findTypeGraphQL(environmentPackage.getName()).values()) {
-                    mergeGraphQLType(rGraphQLType);
+                if (environmentPackageName!=null) {
+                    sdkGraphQLItemExecutor = new GraphQLComponentExecutor(environmentPackageName, fieldConfigurationBuilder);
+                    for (RGraphQLType rGraphQLType : sdkGraphQLItemExecutor.getCustomTypes()) {
+                        mergeGraphQLType(rGraphQLType);
+                    }
                 }
 
                 //Запрашиваем у подсистем
@@ -98,19 +118,19 @@ public class GraphQLExecutor {
                 //В этот map добавляются все построенные типы
                 Map<String, GraphQLType> graphQLTypes = new HashMap<String, GraphQLType>();
                 graphQLTypes.put("boolean", Scalars.GraphQLBoolean);
-                graphQLTypes.put("list:boolean", new GraphQLList(Scalars.GraphQLBoolean));
+                graphQLTypes.put("collection:boolean", new GraphQLList(Scalars.GraphQLBoolean));
                 graphQLTypes.put("int", Scalars.GraphQLInt);
-                graphQLTypes.put("list:int", new GraphQLList(Scalars.GraphQLInt));
+                graphQLTypes.put("collection:int", new GraphQLList(Scalars.GraphQLInt));
                 graphQLTypes.put("long", Scalars.GraphQLLong);
-                graphQLTypes.put("list:long", new GraphQLList(Scalars.GraphQLLong));
+                graphQLTypes.put("collection:long", new GraphQLList(Scalars.GraphQLLong));
                 graphQLTypes.put("bigdecimal", Scalars.GraphQLBigDecimal);
-                graphQLTypes.put("list:bigdecimal", new GraphQLList(Scalars.GraphQLBigDecimal));
+                graphQLTypes.put("collection:bigdecimal", new GraphQLList(Scalars.GraphQLBigDecimal));
                 graphQLTypes.put("float", GraphQLScalarTypeCustom.GraphQLFloat);
-                graphQLTypes.put("list:float", new GraphQLList(GraphQLScalarTypeCustom.GraphQLFloat));
+                graphQLTypes.put("collection:float", new GraphQLList(GraphQLScalarTypeCustom.GraphQLFloat));
                 graphQLTypes.put("string", Scalars.GraphQLString);
-                graphQLTypes.put("list:string", new GraphQLList(Scalars.GraphQLString));
+                graphQLTypes.put("collection:string", new GraphQLList(Scalars.GraphQLString));
                 graphQLTypes.put("date", GraphQLScalarTypeCustom.GraphQLDate);
-                graphQLTypes.put("list:date", new GraphQLList(GraphQLScalarTypeCustom.GraphQLDate));
+                graphQLTypes.put("collection:date", new GraphQLList(GraphQLScalarTypeCustom.GraphQLDate));
 
                 //Добавляем все enum
                 for (RGraphQLTypeEnum rGraphQLEnumType : waitBuildGraphQLTypeEnums) {
@@ -135,7 +155,7 @@ public class GraphQLExecutor {
                         for (RGraphQLObjectTypeField typeGraphQLField : graphQLTypeOutObject.getFields()) {
                             String[] compositeTypes = typeGraphQLField.type.split(":");
                             for (String compositeType : compositeTypes) {
-                                if ("list".equals(compositeType)) continue;
+                                if ("collection".equals(compositeType)) continue;
                                 if (!graphQLTypes.containsKey(compositeType)) {
                                     isLoadedDependenciesType = false;
                                 }
@@ -266,7 +286,7 @@ public class GraphQLExecutor {
                             argumentBuilder.name(argument.name);
 
                             if (argument.isNotNull) {
-                                argumentBuilder.type(new GraphQLNonNull(getType(graphQLTypes, argument.type)));
+                                argumentBuilder.type(new GraphQLNonNull(getGraphQLInputType(graphQLTypes, argument.type)));
                             } else {
                                 argumentBuilder.type(getGraphQLInputType(graphQLTypes, argument.type));
                             }
@@ -276,14 +296,14 @@ public class GraphQLExecutor {
                     }
 
                     ComponentDataFetcher componentDataFetcher;
-                    if (customComponentDataFetcher != null) {
+                    if (customRemoteDataFetcher != null) {
                         try {
-                            componentDataFetcher = (ComponentDataFetcher) customComponentDataFetcher.newInstance(component.getRemotes(), graphQLTypeOutObject.name, typeGraphQLField);
+                            componentDataFetcher = (ComponentDataFetcher) customRemoteDataFetcher.newInstance(component.getRemotes(), graphQLTypeOutObject.name, typeGraphQLField);
                         } catch (ReflectiveOperationException e) {
                             throw new GraphQLExecutorException("Exception build ComponentDataFetcher", e);
                         }
                     } else {
-                        componentDataFetcher = new ComponentDataFetcher(component.getRemotes(), graphQLTypeOutObject.name, typeGraphQLField);
+                        componentDataFetcher = new ComponentDataFetcher(component.getRemotes(), sdkGraphQLItemExecutor, graphQLTypeOutObject.name, typeGraphQLField);
                     }
                     graphQLFieldDefinitionBuilder.dataFetcher(componentDataFetcher);
                 }
@@ -357,7 +377,7 @@ public class GraphQLExecutor {
                 fieldBuilder.name(field.externalName);
 
                 if (field.isNotNull) {
-                    fieldBuilder.type(new GraphQLNonNull(getType(graphQLTypes, field.type)));
+                    fieldBuilder.type(new GraphQLNonNull(getGraphQLInputType(graphQLTypes, field.type)));
                 } else {
                     fieldBuilder.type(getGraphQLInputType(graphQLTypes, field.type));
                 }
@@ -382,7 +402,7 @@ public class GraphQLExecutor {
                 } else {
                     throw new GraphQLExecutorException("GraphQLType: " + type + " is not GraphQLOutputType");
                 }
-            } else if ("list".equals(compositeTypes[0])) {
+            } else if ("collection".equals(compositeTypes[0])) {
                 return new GraphQLList(getType(graphQLTypes, compositeTypes[1]));
             } else {
                 throw new GraphQLExecutorException("not support");
@@ -400,7 +420,7 @@ public class GraphQLExecutor {
                 } else {
                     throw new GraphQLExecutorException("GraphQLType: " + type + " is not GraphQLInputType");
                 }
-            } else if ("list".equals(compositeTypes[0])) {
+            } else if ("collection".equals(compositeTypes[0])) {
                 return new GraphQLList(getGraphQLInputType(graphQLTypes, compositeTypes[1]));
             } else {
                 throw new GraphQLExecutorException("not support");
@@ -408,9 +428,9 @@ public class GraphQLExecutor {
         }
 
         private GraphQLType getType(Map<String, GraphQLType> graphQLTypes, String type) {
-            GraphQLType graphQLype = graphQLTypes.get(type);
-            if (graphQLype != null) {
-                return graphQLype;
+            GraphQLType graphQLType = graphQLTypes.get(type);
+            if (graphQLType != null) {
+                return graphQLType;
             } else {
                 return new GraphQLTypeReference(type);
             }

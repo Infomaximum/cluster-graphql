@@ -5,6 +5,8 @@ import com.infomaximum.cluster.struct.Component;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 
 /**
@@ -12,32 +14,46 @@ import java.util.*;
  */
 public class GRequest implements RemoteObject {
 
-    public static class UploadFiles {
-        public String uploadFilesUUID;
-        public List<String> names;
+    public static class UploadFile {
+        public final String fieldname;
+        public final String filename;
+        public final URI uri;
+
+        public UploadFile(String fieldname, String filename, URI uri) {
+            this.fieldname = fieldname;
+            this.filename = filename;
+            this.uri = uri;
+        }
     }
 
     private final String frontendComponentKey;
+    private final String remoteAddress;
     private final RemoteObject requestContext;
 
     private Set<String> externalNameVariables;
-    private UploadFiles uploadFiles;
+    private List<UploadFile> uploadFiles;
 
     public GRequest(
             String frontendComponentKey,
+            String remoteAddress,
             RemoteObject requestContext,
             Set<String> externalNameVariables,
-            UploadFiles uploadFiles
+            List<UploadFile> uploadFiles
     ) {
         this.frontendComponentKey = frontendComponentKey;
+        this.remoteAddress = remoteAddress;
         this.requestContext = requestContext;
 
         this.externalNameVariables = externalNameVariables;
-        this.uploadFiles = uploadFiles;
+        this.uploadFiles = (uploadFiles==null)?null:Collections.unmodifiableList(uploadFiles);
     }
 
     public String getFrontendComponentKey() {
         return frontendComponentKey;
+    }
+
+    public String getRemoteAddress() {
+        return remoteAddress;
     }
 
     public RemoteObject getRequestContext() {
@@ -48,7 +64,7 @@ public class GRequest implements RemoteObject {
         return externalNameVariables;
     }
 
-    public UploadFiles getUploadFiles() {
+    public List<UploadFile> getUploadFiles() {
         return uploadFiles;
     }
 
@@ -56,6 +72,7 @@ public class GRequest implements RemoteObject {
     public JSONObject serialize(Component component) {
         JSONObject out = new JSONObject();
         out.put("key", frontendComponentKey);
+        out.put("remote_address", remoteAddress);
 
         JSONObject outContext = new JSONObject();
         outContext.put("type", requestContext.getClass().getName());
@@ -69,13 +86,14 @@ public class GRequest implements RemoteObject {
         }
 
         if (uploadFiles != null) {
-            JSONObject outUploadFiles = new JSONObject();
-            outUploadFiles.put("upload_files_uuid", uploadFiles.uploadFilesUUID);
-
-            JSONArray outUploadFileNames = new JSONArray();
-            outUploadFileNames.addAll(uploadFiles.names);
-            outUploadFiles.put("names", outUploadFileNames);
-
+            JSONArray outUploadFiles = new JSONArray();
+            for (UploadFile uploadFile: uploadFiles){
+                JSONObject outUploadFile = new JSONObject();
+                outUploadFile.put("fieldname", uploadFile.fieldname);
+                outUploadFile.put("filename", uploadFile.filename);
+                outUploadFile.put("uri", uploadFile.uri.toString());
+                outUploadFiles.add(outUploadFile);
+            }
             out.put("upload_files", outUploadFiles);
         }
 
@@ -84,6 +102,7 @@ public class GRequest implements RemoteObject {
 
     public static GRequest deserialize(Component component, Class classType, JSONObject json) throws ReflectiveOperationException {
         String frontendComponentKey = json.getAsString("key");
+        String remoteAddress = json.getAsString("remote_address");
 
         JSONObject jsonContext = (JSONObject) json.get("context");
         Class classTypeContext = Class.forName(jsonContext.getAsString("type"));
@@ -98,19 +117,25 @@ public class GRequest implements RemoteObject {
             externalVariables = Collections.emptySet();
         }
 
-        UploadFiles uploadFiles = null;
+        List<UploadFile> uploadFiles = null;
         if (json.containsKey("upload_files")) {
-            JSONObject jUploadFiles = (JSONObject) json.get("upload_files");
-
-            uploadFiles = new UploadFiles();
-            uploadFiles.uploadFilesUUID = jUploadFiles.getAsString("upload_files_uuid");
-
-            uploadFiles.names = new ArrayList<String>();
-            for (Object oJUploadFileName : (JSONArray) jUploadFiles.get("names")) {
-                uploadFiles.names.add((String) oJUploadFileName);
+            JSONArray jOUploadFiles = (JSONArray) json.get("upload_files");
+            for (Object jOUploadFile: jOUploadFiles) {
+                JSONObject jUploadFile = (JSONObject) jOUploadFile;
+                try {
+                    uploadFiles.add(
+                            new UploadFile(
+                                    jUploadFile.getAsString("fieldname"),
+                                    jUploadFile.getAsString("filename"),
+                                    new URI(jUploadFile.getAsString("uri"))
+                            )
+                    );
+                } catch (URISyntaxException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
 
-        return new GRequest(frontendComponentKey, requestContext, externalVariables, uploadFiles);
+        return new GRequest(frontendComponentKey, remoteAddress, requestContext, externalVariables, uploadFiles);
     }
 }

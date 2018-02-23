@@ -1,6 +1,6 @@
 package com.infomaximum.cluster.graphql.schema.struct.output;
 
-import com.infomaximum.cluster.graphql.anotation.TypeAuthControl;
+import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 
 import java.util.List;
 
@@ -9,30 +9,30 @@ import java.util.List;
  */
 public class RGraphQLObjectTypeField {
 
-    public final String subsystem;
+    public final String componentUuid;
 
     public final boolean isField;
     public final String type;
     public final String name;
     public final String externalName;
     public final List<RGraphQLObjectTypeMethodArgument> arguments;
-    public final TypeAuthControl typeAuthControl;
+    public final RemoteObject configuration;
     public final String deprecated;
 
-    public RGraphQLObjectTypeField(String subsystem, TypeAuthControl typeAuthControl, boolean isField, String type, String name, String externalName, String deprecated) {
-        this(subsystem, typeAuthControl, isField, type, name, externalName, deprecated, null);
+    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isField, String type, String name, String externalName, String deprecated) {
+        this(componentUuid, configuration, isField, type, name, externalName, deprecated, null);
     }
 
-    public RGraphQLObjectTypeField(String subsystem, TypeAuthControl typeAuthControl, boolean isField, String type, String name, String externalName, String deprecated, List<RGraphQLObjectTypeMethodArgument> arguments) {
-        this.subsystem=subsystem;
+    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isField, String type, String name, String externalName, String deprecated, List<RGraphQLObjectTypeMethodArgument> arguments) {
+        this.componentUuid = componentUuid;
 
-        this.typeAuthControl=typeAuthControl;
-        this.isField=isField;
+        this.isField = isField;
         this.type = type;
         this.name = name;
         this.externalName = externalName;
+        this.arguments = arguments;
+        this.configuration = configuration;
         this.deprecated = (deprecated==null || deprecated.isEmpty())?null:deprecated;
-        this.arguments=arguments;
     }
 
     @Override

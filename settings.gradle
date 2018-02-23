@@ -1,2 +1,4 @@
 rootProject.name = 'cluster-graphql'
 
+//include ':cluster'
+//project(':cluster').projectDir = new File(settingsDir, '../cluster')
