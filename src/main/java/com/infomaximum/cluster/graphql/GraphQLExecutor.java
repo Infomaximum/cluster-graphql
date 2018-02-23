@@ -82,7 +82,7 @@ public class GraphQLExecutor {
         public Builder withDataFetcher(Class<? extends ComponentDataFetcher> clazzComponentDataFetcher) throws GraphQLExecutorException {
             Constructor constructor = null;
             try {
-                constructor = clazzComponentDataFetcher.getConstructor(Remotes.class, String.class, RGraphQLObjectTypeField.class);
+                constructor = clazzComponentDataFetcher.getConstructor(Remotes.class, GraphQLComponentExecutor.class, String.class, RGraphQLObjectTypeField.class);
             } catch (NoSuchMethodException e) {
                 throw new GraphQLExecutorException("Not found constructor from ComponentDataFetcher", e);
             }
