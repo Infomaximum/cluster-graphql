@@ -298,7 +298,7 @@ public class GraphQLExecutor {
                     ComponentDataFetcher componentDataFetcher;
                     if (customRemoteDataFetcher != null) {
                         try {
-                            componentDataFetcher = (ComponentDataFetcher) customRemoteDataFetcher.newInstance(component.getRemotes(), graphQLTypeOutObject.name, typeGraphQLField);
+                            componentDataFetcher = (ComponentDataFetcher) customRemoteDataFetcher.newInstance(component.getRemotes(), sdkGraphQLItemExecutor, graphQLTypeOutObject.name, typeGraphQLField);
                         } catch (ReflectiveOperationException e) {
                             throw new GraphQLExecutorException("Exception build ComponentDataFetcher", e);
                         }
