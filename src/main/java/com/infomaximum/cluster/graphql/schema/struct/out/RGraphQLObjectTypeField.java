@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.graphql.schema.struct.output;
+package com.infomaximum.cluster.graphql.schema.struct.out;
 
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 
@@ -9,9 +9,13 @@ import java.util.List;
  */
 public class RGraphQLObjectTypeField {
 
+    public static String FIELD_QUERY_POOL="query_pool";
+
     public final String componentUuid;
 
     public final boolean isField;
+    public final boolean queryPool;
+
     public final String type;
     public final String name;
     public final String externalName;
@@ -19,14 +23,16 @@ public class RGraphQLObjectTypeField {
     public final RemoteObject configuration;
     public final String deprecated;
 
-    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isField, String type, String name, String externalName, String deprecated) {
-        this(componentUuid, configuration, isField, type, name, externalName, deprecated, null);
+    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isField, boolean queryPool, String type, String name, String externalName, String deprecated) {
+        this(componentUuid, configuration, isField, queryPool, type, name, externalName, deprecated, null);
     }
 
-    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isField, String type, String name, String externalName, String deprecated, List<RGraphQLObjectTypeMethodArgument> arguments) {
+    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isField, boolean queryPool, String type, String name, String externalName, String deprecated, List<RGraphQLObjectTypeMethodArgument> arguments) {
         this.componentUuid = componentUuid;
 
         this.isField = isField;
+        this.queryPool = queryPool;
+
         this.type = type;
         this.name = name;
         this.externalName = externalName;

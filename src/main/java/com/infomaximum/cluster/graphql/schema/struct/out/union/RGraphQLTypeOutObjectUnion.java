@@ -1,8 +1,7 @@
-package com.infomaximum.cluster.graphql.schema.struct.out;
+package com.infomaximum.cluster.graphql.schema.struct.out.union;
 
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeField;
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLTypeOutObject;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.struct.Component;
 import net.minidev.json.JSONObject;
 

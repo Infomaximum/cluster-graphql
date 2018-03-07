@@ -4,7 +4,7 @@ import com.infomaximum.cluster.core.remote.Remotes;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.datafetcher.utils.ExtResult;
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeField;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.graphql.struct.GRequestItem;
 import graphql.language.Argument;

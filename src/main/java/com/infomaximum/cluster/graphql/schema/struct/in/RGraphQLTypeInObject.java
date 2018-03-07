@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.graphql.schema.struct.input;
+package com.infomaximum.cluster.graphql.schema.struct.in;
 
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.struct.Component;

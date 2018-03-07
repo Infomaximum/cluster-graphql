@@ -1,16 +1,15 @@
 package com.infomaximum.cluster.graphql.schema.struct;
 
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
-import com.infomaximum.cluster.graphql.schema.struct.input.RGraphQLInputObjectTypeField;
-import com.infomaximum.cluster.graphql.schema.struct.input.RGraphQLTypeInObject;
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeField;
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeMethodArgument;
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLTypeOutObject;
+import com.infomaximum.cluster.graphql.schema.struct.in.RGraphQLInputObjectTypeField;
+import com.infomaximum.cluster.graphql.schema.struct.in.RGraphQLTypeInObject;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeMethodArgument;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObject;
 import com.infomaximum.cluster.struct.Component;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -22,11 +21,12 @@ import java.util.Set;
 public abstract class RGraphQLType implements RemoteObject {
 
     protected static String FIELD_COMPONENT_UUID="component_uuid";
+    protected static String FIELD_NAME="name";
 
     private final String name;
 
     public RGraphQLType(String name) {
-        this.name=name;
+        this.name = name;
     }
 
     public String getName() {
@@ -36,7 +36,7 @@ public abstract class RGraphQLType implements RemoteObject {
     @Override
     public JSONObject serialize(Component component) {
         JSONObject out = new JSONObject();
-        out.put("name", name);
+        out.put(FIELD_NAME, name);
 
         serializeNative(component, out);
 
@@ -46,7 +46,7 @@ public abstract class RGraphQLType implements RemoteObject {
     public abstract void serializeNative(Component component, JSONObject out);
 
     public static RGraphQLType deserialize(Component component, Class classType, JSONObject json) throws ReflectiveOperationException {
-        String name = json.getAsString("name");
+        String name = json.getAsString(FIELD_NAME);
 
         RGraphQLType rGraphQLType;
         if (classType.isAssignableFrom(RGraphQLTypeEnum.class)) {
@@ -123,6 +123,7 @@ public abstract class RGraphQLType implements RemoteObject {
                     jField.getAsString(FIELD_COMPONENT_UUID),
                     fieldConfiguration,
                     (boolean) jField.get("is_field"),
+                    (boolean) jField.get(RGraphQLObjectTypeField.FIELD_QUERY_POOL),
                     jField.getAsString("type"),
                     jField.getAsString("name"),
                     jField.getAsString("ext_name"),
@@ -149,6 +150,7 @@ public abstract class RGraphQLType implements RemoteObject {
                 outField.put("configuration", outFieldConfiguration);
             }
             outField.put("is_field", field.isField);
+            outField.put(RGraphQLObjectTypeField.FIELD_QUERY_POOL, field.queryPool);
             outField.put("type", field.type);
             outField.put("name", field.name);
             outField.put("ext_name", field.externalName);

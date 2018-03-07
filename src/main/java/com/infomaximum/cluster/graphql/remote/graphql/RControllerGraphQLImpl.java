@@ -1,6 +1,7 @@
 package com.infomaximum.cluster.graphql.remote.graphql;
 
 import com.infomaximum.cluster.core.remote.AbstractRController;
+import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.customtype.CustomEnvType;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
@@ -8,6 +9,7 @@ import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLField
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.graphql.struct.GRequestItem;
+import com.infomaximum.cluster.querypool.QueryPoolExecutor;
 import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,12 +27,12 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
 
     private final GraphQLComponentExecutor graphQLItemExecutor;
 
-    public RControllerGraphQLImpl(T component) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
+    public RControllerGraphQLImpl(T component, QueryPoolExecutor queryExecutor) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
         super(component);
         graphQLItemExecutor = new GraphQLComponentExecutor(component);
     }
 
-    public RControllerGraphQLImpl(T component, Set<CustomEnvType> customEnvTypes, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
+    public RControllerGraphQLImpl(T component, QueryPoolExecutor queryExecutor, Set<CustomEnvType> customEnvTypes, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
         super(component);
         graphQLItemExecutor = new GraphQLComponentExecutor(component, customEnvTypes, fieldConfigurationBuilder);
     }

@@ -39,7 +39,7 @@ public class FrontendComponent extends Component {
     public ExecutorTransport initExecutorTransport() throws ClusterException {
         try {
             return new ExecutorTransportImpl.Builder(this)
-                    .withRemoteController(new RControllerGraphQLImpl(this))//Обработчик GraphQL запросов
+                    .withRemoteController(new com.infomaximum.subsystems.graphql.RControllerGraphQLImpl(this))//Обработчик GraphQL запросов
                     .build();
         } catch (ReflectiveOperationException e) {
             throw new ClusterException(e);

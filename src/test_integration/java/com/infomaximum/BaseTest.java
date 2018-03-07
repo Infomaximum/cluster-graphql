@@ -48,7 +48,7 @@ public abstract class BaseTest {
                 .variables(Collections.emptyMap())
                 .build();
 
-        return frontendComponent.getGraphQLExecutor().getGraphQL().execute(executionInput);
+        return frontendComponent.getGraphQLExecutor().execute(executionInput);
     }
 
     @AfterClass

@@ -5,13 +5,14 @@ import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.anotation.*;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLTypeEnum;
-import com.infomaximum.cluster.graphql.schema.struct.input.RGraphQLInputObjectTypeField;
-import com.infomaximum.cluster.graphql.schema.struct.input.RGraphQLTypeInObject;
-import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObjectUnion;
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeField;
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeMethodArgument;
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLTypeOutObject;
+import com.infomaximum.cluster.graphql.schema.struct.in.RGraphQLInputObjectTypeField;
+import com.infomaximum.cluster.graphql.schema.struct.in.RGraphQLTypeInObject;
+import com.infomaximum.cluster.graphql.schema.struct.out.union.RGraphQLTypeOutObjectUnion;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeMethodArgument;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.struct.GOptional;
+import com.infomaximum.cluster.querypool.GraphQLQuery;
 import com.infomaximum.cluster.struct.Component;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
@@ -79,7 +80,7 @@ public class TypeGraphQLBuilder {
 				//Обрабытываем поля
 				for (Field field: classRTypeGraphQL.getDeclaredFields()) {
 					GraphQLField aGraphQLField = field.getAnnotation(GraphQLField.class);
-					if (aGraphQLField ==null) continue;
+					if (aGraphQLField == null) continue;
 
 					String typeField = getGraphQLType(field.getType(), field.getGenericType());
 
@@ -93,7 +94,7 @@ public class TypeGraphQLBuilder {
 						fieldConfiguration = fieldConfigurationBuilder.build(field);
 					}
 
-					fields.add(new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, true, typeField, nameField, externalNameField, aGraphQLField.deprecated()));
+					fields.add(new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, true, false, typeField, nameField, externalNameField, aGraphQLField.deprecated()));
 				}
 
 				//Обрабатываем методы
@@ -102,6 +103,8 @@ public class TypeGraphQLBuilder {
 
 					GraphQLField aGraphQLTypeMethod = method.getAnnotation(GraphQLField.class);
 					if (aGraphQLTypeMethod == null) continue;
+
+
 
 					fields.add(buildRGraphQLObjectTypeField(componentUuid, method, aGraphQLTypeMethod));
 				}
@@ -169,6 +172,8 @@ public class TypeGraphQLBuilder {
 	}
 
 	private RGraphQLObjectTypeField buildRGraphQLObjectTypeField(String componentUuid, Method method, GraphQLField aGraphQLTypeMethod) throws ClassNotFoundException {
+		boolean queryPool = GraphQLQuery.class.isAssignableFrom(method.getReturnType());
+
 		String typeField = getGraphQLType(method.getReturnType(), method.getGenericReturnType());
 
 		String nameMethod = method.getName();
@@ -211,7 +216,7 @@ public class TypeGraphQLBuilder {
 			fieldConfiguration = fieldConfigurationBuilder.build(method);
 		}
 
-		return new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, false, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
+		return new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, false, queryPool, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
 	}
 
 	private static String getExternalName(Method method) {
@@ -259,8 +264,7 @@ public class TypeGraphQLBuilder {
 			//Возможно это сложный GraphQL объект
 
 			//Возможно обертка
-			GraphQLTypeWrapper aGraphQLTypeWrapper = (GraphQLTypeWrapper) clazz.getAnnotation(GraphQLTypeWrapper.class);
-			if (aGraphQLTypeWrapper != null) {
+			if (GraphQLQuery.class.isAssignableFrom(clazz)) {
 				Type iGenericType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
 				if (iGenericType instanceof ParameterizedType) {
 					ParameterizedType iPGenericType = (ParameterizedType) iGenericType;
