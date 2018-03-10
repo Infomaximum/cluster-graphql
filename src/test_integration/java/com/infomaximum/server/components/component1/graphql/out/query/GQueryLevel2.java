@@ -6,7 +6,6 @@ import com.infomaximum.cluster.graphql.anotation.GraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.subsystems.exception.SubsystemException;
 import com.infomaximum.subsystems.graphql.GraphQLQuery;
-import com.infomaximum.subsystems.querypool.Query;
 import com.infomaximum.subsystems.querypool.QueryPool;
 import com.infomaximum.subsystems.querypool.QueryTransaction;
 import com.infomaximum.subsystems.querypool.ResourceProvider;
@@ -33,7 +32,6 @@ public class GQueryLevel2 {
                 resources.borrowResource(GQuery.class, QueryPool.LockType.SHARED);
             }
 
-            @Override
             public Integer execute(QueryTransaction transaction) throws SubsystemException {
                 if (k.isPresent()) {
                     return 1 + k.get();

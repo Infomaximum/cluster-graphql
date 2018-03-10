@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.graphql;
+package com.infomaximum.cluster.graphql.executor;
 
 
 import com.infomaximum.cluster.core.remote.Remotes;
@@ -36,7 +36,7 @@ public class GraphQLExecutor {
     private GraphQLSchema schema;
     private GraphQL graphQL;
 
-    private GraphQLExecutor(Component component, GraphQLSchema schema, GraphQL graphQL) {
+    GraphQLExecutor(Component component, GraphQLSchema schema, GraphQL graphQL) {
         this.component = component;
         this.schema = schema;
         this.graphQL = graphQL;
@@ -53,42 +53,23 @@ public class GraphQLExecutor {
     public static class Builder {
 
         private Component component;
-        private String environmentPackageName;
+        private String sdkPackagePath;
         private Constructor customRemoteDataFetcher;
         private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
         GraphQLComponentExecutor sdkGraphQLItemExecutor;
 
-        public Builder(Component component) {
-            this(component, (String) null);
-        }
+        public Builder(
+                Component component,
+                String sdkPackagePath,
+                Constructor customRemoteDataFetcher,
+                TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder
+        ) {
 
-        public Builder(Component component, Package environmentPackage) {
             this.component = component;
-            this.environmentPackageName = environmentPackage.getName();
-        }
-
-        public Builder(Component component, String environmentPackageName) {
-            this.component = component;
-            this.environmentPackageName = environmentPackageName;
-        }
-
-        public Builder withDataFetcher(Class<? extends ComponentDataFetcher> clazzComponentDataFetcher) throws GraphQLExecutorException {
-            Constructor constructor = null;
-            try {
-                constructor = clazzComponentDataFetcher.getConstructor(Remotes.class, GraphQLComponentExecutor.class, String.class, RGraphQLObjectTypeField.class);
-            } catch (NoSuchMethodException e) {
-                throw new GraphQLExecutorException("Not found constructor from ComponentDataFetcher", e);
-            }
-            constructor.setAccessible(true);
-
-            customRemoteDataFetcher = constructor;
-            return this;
-        }
-
-        public Builder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder){
-            this.fieldConfigurationBuilder=fieldConfigurationBuilder;
-            return this;
+            this.sdkPackagePath = sdkPackagePath;
+            this.customRemoteDataFetcher = customRemoteDataFetcher;
+            this.fieldConfigurationBuilder = fieldConfigurationBuilder;
         }
 
         public GraphQLExecutor build() throws GraphQLExecutorException {
@@ -101,8 +82,8 @@ public class GraphQLExecutor {
                 Map<String, Set<RGraphQLInputObjectTypeField>> buildGraphQLTypeInObjects = new HashMap<String, Set<RGraphQLInputObjectTypeField>>();
 
                 //Собираем встроенные
-                if (environmentPackageName!=null) {
-                    sdkGraphQLItemExecutor = new GraphQLComponentExecutor(environmentPackageName, fieldConfigurationBuilder);
+                if (sdkPackagePath!=null) {
+                    sdkGraphQLItemExecutor = new GraphQLComponentExecutor(sdkPackagePath, fieldConfigurationBuilder);
                     for (RGraphQLType rGraphQLType : sdkGraphQLItemExecutor.getCustomTypes()) {
                         mergeGraphQLType(
                                 buildGraphQLTypeEnums,

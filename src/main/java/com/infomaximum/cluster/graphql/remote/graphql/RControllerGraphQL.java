@@ -3,7 +3,6 @@ package com.infomaximum.cluster.graphql.remote.graphql;
 import com.infomaximum.cluster.anotation.DisableValidationRemoteMethod;
 import com.infomaximum.cluster.core.remote.struct.RController;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
-import com.infomaximum.cluster.graphql.remote.graphql.struct.PrepareRequest;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.graphql.struct.GRequestItem;
@@ -18,7 +17,7 @@ public interface RControllerGraphQL extends RController {
 
 	public List<RGraphQLType> getCustomTypes();
 
-	public PrepareRequest prepareRequest(long requestId, String graphQLTypeName, String graphQLTypeMethodName, Map<String, Object> arguments);
+	public Map<Long, Boolean> prepareRequest(long requestId, String graphQLTypeName, String graphQLTypeMethodName, Map<String, Object> arguments);
 
 	@DisableValidationRemoteMethod
     public Object execute(GRequest gRequest, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeMethodName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException;

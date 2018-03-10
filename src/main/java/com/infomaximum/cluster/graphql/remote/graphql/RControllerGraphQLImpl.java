@@ -1,7 +1,6 @@
 package com.infomaximum.cluster.graphql.remote.graphql;
 
 import com.infomaximum.cluster.core.remote.AbstractRController;
-import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.customtype.CustomEnvType;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
@@ -27,12 +26,8 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
 
     private final GraphQLComponentExecutor graphQLItemExecutor;
 
-    public RControllerGraphQLImpl(T component, QueryPoolExecutor queryExecutor) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
-        super(component);
-        graphQLItemExecutor = new GraphQLComponentExecutor(component);
-    }
 
-    public RControllerGraphQLImpl(T component, QueryPoolExecutor queryExecutor, Set<CustomEnvType> customEnvTypes, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
+    public RControllerGraphQLImpl(T component, Set<CustomEnvType> customEnvTypes, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws ReflectiveOperationException{
         super(component);
         graphQLItemExecutor = new GraphQLComponentExecutor(component, customEnvTypes, fieldConfigurationBuilder);
     }
@@ -40,6 +35,11 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
     @Override
     public List<RGraphQLType> getCustomTypes() {
         return graphQLItemExecutor.getCustomTypes();
+    }
+
+    @Override
+    public Map<Long, Boolean> prepareRequest(long requestId, String graphQLTypeName, String graphQLTypeMethodName, Map<String, Object> arguments) {
+        return null;
     }
 
     @Override

@@ -44,4 +44,13 @@ class ResourceProviderImpl implements ResourceProvider, AutoCloseable {
             throw new RuntimeException();
         }
     }
+
+    @Override
+    public Map<Long, Boolean> getLockResources() {
+        HashMap<Long, Boolean> lockResources = new HashMap<>();
+        for (Map.Entry<Long, QueryPool.LockType> entry: resources.entrySet()) {
+            lockResources.put(entry.getKey(), (entry.getValue()==QueryPool.LockType.EXCLUSIVE));
+        }
+        return lockResources;
+    }
 }
