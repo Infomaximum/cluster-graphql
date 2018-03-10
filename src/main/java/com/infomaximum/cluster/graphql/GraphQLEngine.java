@@ -5,7 +5,6 @@ import com.infomaximum.cluster.core.remote.Remotes;
 import com.infomaximum.cluster.graphql.customtype.CustomEnvType;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
-import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQLImpl;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
@@ -45,7 +44,7 @@ public class GraphQLEngine {
         ).build();
     }
 
-    public AbstractRController buildRemoteControllerGraphQL(Component component) throws GraphQLExecutorException {
+    public RControllerGraphQLImpl buildRemoteControllerGraphQL(Component component) throws GraphQLExecutorException {
         try {
             return new RControllerGraphQLImpl(component, customEnvTypes, fieldConfigurationBuilder);
         } catch (ReflectiveOperationException e) {
