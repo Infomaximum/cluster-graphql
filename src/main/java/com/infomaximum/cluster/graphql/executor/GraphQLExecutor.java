@@ -1,7 +1,5 @@
 package com.infomaximum.cluster.graphql.executor;
 
-
-import com.infomaximum.cluster.core.remote.Remotes;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.instrumentation.QueryPoolInstrumantation;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
@@ -192,7 +190,7 @@ public class GraphQLExecutor {
                         .build(new HashSet<GraphQLType>(graphQLTypes.values()));
 
                 GraphQL graphQL = GraphQL.newGraphQL(schema)
-                        .instrumentation(new QueryPoolInstrumantation(schema, buildGraphQLTypeOutObjects))
+                        .instrumentation(new QueryPoolInstrumantation(component, schema, buildGraphQLTypeOutObjects))
                         .build();
 
                 return new GraphQLExecutor(component, schema, graphQL);

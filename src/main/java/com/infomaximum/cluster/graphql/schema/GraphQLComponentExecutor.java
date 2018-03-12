@@ -76,7 +76,7 @@ public class GraphQLComponentExecutor {
         return rTypeGraphQLs;
     }
 
-    public Object execute(GRequest request, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeMethodName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
+    public Object execute(GRequest request, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
         try {
             Class classSchema = classSchemas.get(graphQLTypeName);
             if (classSchema == null) throw new RuntimeException("not support scheme: " + classSchema);
@@ -93,7 +93,7 @@ public class GraphQLComponentExecutor {
             }
 
 
-            Method method = getMethod(classSchema, graphQLTypeMethodName);
+            Method method = getMethod(classSchema, graphQLTypeFieldName);
 
             Class[] methodParameterTypes = method.getParameterTypes();
             Annotation[][] parametersAnnotations = method.getParameterAnnotations();

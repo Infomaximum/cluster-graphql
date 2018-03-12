@@ -7,6 +7,7 @@ import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.graphql.struct.GRequestItem;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -17,8 +18,8 @@ public interface RControllerGraphQL extends RController {
 
 	public List<RGraphQLType> getCustomTypes();
 
-	public Map<Long, Boolean> prepareRequest(long requestId, String graphQLTypeName, String graphQLTypeMethodName, Map<String, Object> arguments);
+	public Map<Long, Boolean> prepareRequest(String requestQueryKey, String graphQLTypeName, String graphQLTypeFieldName);
 
 	@DisableValidationRemoteMethod
-    public Object execute(GRequest gRequest, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeMethodName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException;
+    public Object execute(String requestQueryKey, GRequest gRequest, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException;
 }

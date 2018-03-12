@@ -16,6 +16,8 @@ public class Server implements AutoCloseable  {
     public Server() throws ClusterException {
         INSTANCE = this;
 
+        graphQLEngine = new GraphQLEngine.Builder().build();
+
         cluster = new Cluster.Builder()
                 .withTransport(
                         new MockTransportBuilder()
@@ -28,7 +30,6 @@ public class Server implements AutoCloseable  {
                 )
                 .build();
 
-        graphQLEngine = new GraphQLEngine.Builder().build();
     }
 
     public Cluster getCluster() {

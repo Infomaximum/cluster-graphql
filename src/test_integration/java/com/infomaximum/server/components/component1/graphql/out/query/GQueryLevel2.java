@@ -23,7 +23,7 @@ public class GQueryLevel2 {
     }
 
     @GraphQLField
-    public GraphQLQuery<Integer> getQueryValue(@GraphQLName("k") final GOptional<Integer> k) {
+    public GraphQLQuery<Integer> getQueryValue() {
 
         return new GraphQLQuery<Integer>() {
 
@@ -32,7 +32,10 @@ public class GQueryLevel2 {
                 resources.borrowResource(GQuery.class, QueryPool.LockType.SHARED);
             }
 
-            public Integer execute(QueryTransaction transaction) throws SubsystemException {
+            public Integer execute(
+                    @GraphQLName("k") final GOptional<Integer> k,
+                    QueryTransaction transaction
+            ) throws SubsystemException {
                 if (k.isPresent()) {
                     return 1 + k.get();
                 } else{

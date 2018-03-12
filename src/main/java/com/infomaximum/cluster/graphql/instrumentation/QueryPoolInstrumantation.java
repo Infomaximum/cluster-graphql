@@ -1,7 +1,9 @@
 package com.infomaximum.cluster.graphql.instrumentation;
 
+import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
+import com.infomaximum.cluster.struct.Component;
 import graphql.ExecutionResult;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -19,12 +21,14 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class QueryPoolInstrumantation implements Instrumentation {
 
+    private final Component component;
     private final GraphQLSchema graphQLSchema;
     private final Map<String, MergeGraphQLTypeOutObject> remoteGraphQLTypeOutObjects;
 
     private final AtomicLong incrementQueryId;
 
-    public QueryPoolInstrumantation(GraphQLSchema graphQLSchema, Map<String, MergeGraphQLTypeOutObject> remoteGraphQLTypeOutObjects) {
+    public QueryPoolInstrumantation(Component component, GraphQLSchema graphQLSchema, Map<String, MergeGraphQLTypeOutObject> remoteGraphQLTypeOutObjects) {
+        this.component = component;
         this.graphQLSchema = graphQLSchema;
         this.remoteGraphQLTypeOutObjects = remoteGraphQLTypeOutObjects;
 
@@ -51,8 +55,8 @@ public class QueryPoolInstrumantation implements Instrumentation {
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
         return new InstrumentationContext<List<ValidationError>>() {
             @Override
-            public void onEnd(List<ValidationError> result, Throwable t) {
-                if (!result.isEmpty()) return;
+            public void onEnd(List<ValidationError> validationErrors, Throwable t) {
+                if (!validationErrors.isEmpty()) return;
 
                 Document document = parameters.getDocument();
                 for (Node node: document.getChildren()) {
@@ -69,7 +73,13 @@ public class QueryPoolInstrumantation implements Instrumentation {
                         throw new RuntimeException("not support operation type: " + operationDefinition.getOperation());
                     }
 
-                    prepareQuery(parent, node);
+                    Map<Long, Boolean> prepareResource = new HashMap<Long, Boolean>();
+                    prepareQuery(
+                            parameters.getInstrumentationState(),
+                            parent,
+                            node,
+                            prepareResource
+                    );
                 }
 
             }
@@ -104,7 +114,7 @@ public class QueryPoolInstrumantation implements Instrumentation {
         return CompletableFuture.completedFuture(executionResult);
     }
 
-    private void prepareQuery(GraphQLObjectType parent, Node node) {
+    private void prepareQuery(QueryInstrumentationState queryInstrumentationState, GraphQLObjectType parent, Node node, Map<Long, Boolean> prepareResource) {
         if (node instanceof Field) {
             Field fieldNode = (Field)node;
 
@@ -113,22 +123,34 @@ public class QueryPoolInstrumantation implements Instrumentation {
             RGraphQLObjectTypeField rGraphQLObjectTypeField = mergeGraphQLTypeOutObject.getFieldByExternalName(fieldNode.getName());
 
             if (rGraphQLObjectTypeField.queryPool) {
+                String requestQueryKey = new StringBuilder()
+                        .append(queryInstrumentationState.id)
+                        .toString();
+
                 //Собираем какие ресурсы нам необходимы для лока
-                mergeGraphQLTypeOutObject.getFields();
+                RControllerGraphQL rControllerGraphQL = component.getRemotes().getFromSSUuid(rGraphQLObjectTypeField.componentUuid, RControllerGraphQL.class);
+                Map<Long, Boolean> prepareResourceRequest = rControllerGraphQL.prepareRequest(
+                        requestQueryKey,
+                        parent.getName(),
+                        rGraphQLObjectTypeField.name
+                );
+                for (Map.Entry<Long, Boolean> entry: prepareResourceRequest.entrySet()) {
+                    prepareResource.merge(entry.getKey(), entry.getValue(), (val1, val2) -> val1 ? val1 : val2);
+                }
             }
 
             for (Node iNode: fieldNode.getChildren()) {
-                prepareQuery((GraphQLObjectType)parent.getFieldDefinition(fieldNode.getName()).getType(), iNode);
+                prepareQuery(queryInstrumentationState, (GraphQLObjectType)parent.getFieldDefinition(fieldNode.getName()).getType(), iNode, prepareResource);
             }
         } else if (node instanceof OperationDefinition) {
             OperationDefinition operationDefinitionNode = (OperationDefinition) node;
             for (Node iNode: operationDefinitionNode.getChildren()) {
-                prepareQuery(parent, iNode);
+                prepareQuery(queryInstrumentationState, parent, iNode, prepareResource);
             }
         } else if (node instanceof SelectionSet) {
             SelectionSet selectionSetNode = (SelectionSet) node;
             for (Node iNode: selectionSetNode.getChildren()) {
-                prepareQuery(parent, iNode);
+                prepareQuery(queryInstrumentationState, parent, iNode, prepareResource);
             }
         }
 

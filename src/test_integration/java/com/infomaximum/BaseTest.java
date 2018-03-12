@@ -48,6 +48,10 @@ public abstract class BaseTest {
                 .variables(Collections.emptyMap())
                 .build();
 
+
+
+
+
         return frontendComponent.getGraphQLExecutor().execute(executionInput);
     }
 
