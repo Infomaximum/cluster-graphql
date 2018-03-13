@@ -2,11 +2,8 @@ package com.infomaximum.cluster.graphql.struct;
 
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.struct.Component;
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.*;
 
 /**
@@ -68,74 +65,74 @@ public class GRequest implements RemoteObject {
         return uploadFiles;
     }
 
-    @Override
-    public JSONObject serialize(Component component) {
-        JSONObject out = new JSONObject();
-        out.put("key", frontendComponentKey);
-        out.put("remote_address", remoteAddress);
-
-        JSONObject outContext = new JSONObject();
-        outContext.put("type", requestContext.getClass().getName());
-        outContext.put("value", requestContext.serialize(component));
-        out.put("context", outContext);
-
-        if (externalNameVariables != null && !externalNameVariables.isEmpty()) {
-            JSONArray jVariables = new JSONArray();
-            jVariables.addAll(externalNameVariables);
-            out.put("variables", jVariables);
-        }
-
-        if (uploadFiles != null) {
-            JSONArray outUploadFiles = new JSONArray();
-            for (UploadFile uploadFile: uploadFiles){
-                JSONObject outUploadFile = new JSONObject();
-                outUploadFile.put("fieldname", uploadFile.fieldname);
-                outUploadFile.put("filename", uploadFile.filename);
-                outUploadFile.put("uri", uploadFile.uri.toString());
-                outUploadFiles.add(outUploadFile);
-            }
-            out.put("upload_files", outUploadFiles);
-        }
-
-        return out;
-    }
-
-    public static GRequest deserialize(Component component, Class classType, JSONObject json) throws ReflectiveOperationException {
-        String frontendComponentKey = json.getAsString("key");
-        String remoteAddress = json.getAsString("remote_address");
-
-        JSONObject jsonContext = (JSONObject) json.get("context");
-        Class classTypeContext = Class.forName(jsonContext.getAsString("type"));
-        JSONObject jsonValue = (JSONObject) jsonContext.get("value");
-        RemoteObject requestContext = RemoteObject.deserialize(component, classTypeContext, jsonValue);
-
-        Set<String> externalVariables;
-        if (json.containsKey("variables")) {
-            externalVariables = new HashSet<String>();
-            externalVariables.addAll((Collection<String>) json.get("variables"));
-        } else {
-            externalVariables = Collections.emptySet();
-        }
-
-        List<UploadFile> uploadFiles = null;
-        if (json.containsKey("upload_files")) {
-            JSONArray jOUploadFiles = (JSONArray) json.get("upload_files");
-            for (Object jOUploadFile: jOUploadFiles) {
-                JSONObject jUploadFile = (JSONObject) jOUploadFile;
-                try {
-                    uploadFiles.add(
-                            new UploadFile(
-                                    jUploadFile.getAsString("fieldname"),
-                                    jUploadFile.getAsString("filename"),
-                                    new URI(jUploadFile.getAsString("uri"))
-                            )
-                    );
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-
-        return new GRequest(frontendComponentKey, remoteAddress, requestContext, externalVariables, uploadFiles);
-    }
+//    @Override
+//    public JSONObject serialize(Component component) {
+//        JSONObject out = new JSONObject();
+//        out.put("key", frontendComponentKey);
+//        out.put("remote_address", remoteAddress);
+//
+//        JSONObject outContext = new JSONObject();
+//        outContext.put("type", requestContext.getClass().getName());
+//        outContext.put("value", requestContext.serialize(component));
+//        out.put("context", outContext);
+//
+//        if (externalNameVariables != null && !externalNameVariables.isEmpty()) {
+//            JSONArray jVariables = new JSONArray();
+//            jVariables.addAll(externalNameVariables);
+//            out.put("variables", jVariables);
+//        }
+//
+//        if (uploadFiles != null) {
+//            JSONArray outUploadFiles = new JSONArray();
+//            for (UploadFile uploadFile: uploadFiles){
+//                JSONObject outUploadFile = new JSONObject();
+//                outUploadFile.put("fieldname", uploadFile.fieldname);
+//                outUploadFile.put("filename", uploadFile.filename);
+//                outUploadFile.put("uri", uploadFile.uri.toString());
+//                outUploadFiles.add(outUploadFile);
+//            }
+//            out.put("upload_files", outUploadFiles);
+//        }
+//
+//        return out;
+//    }
+//
+//    public static GRequest deserialize(Component component, Class classType, JSONObject json) throws ReflectiveOperationException {
+//        String frontendComponentKey = json.getAsString("key");
+//        String remoteAddress = json.getAsString("remote_address");
+//
+//        JSONObject jsonContext = (JSONObject) json.get("context");
+//        Class classTypeContext = Class.forName(jsonContext.getAsString("type"));
+//        JSONObject jsonValue = (JSONObject) jsonContext.get("value");
+//        RemoteObject requestContext = RemoteObject.deserialize(component, classTypeContext, jsonValue);
+//
+//        Set<String> externalVariables;
+//        if (json.containsKey("variables")) {
+//            externalVariables = new HashSet<String>();
+//            externalVariables.addAll((Collection<String>) json.get("variables"));
+//        } else {
+//            externalVariables = Collections.emptySet();
+//        }
+//
+//        List<UploadFile> uploadFiles = null;
+//        if (json.containsKey("upload_files")) {
+//            JSONArray jOUploadFiles = (JSONArray) json.get("upload_files");
+//            for (Object jOUploadFile: jOUploadFiles) {
+//                JSONObject jUploadFile = (JSONObject) jOUploadFile;
+//                try {
+//                    uploadFiles.add(
+//                            new UploadFile(
+//                                    jUploadFile.getAsString("fieldname"),
+//                                    jUploadFile.getAsString("filename"),
+//                                    new URI(jUploadFile.getAsString("uri"))
+//                            )
+//                    );
+//                } catch (URISyntaxException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//        }
+//
+//        return new GRequest(frontendComponentKey, remoteAddress, requestContext, externalVariables, uploadFiles);
+//    }
 }

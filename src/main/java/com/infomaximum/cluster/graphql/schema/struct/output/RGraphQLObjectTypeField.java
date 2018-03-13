@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class RGraphQLObjectTypeField {
 
-    public final String subsystem;
+    public final String componentUuid;
 
     public final boolean isField;
     public final String type;
@@ -19,14 +19,14 @@ public class RGraphQLObjectTypeField {
     public final RemoteObject configuration;
     public final String deprecated;
 
-    public RGraphQLObjectTypeField(String subsystem, RemoteObject configuration, boolean isField, String type, String name, String externalName, String deprecated) {
-        this(subsystem, configuration, isField, type, name, externalName, deprecated, null);
+    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isField, String type, String name, String externalName, String deprecated) {
+        this(componentUuid, configuration, isField, type, name, externalName, deprecated, null);
     }
 
-    public RGraphQLObjectTypeField(String subsystem, RemoteObject configuration, boolean isField, String type, String name, String externalName, String deprecated, List<RGraphQLObjectTypeMethodArgument> arguments) {
-        this.subsystem=subsystem;
+    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isField, String type, String name, String externalName, String deprecated, List<RGraphQLObjectTypeMethodArgument> arguments) {
+        this.componentUuid = componentUuid;
 
-        this.isField=isField;
+        this.isField = isField;
         this.type = type;
         this.name = name;
         this.externalName = externalName;

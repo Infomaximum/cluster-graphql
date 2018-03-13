@@ -5,6 +5,7 @@ import com.infomaximum.cluster.core.remote.Remotes;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.scalartype.GraphQLScalarTypeCustom;
+import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.TypeSchema;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObjectUnion;
@@ -19,7 +20,6 @@ import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObjectUn
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeMethodArgument;
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLTypeOutObject;
-import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLBuilder;
 import com.infomaximum.cluster.struct.Component;
 import graphql.GraphQL;
 import graphql.Scalars;
@@ -55,10 +55,11 @@ public class GraphQLExecutor {
 
         private Component component;
         private String environmentPackageName;
-        private Constructor customComponentDataFetcher;
+        private Constructor customRemoteDataFetcher;
         private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
         //Собираем какие типы у нас вообще есть
+        private GraphQLComponentExecutor sdkGraphQLItemExecutor;
         private List<RGraphQLTypeEnum> waitBuildGraphQLTypeEnums = new ArrayList<RGraphQLTypeEnum>();
         private Map<String, MergeGraphQLTypeOutObject> waitBuildGraphQLTypeOutObjects = new HashMap<String, MergeGraphQLTypeOutObject>();
         private Map<String, MergeGraphQLTypeOutObjectUnion> waitBuildGraphQLTypeOutObjectUnions = new HashMap<String, MergeGraphQLTypeOutObjectUnion>();
@@ -81,13 +82,13 @@ public class GraphQLExecutor {
         public Builder withDataFetcher(Class<? extends ComponentDataFetcher> clazzComponentDataFetcher) throws GraphQLExecutorException {
             Constructor constructor = null;
             try {
-                constructor = clazzComponentDataFetcher.getConstructor(Remotes.class, String.class, RGraphQLObjectTypeField.class);
+                constructor = clazzComponentDataFetcher.getConstructor(Remotes.class, GraphQLComponentExecutor.class, String.class, RGraphQLObjectTypeField.class);
             } catch (NoSuchMethodException e) {
                 throw new GraphQLExecutorException("Not found constructor from ComponentDataFetcher", e);
             }
             constructor.setAccessible(true);
 
-            customComponentDataFetcher = constructor;
+            customRemoteDataFetcher = constructor;
             return this;
         }
 
@@ -100,12 +101,8 @@ public class GraphQLExecutor {
             try {
                 //Собираем встроенные
                 if (environmentPackageName!=null) {
-                    TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(environmentPackageName);
-                    if (fieldConfigurationBuilder != null) {
-                        typeGraphQLBuilder.withFieldConfigurationBuilder(fieldConfigurationBuilder);
-                    }
-
-                    for (RGraphQLType rGraphQLType : typeGraphQLBuilder.build().values()) {
+                    sdkGraphQLItemExecutor = new GraphQLComponentExecutor(environmentPackageName, fieldConfigurationBuilder);
+                    for (RGraphQLType rGraphQLType : sdkGraphQLItemExecutor.getCustomTypes()) {
                         mergeGraphQLType(rGraphQLType);
                     }
                 }
@@ -299,14 +296,14 @@ public class GraphQLExecutor {
                     }
 
                     ComponentDataFetcher componentDataFetcher;
-                    if (customComponentDataFetcher != null) {
+                    if (customRemoteDataFetcher != null) {
                         try {
-                            componentDataFetcher = (ComponentDataFetcher) customComponentDataFetcher.newInstance(component.getRemotes(), graphQLTypeOutObject.name, typeGraphQLField);
+                            componentDataFetcher = (ComponentDataFetcher) customRemoteDataFetcher.newInstance(component.getRemotes(), sdkGraphQLItemExecutor, graphQLTypeOutObject.name, typeGraphQLField);
                         } catch (ReflectiveOperationException e) {
                             throw new GraphQLExecutorException("Exception build ComponentDataFetcher", e);
                         }
                     } else {
-                        componentDataFetcher = new ComponentDataFetcher(component.getRemotes(), graphQLTypeOutObject.name, typeGraphQLField);
+                        componentDataFetcher = new ComponentDataFetcher(component.getRemotes(), sdkGraphQLItemExecutor, graphQLTypeOutObject.name, typeGraphQLField);
                     }
                     graphQLFieldDefinitionBuilder.dataFetcher(componentDataFetcher);
                 }
