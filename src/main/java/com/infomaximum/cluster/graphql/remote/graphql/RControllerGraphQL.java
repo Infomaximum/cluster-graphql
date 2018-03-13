@@ -7,16 +7,16 @@ import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.graphql.struct.GRequestItem;
 
-import java.util.List;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by kris on 02.11.16.
  */
 public interface RControllerGraphQL extends RController {
 
-	public List<RGraphQLType> getCustomTypes();
+	public ArrayList<RGraphQLType> getCustomTypes();
 
 	@DisableValidationRemoteMethod
-    public Object execute(GRequest gRequest, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeMethodName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException;
+    public Object execute(GRequest gRequest, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeMethodName, HashMap<String, Object> arguments) throws GraphQLExecutorDataFetcherException;
 }

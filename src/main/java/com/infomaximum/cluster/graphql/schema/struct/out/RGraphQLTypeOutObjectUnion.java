@@ -4,7 +4,6 @@ import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLTypeOutObject;
 import com.infomaximum.cluster.struct.Component;
-import net.minidev.json.JSONObject;
 
 import java.util.Collections;
 import java.util.Set;
@@ -25,9 +24,9 @@ public class RGraphQLTypeOutObjectUnion extends RGraphQLType {
         return fields;
     }
 
-    @Override
-    public void serializeNative(Component component, JSONObject out) {
-        out.put("fields", RGraphQLType.serializeFields(component, fields));
-    }
+//    @Override
+//    public void serializeNative(Component component, JSONObject out) {
+//        out.put("fields", RGraphQLType.serializeFields(component, fields));
+//    }
 
 }

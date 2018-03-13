@@ -36,12 +36,12 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
     }
 
     @Override
-    public List<RGraphQLType> getCustomTypes() {
+    public ArrayList<RGraphQLType> getCustomTypes() {
         return graphQLItemExecutor.getCustomTypes();
     }
 
     @Override
-    public Object execute(GRequest request, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeMethodName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
+    public Object execute(GRequest request, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeMethodName, HashMap<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
         return graphQLItemExecutor.execute(request, gRequestItem, graphQLTypeName, graphQLTypeMethodName, arguments);
     }
 
