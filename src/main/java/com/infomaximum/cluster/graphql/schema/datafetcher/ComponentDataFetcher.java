@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -59,7 +60,7 @@ public class ComponentDataFetcher implements DataFetcher {
             } else {
                 //Этот объект принадлежит определенной подсистеме - необходимо вызывать метод удаленно именно не родительской подсистеме
                 RControllerGraphQL rControllerGraphQL = remotes.getFromSSUuid(rTypeGraphQLField.componentUuid, RControllerGraphQL.class);
-                Object result = rControllerGraphQL.execute(gRequest, gRequestItem, graphQLTypeName, rTypeGraphQLField.name, environment.getArguments());
+                Object result = rControllerGraphQL.execute(gRequest, gRequestItem, graphQLTypeName, rTypeGraphQLField.name, new HashMap<>(environment.getArguments()));
                 return ExtResult.get(result);
             }
         } catch (Throwable t) {

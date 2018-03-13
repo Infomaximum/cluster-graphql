@@ -17,6 +17,7 @@ import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
@@ -27,7 +28,7 @@ public class GraphQLComponentExecutor {
 
     private final Set<CustomEnvType> customEnvTypes;
 
-    private List<RGraphQLType> rTypeGraphQLs;
+    private ArrayList<RGraphQLType> rTypeGraphQLs;
     private Map<String, Class> classSchemas;
 
     public GraphQLComponentExecutor(Component component) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
@@ -60,7 +61,7 @@ public class GraphQLComponentExecutor {
 
     private void build(TypeGraphQLBuilder typeGraphQLBuilder) throws ClassNotFoundException {
         Map<Class, RGraphQLType> rTypeGraphQLItems = typeGraphQLBuilder.build();
-        rTypeGraphQLs = Collections.unmodifiableList(new ArrayList<>(typeGraphQLBuilder.build().values()));
+        rTypeGraphQLs = new ArrayList<>(typeGraphQLBuilder.build().values());
 
         classSchemas = new HashMap<String, Class>();
         for (Map.Entry<Class, RGraphQLType> entryTypeGraphQL: rTypeGraphQLItems.entrySet()) {
@@ -72,7 +73,7 @@ public class GraphQLComponentExecutor {
         }
     }
 
-    public List<RGraphQLType> getCustomTypes() {
+    public ArrayList<RGraphQLType> getCustomTypes() {
         return rTypeGraphQLs;
     }
 
@@ -82,9 +83,7 @@ public class GraphQLComponentExecutor {
             if (classSchema == null) throw new RuntimeException("not support scheme: " + classSchema);
 
             Object object;
-            if (RemoteObject.instanceOf(classSchema)
-                    &&
-                    classSchemas.get(graphQLTypeName).isAssignableFrom(gRequestItem.source.getClass())) {
+            if (classSchemas.get(graphQLTypeName).isAssignableFrom(gRequestItem.source.getClass())) {
                 object = gRequestItem.source;
             } else {
                 Constructor constructor = classSchema.getDeclaredConstructor();
@@ -178,12 +177,12 @@ public class GraphQLComponentExecutor {
             return new GOptional(getValue(((ParameterizedType) type).getActualTypeArguments()[0], inputValue, true), isPresent);
         } else if (Collection.class.isAssignableFrom(clazz)) {
             Collection collection;
-            if (clazz.isAssignableFrom(List.class)) {
+            if (clazz.isAssignableFrom(ArrayList.class)) {
                 collection = new ArrayList();
-            } else if (clazz.isAssignableFrom(Set.class)) {
+            } else if (clazz.isAssignableFrom(HashSet.class)) {
                 collection = new HashSet();
             } else {
-                throw new RuntimeException("Not suuport type collection: " + clazz);
+                throw new RuntimeException("Not support type collection: " + clazz);
             }
             for (Object iObject : (Collection) inputValue) {
                 collection.add(getValue(((ParameterizedType) type).getActualTypeArguments()[0], iObject, true));

@@ -11,6 +11,7 @@ import com.infomaximum.cluster.graphql.struct.GRequestItem;
 import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 
@@ -30,17 +31,17 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
     }
 
     @Override
-    public List<RGraphQLType> getCustomTypes() {
+    public ArrayList<RGraphQLType> getCustomTypes() {
         return graphQLItemExecutor.getCustomTypes();
     }
 
     @Override
-    public Map<Long, Boolean> prepareRequest(String requestQueryKey, String graphQLTypeName, String graphQLTypeFieldName) {
+    public HashMap<Long, Boolean> prepareRequest(String requestQueryKey, String graphQLTypeName, String graphQLTypeFieldName) {
         return null;
     }
 
     @Override
-    public Object execute(String requestQueryKey, GRequest request, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
+    public Object execute(String requestQueryKey, GRequest request, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
         return graphQLItemExecutor.execute(request, gRequestItem, graphQLTypeName, graphQLTypeFieldName, arguments);
     }
 

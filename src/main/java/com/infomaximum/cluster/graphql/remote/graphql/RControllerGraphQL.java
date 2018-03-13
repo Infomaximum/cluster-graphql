@@ -10,16 +10,18 @@ import com.infomaximum.cluster.graphql.struct.GRequestItem;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by kris on 02.11.16.
  */
 public interface RControllerGraphQL extends RController {
 
-	public List<RGraphQLType> getCustomTypes();
+	public ArrayList<RGraphQLType> getCustomTypes();
 
 	public Map<Long, Boolean> prepareRequest(String requestQueryKey, String graphQLTypeName, String graphQLTypeFieldName);
 
 	@DisableValidationRemoteMethod
-    public Object execute(String requestQueryKey, GRequest gRequest, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException;
+    public Object execute(String requestQueryKey, GRequest gRequest, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Object> arguments) throws GraphQLExecutorDataFetcherException;
 }

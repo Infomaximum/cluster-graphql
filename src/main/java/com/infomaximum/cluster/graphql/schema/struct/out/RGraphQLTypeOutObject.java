@@ -2,8 +2,6 @@ package com.infomaximum.cluster.graphql.schema.struct.out;
 
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.struct.Component;
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
 
 import java.util.Collections;
 import java.util.Set;
@@ -37,16 +35,16 @@ public class RGraphQLTypeOutObject extends RGraphQLType {
         return fields;
     }
 
-    @Override
-    public void serializeNative(Component component, JSONObject out) {
-        out.put("class_name", className);
-
-        JSONArray outUnions = new JSONArray();
-        for (String unionGraphQLTypeName : unionGraphQLTypeNames) {
-            outUnions.add(unionGraphQLTypeName);
-        }
-        out.put("unions", outUnions);
-
-        out.put("fields", serializeFields(component, fields));
-    }
+//    @Override
+//    public void serializeNative(Component component, JSONObject out) {
+//        out.put("class_name", className);
+//
+//        JSONArray outUnions = new JSONArray();
+//        for (String unionGraphQLTypeName : unionGraphQLTypeNames) {
+//            outUnions.add(unionGraphQLTypeName);
+//        }
+//        out.put("unions", outUnions);
+//
+//        out.put("fields", serializeFields(component, fields));
+//    }
 }
