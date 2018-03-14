@@ -19,6 +19,7 @@ import com.infomaximum.cluster.graphql.schema.struct.out.union.RGraphQLTypeOutOb
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeMethodArgument;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObject;
+import com.infomaximum.cluster.querypool.QueryPoolExecutor;
 import com.infomaximum.cluster.struct.Component;
 import graphql.*;
 import graphql.schema.*;
@@ -54,6 +55,7 @@ public class GraphQLExecutor {
         private String sdkPackagePath;
         private Constructor customRemoteDataFetcher;
         private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
+        private QueryPoolExecutor queryPoolExecutor;
 
         GraphQLComponentExecutor sdkGraphQLItemExecutor;
 
@@ -61,13 +63,15 @@ public class GraphQLExecutor {
                 Component component,
                 String sdkPackagePath,
                 Constructor customRemoteDataFetcher,
-                TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder
+                TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
+                QueryPoolExecutor queryPoolExecutor
         ) {
 
             this.component = component;
             this.sdkPackagePath = sdkPackagePath;
             this.customRemoteDataFetcher = customRemoteDataFetcher;
             this.fieldConfigurationBuilder = fieldConfigurationBuilder;
+            this.queryPoolExecutor = queryPoolExecutor;
         }
 
         public GraphQLExecutor build() throws GraphQLExecutorException {
@@ -81,7 +85,7 @@ public class GraphQLExecutor {
 
                 //Собираем встроенные
                 if (sdkPackagePath!=null) {
-                    sdkGraphQLItemExecutor = new GraphQLComponentExecutor(sdkPackagePath, fieldConfigurationBuilder);
+                    sdkGraphQLItemExecutor = new GraphQLComponentExecutor(sdkPackagePath, fieldConfigurationBuilder, queryPoolExecutor);
                     for (RGraphQLType rGraphQLType : sdkGraphQLItemExecutor.getCustomTypes()) {
                         mergeGraphQLType(
                                 buildGraphQLTypeEnums,

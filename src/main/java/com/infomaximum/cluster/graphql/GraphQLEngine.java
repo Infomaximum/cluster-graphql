@@ -10,6 +10,7 @@ import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
+import com.infomaximum.cluster.querypool.QueryPoolExecutor;
 import com.infomaximum.cluster.struct.Component;
 
 import java.lang.reflect.Constructor;
@@ -21,18 +22,21 @@ public class GraphQLEngine {
     private final Set<CustomEnvType> customEnvTypes;
     private final Constructor customRemoteDataFetcher;
     private final TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
+    private final QueryPoolExecutor queryPoolExecutor;
 
     private GraphQLEngine(
             String sdkPackagePath,
             Set<CustomEnvType> customEnvTypes,
             Constructor customRemoteDataFetcher,
-            TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder
+            TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
+            QueryPoolExecutor queryPoolExecutor
             ){
 
         this.sdkPackagePath = sdkPackagePath;
         this.customEnvTypes = customEnvTypes;
         this.customRemoteDataFetcher = customRemoteDataFetcher;
         this.fieldConfigurationBuilder = fieldConfigurationBuilder;
+        this.queryPoolExecutor = queryPoolExecutor;
     }
 
     public GraphQLExecutor buildExecutor(Component component) throws GraphQLExecutorException {
@@ -40,13 +44,14 @@ public class GraphQLEngine {
                 component,
                 sdkPackagePath,
                 customRemoteDataFetcher,
-                fieldConfigurationBuilder
+                fieldConfigurationBuilder,
+                queryPoolExecutor
         ).build();
     }
 
     public RControllerGraphQLImpl buildRemoteControllerGraphQL(Component component) throws GraphQLExecutorException {
         try {
-            return new RControllerGraphQLImpl(component, customEnvTypes, fieldConfigurationBuilder);
+            return new RControllerGraphQLImpl(component, customEnvTypes, fieldConfigurationBuilder, queryPoolExecutor);
         } catch (ReflectiveOperationException e) {
             throw new GraphQLExecutorException(e);
         }
@@ -58,6 +63,7 @@ public class GraphQLEngine {
         private Set<CustomEnvType> customEnvTypes;
         private Constructor customRemoteDataFetcher;
         private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
+        private QueryPoolExecutor queryPoolExecutor;
 
         public Builder() {}
 
@@ -90,7 +96,12 @@ public class GraphQLEngine {
         }
 
         public Builder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder){
-            this.fieldConfigurationBuilder=fieldConfigurationBuilder;
+            this.fieldConfigurationBuilder = fieldConfigurationBuilder;
+            return this;
+        }
+
+        public Builder withQueryPoolExecutor(QueryPoolExecutor queryPoolExecutor){
+            this.queryPoolExecutor = queryPoolExecutor;
             return this;
         }
 
@@ -99,7 +110,8 @@ public class GraphQLEngine {
                     sdkPackagePath,
                     customEnvTypes,
                     customRemoteDataFetcher,
-                    fieldConfigurationBuilder
+                    fieldConfigurationBuilder,
+                    queryPoolExecutor
             );
         }
     }

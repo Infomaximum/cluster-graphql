@@ -62,24 +62,24 @@ public class QueryPoolInstrumantation implements Instrumentation {
                 for (Node node: document.getChildren()) {
                     GraphQLObjectType parent;
 
-                    OperationDefinition operationDefinition = (OperationDefinition) node;
-                    if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
-                        parent = graphQLSchema.getQueryType();
-                    } else if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
-                        parent = graphQLSchema.getMutationType();
-                    } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
-                        parent = graphQLSchema.getSubscriptionType();
-                    } else {
-                        throw new RuntimeException("not support operation type: " + operationDefinition.getOperation());
-                    }
+//                    OperationDefinition operationDefinition = (OperationDefinition) node;
+//                    if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
+//                        parent = graphQLSchema.getQueryType();
+//                    } else if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
+//                        parent = graphQLSchema.getMutationType();
+//                    } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
+//                        parent = graphQLSchema.getSubscriptionType();
+//                    } else {
+//                        throw new RuntimeException("not support operation type: " + operationDefinition.getOperation());
+//                    }
 
-                    Map<Long, Boolean> prepareResource = new HashMap<Long, Boolean>();
-                    prepareQuery(
-                            parameters.getInstrumentationState(),
-                            parent,
-                            node,
-                            prepareResource
-                    );
+//                    Map<Long, Boolean> prepareResource = new HashMap<Long, Boolean>();
+//                    prepareQuery(
+//                            parameters.getInstrumentationState(),
+//                            parent,
+//                            node,
+//                            prepareResource
+//                    );
                 }
 
             }

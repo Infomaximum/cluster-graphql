@@ -24,6 +24,8 @@ public class Level2RequestTest extends BaseTest {
         Assert.assertTrue(true);
 
         ExecutionResult executionResult = grapqhlExecutor("{level2{query_value(k:5)}}");
+        Assert.assertTrue(executionResult.getErrors().isEmpty());
+
         Map dataResult = executionResult.getData();
 
         Assert.assertEquals(6, ((Map)dataResult.get("level2")).get("query_value"));

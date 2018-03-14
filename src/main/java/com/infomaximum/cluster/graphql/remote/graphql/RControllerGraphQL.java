@@ -20,7 +20,7 @@ public interface RControllerGraphQL extends RController {
 
 	public ArrayList<RGraphQLType> getCustomTypes();
 
-	public Map<Long, Boolean> prepareRequest(String requestQueryKey, String graphQLTypeName, String graphQLTypeFieldName);
+	public HashMap<Long, Boolean> prepareRequest(String requestQueryKey, String graphQLTypeName, String graphQLTypeFieldName);
 
 	@DisableValidationRemoteMethod
     public Object execute(String requestQueryKey, GRequest gRequest, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Object> arguments) throws GraphQLExecutorDataFetcherException;

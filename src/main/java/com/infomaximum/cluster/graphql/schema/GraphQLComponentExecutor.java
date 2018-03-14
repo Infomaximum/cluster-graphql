@@ -13,6 +13,8 @@ import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.graphql.struct.GRequestItem;
+import com.infomaximum.cluster.querypool.GraphQLQuery;
+import com.infomaximum.cluster.querypool.QueryPoolExecutor;
 import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,17 +28,19 @@ public class GraphQLComponentExecutor {
 
     private final static Logger log = LoggerFactory.getLogger(GraphQLComponentExecutor.class);
 
+    private final Component component;
+
     private final Set<CustomEnvType> customEnvTypes;
 
     private ArrayList<RGraphQLType> rTypeGraphQLs;
     private Map<String, Class> classSchemas;
 
-    public GraphQLComponentExecutor(Component component) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
-        this(component, null, null);
-    }
+    private final QueryPoolExecutor queryPoolExecutor;
 
-    public GraphQLComponentExecutor(Component component, Set<CustomEnvType> customEnvTypes, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
+    public GraphQLComponentExecutor(Component component, Set<CustomEnvType> customEnvTypes, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, QueryPoolExecutor queryPoolExecutor) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
+        this.component = component;
         this.customEnvTypes = customEnvTypes;
+        this.queryPoolExecutor = queryPoolExecutor;
 
         TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(component);
         if (fieldConfigurationBuilder != null) {
@@ -45,12 +49,10 @@ public class GraphQLComponentExecutor {
         build(typeGraphQLBuilder);
     }
 
-    public GraphQLComponentExecutor(String packageName) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
-        this(packageName, null);
-    }
-
-    public GraphQLComponentExecutor(String packageName, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
-        this.customEnvTypes = null;
+    public GraphQLComponentExecutor(String packageName, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, QueryPoolExecutor queryPoolExecutor) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
+        this.component = null;
+                this.customEnvTypes = null;
+        this.queryPoolExecutor = queryPoolExecutor;
 
         TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName);
         if (fieldConfigurationBuilder != null) {
@@ -150,6 +152,11 @@ public class GraphQLComponentExecutor {
                 log.error("Ошибка вызова метода: {}, у объекта: {}", method.getName(), object.getClass().getName(), e);
                 throw new RuntimeException(e);
             }
+
+            if (result instanceof GraphQLQuery) {
+                result = queryPoolExecutor.execute(component, request, (RemoteObject) gRequestItem.source, (GraphQLQuery) result);
+            }
+
             return result;
         } catch (ReflectiveOperationException re) {
             throw new RuntimeException(re);

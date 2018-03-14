@@ -28,7 +28,7 @@ public class GQuery {
     }
 
     @GraphQLField
-    public Integer getValue(@GraphQLName("k") final GOptional<Integer> k) {
+    public Integer getValue1(@GraphQLName("k") final GOptional<Integer> k) {
         if (k.isPresent()) {
             return 1 + k.get();
         } else{

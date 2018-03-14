@@ -283,8 +283,20 @@ public class TypeGraphQLBuilder {
 			//Возможно это сложный GraphQL объект
 
 			//Возможно обертка
-			if (GraphQLQuery.class.isAssignableFrom(clazz)) {
+			GraphQLTypeWrapper aGraphQLTypeWrapper = (GraphQLTypeWrapper) clazz.getAnnotation(GraphQLTypeWrapper.class);
+			if (aGraphQLTypeWrapper != null) {
 				Type iGenericType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+				if (iGenericType instanceof ParameterizedType) {
+					ParameterizedType iPGenericType = (ParameterizedType) iGenericType;
+					return getGraphQLType((Class) iPGenericType.getRawType(), iPGenericType);
+				} else {
+					return getGraphQLType((Class) iGenericType, null);
+				}
+			}
+
+			//GraphQLQuery
+			if (GraphQLQuery.class.isAssignableFrom(clazz)) {
+				Type iGenericType = ((ParameterizedType) genericType).getActualTypeArguments()[2];
 				if (iGenericType instanceof ParameterizedType) {
 					ParameterizedType iPGenericType = (ParameterizedType) iGenericType;
 					return getGraphQLType((Class) iPGenericType.getRawType(), iPGenericType);
