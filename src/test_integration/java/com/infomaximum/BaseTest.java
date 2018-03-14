@@ -2,6 +2,7 @@ package com.infomaximum;
 
 import com.infomaximum.cluster.exception.ClusterException;
 import com.infomaximum.cluster.graphql.struct.GRequest;
+import com.infomaximum.cluster.graphql.struct.GRequestItem;
 import com.infomaximum.server.Server;
 import com.infomaximum.server.components.frontend.FrontendComponent;
 import com.infomaximum.server.sdk.GRequestContext;
@@ -33,7 +34,7 @@ public abstract class BaseTest {
     public static ExecutionResult grapqhlExecutor(String query) {
         FrontendComponent frontendComponent = getServer().getCluster().getAnyComponent(FrontendComponent.class);
 
-        GRequest gRequest = new GRequest(
+        GRequest<GRequestContext> gRequest = new GRequest<>(
                 frontendComponent.getKey(),
                 "127.0.0.1",
                 new GRequestContext(),
