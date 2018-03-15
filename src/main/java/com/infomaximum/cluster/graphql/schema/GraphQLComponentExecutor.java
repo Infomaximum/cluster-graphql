@@ -121,7 +121,7 @@ public class GraphQLComponentExecutor {
                 } else {
                     //возможно особый аргумент
                     Class classType = methodParameterTypes[index];
-                    if (classType == GRequest.class) {
+                    if (GRequest.class.isAssignableFrom(classType)) {
                         argumentValue = request;
                     } else {
                         boolean isSuccessFindEnvironment = false;
