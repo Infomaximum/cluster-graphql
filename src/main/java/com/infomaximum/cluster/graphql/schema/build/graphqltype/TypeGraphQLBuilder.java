@@ -296,7 +296,7 @@ public class TypeGraphQLBuilder {
 
 			//GraphQLQuery
 			if (GraphQLQuery.class.isAssignableFrom(clazz)) {
-				Type iGenericType = ((ParameterizedType) genericType).getActualTypeArguments()[2];
+				Type iGenericType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
 				if (iGenericType instanceof ParameterizedType) {
 					ParameterizedType iPGenericType = (ParameterizedType) iGenericType;
 					return getGraphQLType((Class) iPGenericType.getRawType(), iPGenericType);
