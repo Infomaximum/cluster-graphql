@@ -6,7 +6,7 @@ import com.infomaximum.cluster.struct.Component;
 import com.infomaximum.subsystems.exception.SubsystemException;
 import com.infomaximum.subsystems.querypool.QueryTransaction;
 
-public abstract class GraphQLQuery<C extends Component, S extends RemoteObject, T> implements com.infomaximum.cluster.querypool.GraphQLQuery<T> {
+public abstract class GraphQLQuery<C extends Component, S extends RemoteObject, T> {
 
     public abstract T execute(
             C component,

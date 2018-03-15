@@ -1,11 +1,11 @@
 package com.infomaximum.cluster.graphql.schema;
 
 import com.google.common.base.Defaults;
-import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.anotation.GraphQLName;
 import com.infomaximum.cluster.graphql.anotation.GraphQLSource;
 import com.infomaximum.cluster.graphql.anotation.GraphQLTypeInput;
-import com.infomaximum.cluster.graphql.customtype.CustomEnvType;
+import com.infomaximum.cluster.graphql.customfieldargument.CustomFieldArgument;
+import com.infomaximum.cluster.graphql.customfield.CustomField;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLBuilder;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
@@ -13,13 +13,10 @@ import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.graphql.struct.GRequestItem;
-import com.infomaximum.cluster.querypool.GraphQLQuery;
-import com.infomaximum.cluster.querypool.QueryPoolExecutor;
 import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
@@ -30,34 +27,32 @@ public class GraphQLComponentExecutor {
 
     private final Component component;
 
-    private final Set<CustomEnvType> customEnvTypes;
+    private final Set<CustomField> customFields;
+
+    private final Set<CustomFieldArgument> customArguments;
 
     private ArrayList<RGraphQLType> rTypeGraphQLs;
     private Map<String, Class> classSchemas;
 
-    private final QueryPoolExecutor queryPoolExecutor;
-
-    public GraphQLComponentExecutor(Component component, Set<CustomEnvType> customEnvTypes, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, QueryPoolExecutor queryPoolExecutor) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
+    public GraphQLComponentExecutor(Component component, Set<CustomFieldArgument> customArguments, Set<CustomField> customFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws ReflectiveOperationException {
         this.component = component;
-        this.customEnvTypes = customEnvTypes;
-        this.queryPoolExecutor = queryPoolExecutor;
+        this.customArguments = customArguments;
+        this.customFields = customFields;
 
-        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(component);
-        if (fieldConfigurationBuilder != null) {
-            typeGraphQLBuilder.withFieldConfigurationBuilder(fieldConfigurationBuilder);
-        }
+        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(component)
+                .withCustomFields(customFields)
+                .withFieldConfigurationBuilder(fieldConfigurationBuilder);
         build(typeGraphQLBuilder);
     }
 
-    public GraphQLComponentExecutor(String packageName, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, QueryPoolExecutor queryPoolExecutor) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
+    public GraphQLComponentExecutor(String packageName, Set<CustomField> customFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
         this.component = null;
-                this.customEnvTypes = null;
-        this.queryPoolExecutor = queryPoolExecutor;
+        this.customArguments = null;
+        this.customFields = customFields;
 
-        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName);
-        if (fieldConfigurationBuilder != null) {
-            typeGraphQLBuilder.withFieldConfigurationBuilder(fieldConfigurationBuilder);
-        }
+        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName)
+                .withCustomFields(customFields)
+                .withFieldConfigurationBuilder(fieldConfigurationBuilder);
         build(typeGraphQLBuilder);
     }
 
@@ -75,7 +70,7 @@ public class GraphQLComponentExecutor {
         }
     }
 
-    public ArrayList<RGraphQLType> getCustomTypes() {
+    public ArrayList<RGraphQLType> getGraphQLTypes() {
         return rTypeGraphQLs;
     }
 
@@ -125,16 +120,16 @@ public class GraphQLComponentExecutor {
                         argumentValue = request;
                     } else {
                         boolean isSuccessFindEnvironment = false;
-                        if (customEnvTypes !=null) {
-                            for (CustomEnvType customEnvironment: customEnvTypes) {
-                                if (customEnvironment.isSupport(classType)) {
-                                    argumentValue = customEnvironment.getValue(request, classType);
+                        if (customArguments !=null) {
+                            for (CustomFieldArgument customArgument: customArguments) {
+                                if (customArgument.isSupport(classType)) {
+                                    argumentValue = customArgument.getValue(request, classType);
                                     isSuccessFindEnvironment = true;
                                 }
                             }
                         }
                         if (!isSuccessFindEnvironment) {
-                            throw new RuntimeException("Nothing argument index: " + index);
+                            throw new RuntimeException("Nothing argument type: " + classType + ", index: " + index + ", method: " + method + ", class: " + classSchema);
                         }
                     }
                 }
@@ -153,8 +148,13 @@ public class GraphQLComponentExecutor {
                 throw new RuntimeException(e);
             }
 
-            if (result instanceof GraphQLQuery) {
-                result = queryPoolExecutor.execute(component, request, (RemoteObject) gRequestItem.source, (GraphQLQuery) result);
+            if (result!=null && customFields != null) {
+                for (CustomField customField: customFields) {
+                    if (customField.isSupport(result.getClass())) {
+                        result = customField.getEndValue(component, gRequestItem.source, result);
+                        break;
+                    }
+                }
             }
 
             return result;

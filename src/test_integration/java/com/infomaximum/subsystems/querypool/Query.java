@@ -1,9 +1,8 @@
 package com.infomaximum.subsystems.querypool;
 
-import com.infomaximum.cluster.querypool.GraphQLQuery;
 import com.infomaximum.subsystems.exception.SubsystemException;
 
-public abstract class Query<T> implements GraphQLQuery {
+public abstract class Query<T> {
 
     public abstract void prepare(ResourceProvider resources);
 

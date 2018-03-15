@@ -1,14 +1,14 @@
 package com.infomaximum.cluster.graphql.remote.graphql;
 
 import com.infomaximum.cluster.core.remote.AbstractRController;
-import com.infomaximum.cluster.graphql.customtype.CustomEnvType;
+import com.infomaximum.cluster.graphql.customfieldargument.CustomFieldArgument;
+import com.infomaximum.cluster.graphql.customfield.CustomField;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.graphql.struct.GRequestItem;
-import com.infomaximum.cluster.querypool.QueryPoolExecutor;
 import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,23 +26,18 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
     private final GraphQLComponentExecutor graphQLItemExecutor;
 
 
-    public RControllerGraphQLImpl(T component, Set<CustomEnvType> customEnvTypes, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, QueryPoolExecutor queryPoolExecutor) throws ReflectiveOperationException{
+    public RControllerGraphQLImpl(T component, Set<CustomFieldArgument> customEnvTypes, Set<CustomField> customFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws ReflectiveOperationException{
         super(component);
-        graphQLItemExecutor = new GraphQLComponentExecutor(component, customEnvTypes, fieldConfigurationBuilder, queryPoolExecutor);
+        graphQLItemExecutor = new GraphQLComponentExecutor(component, customEnvTypes, customFields, fieldConfigurationBuilder);
     }
 
     @Override
-    public ArrayList<RGraphQLType> getCustomTypes() {
-        return graphQLItemExecutor.getCustomTypes();
+    public ArrayList<RGraphQLType> getGraphQLTypes() {
+        return graphQLItemExecutor.getGraphQLTypes();
     }
 
     @Override
-    public HashMap<Long, Boolean> prepareRequest(String requestQueryKey, String graphQLTypeName, String graphQLTypeFieldName) {
-        return null;
-    }
-
-    @Override
-    public Object execute(String requestQueryKey, GRequest request, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
+    public Object execute(GRequest request, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
         return graphQLItemExecutor.execute(request, gRequestItem, graphQLTypeName, graphQLTypeFieldName, arguments);
     }
 

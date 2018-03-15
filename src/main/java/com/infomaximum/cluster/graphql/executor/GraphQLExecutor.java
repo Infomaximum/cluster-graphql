@@ -1,5 +1,6 @@
 package com.infomaximum.cluster.graphql.executor;
 
+import com.infomaximum.cluster.graphql.customfield.CustomField;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.instrumentation.QueryPoolInstrumantation;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
@@ -19,7 +20,6 @@ import com.infomaximum.cluster.graphql.schema.struct.out.union.RGraphQLTypeOutOb
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeMethodArgument;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObject;
-import com.infomaximum.cluster.querypool.QueryPoolExecutor;
 import com.infomaximum.cluster.struct.Component;
 import graphql.*;
 import graphql.schema.*;
@@ -31,12 +31,10 @@ import static graphql.schema.GraphQLSchema.newSchema;
 
 public class GraphQLExecutor {
 
-    private Component component;
     private GraphQLSchema schema;
     private GraphQL graphQL;
 
-    GraphQLExecutor(Component component, GraphQLSchema schema, GraphQL graphQL) {
-        this.component = component;
+    GraphQLExecutor(GraphQLSchema schema, GraphQL graphQL) {
         this.schema = schema;
         this.graphQL = graphQL;
     }
@@ -54,8 +52,9 @@ public class GraphQLExecutor {
         private Component component;
         private String sdkPackagePath;
         private Constructor customRemoteDataFetcher;
+
+        private Set<CustomField> customFields;
         private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
-        private QueryPoolExecutor queryPoolExecutor;
 
         GraphQLComponentExecutor sdkGraphQLItemExecutor;
 
@@ -63,15 +62,15 @@ public class GraphQLExecutor {
                 Component component,
                 String sdkPackagePath,
                 Constructor customRemoteDataFetcher,
-                TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
-                QueryPoolExecutor queryPoolExecutor
+                Set<CustomField> customFields,
+                TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder
         ) {
 
             this.component = component;
             this.sdkPackagePath = sdkPackagePath;
             this.customRemoteDataFetcher = customRemoteDataFetcher;
+            this.customFields = customFields;
             this.fieldConfigurationBuilder = fieldConfigurationBuilder;
-            this.queryPoolExecutor = queryPoolExecutor;
         }
 
         public GraphQLExecutor build() throws GraphQLExecutorException {
@@ -85,8 +84,8 @@ public class GraphQLExecutor {
 
                 //Собираем встроенные
                 if (sdkPackagePath!=null) {
-                    sdkGraphQLItemExecutor = new GraphQLComponentExecutor(sdkPackagePath, fieldConfigurationBuilder, queryPoolExecutor);
-                    for (RGraphQLType rGraphQLType : sdkGraphQLItemExecutor.getCustomTypes()) {
+                    sdkGraphQLItemExecutor = new GraphQLComponentExecutor(sdkPackagePath, customFields, fieldConfigurationBuilder);
+                    for (RGraphQLType rGraphQLType : sdkGraphQLItemExecutor.getGraphQLTypes()) {
                         mergeGraphQLType(
                                 buildGraphQLTypeEnums,
                                 buildGraphQLTypeOutObjects,
@@ -100,7 +99,7 @@ public class GraphQLExecutor {
                 //Запрашиваем у подсистем
                 Collection<RControllerGraphQL> rControllerGraphQLs = component.getRemotes().getControllers(RControllerGraphQL.class);
                 for (RControllerGraphQL rControllerGraphQL : rControllerGraphQLs) {
-                    for (RGraphQLType rGraphQLType : rControllerGraphQL.getCustomTypes()) {
+                    for (RGraphQLType rGraphQLType : rControllerGraphQL.getGraphQLTypes()) {
                         mergeGraphQLType(
                                 buildGraphQLTypeEnums,
                                 buildGraphQLTypeOutObjects,
@@ -197,7 +196,7 @@ public class GraphQLExecutor {
                         .instrumentation(new QueryPoolInstrumantation(component, schema, buildGraphQLTypeOutObjects))
                         .build();
 
-                return new GraphQLExecutor(component, schema, graphQL);
+                return new GraphQLExecutor(schema, graphQL);
             } catch (Throwable throwable) {
                 throw new GraphQLExecutorException(throwable);
             }

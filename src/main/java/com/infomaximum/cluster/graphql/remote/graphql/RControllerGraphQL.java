@@ -18,10 +18,8 @@ import java.util.HashMap;
  */
 public interface RControllerGraphQL extends RController {
 
-	public ArrayList<RGraphQLType> getCustomTypes();
-
-	public HashMap<Long, Boolean> prepareRequest(String requestQueryKey, String graphQLTypeName, String graphQLTypeFieldName);
+	public ArrayList<RGraphQLType> getGraphQLTypes();
 
 	@DisableValidationRemoteMethod
-    public Object execute(String requestQueryKey, GRequest gRequest, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Object> arguments) throws GraphQLExecutorDataFetcherException;
+    public Object execute(GRequest gRequest, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Object> arguments) throws GraphQLExecutorDataFetcherException;
 }

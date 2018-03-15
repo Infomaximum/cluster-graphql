@@ -113,46 +113,46 @@ public class QueryPoolInstrumantation implements Instrumentation {
 
         return CompletableFuture.completedFuture(executionResult);
     }
-
-    private void prepareQuery(QueryInstrumentationState queryInstrumentationState, GraphQLObjectType parent, Node node, Map<Long, Boolean> prepareResource) {
-        if (node instanceof Field) {
-            Field fieldNode = (Field)node;
-
-            MergeGraphQLTypeOutObject mergeGraphQLTypeOutObject = remoteGraphQLTypeOutObjects.get(parent.getName());
-
-            RGraphQLObjectTypeField rGraphQLObjectTypeField = mergeGraphQLTypeOutObject.getFieldByExternalName(fieldNode.getName());
-
-            if (rGraphQLObjectTypeField.queryPool) {
-                String requestQueryKey = new StringBuilder()
-                        .append(queryInstrumentationState.id)
-                        .toString();
-
-                //Собираем какие ресурсы нам необходимы для лока
-                RControllerGraphQL rControllerGraphQL = component.getRemotes().getFromSSUuid(rGraphQLObjectTypeField.componentUuid, RControllerGraphQL.class);
-                Map<Long, Boolean> prepareResourceRequest = rControllerGraphQL.prepareRequest(
-                        requestQueryKey,
-                        parent.getName(),
-                        rGraphQLObjectTypeField.name
-                );
-                for (Map.Entry<Long, Boolean> entry: prepareResourceRequest.entrySet()) {
-                    prepareResource.merge(entry.getKey(), entry.getValue(), (val1, val2) -> val1 ? val1 : val2);
-                }
-            }
-
-            for (Node iNode: fieldNode.getChildren()) {
-                prepareQuery(queryInstrumentationState, (GraphQLObjectType)parent.getFieldDefinition(fieldNode.getName()).getType(), iNode, prepareResource);
-            }
-        } else if (node instanceof OperationDefinition) {
-            OperationDefinition operationDefinitionNode = (OperationDefinition) node;
-            for (Node iNode: operationDefinitionNode.getChildren()) {
-                prepareQuery(queryInstrumentationState, parent, iNode, prepareResource);
-            }
-        } else if (node instanceof SelectionSet) {
-            SelectionSet selectionSetNode = (SelectionSet) node;
-            for (Node iNode: selectionSetNode.getChildren()) {
-                prepareQuery(queryInstrumentationState, parent, iNode, prepareResource);
-            }
-        }
-
-    }
+//
+//    private void prepareQuery(QueryInstrumentationState queryInstrumentationState, GraphQLObjectType parent, Node node, Map<Long, Boolean> prepareResource) {
+//        if (node instanceof Field) {
+//            Field fieldNode = (Field)node;
+//
+//            MergeGraphQLTypeOutObject mergeGraphQLTypeOutObject = remoteGraphQLTypeOutObjects.get(parent.getName());
+//
+//            RGraphQLObjectTypeField rGraphQLObjectTypeField = mergeGraphQLTypeOutObject.getFieldByExternalName(fieldNode.getName());
+//
+//            if (rGraphQLObjectTypeField.queryPool) {
+//                String requestQueryKey = new StringBuilder()
+//                        .append(queryInstrumentationState.id)
+//                        .toString();
+//
+//                //Собираем какие ресурсы нам необходимы для лока
+//                RControllerGraphQL rControllerGraphQL = component.getRemotes().getFromSSUuid(rGraphQLObjectTypeField.componentUuid, RControllerGraphQL.class);
+//                Map<Long, Boolean> prepareResourceRequest = rControllerGraphQL.prepareRequest(
+//                        requestQueryKey,
+//                        parent.getName(),
+//                        rGraphQLObjectTypeField.name
+//                );
+//                for (Map.Entry<Long, Boolean> entry: prepareResourceRequest.entrySet()) {
+//                    prepareResource.merge(entry.getKey(), entry.getValue(), (val1, val2) -> val1 ? val1 : val2);
+//                }
+//            }
+//
+//            for (Node iNode: fieldNode.getChildren()) {
+//                prepareQuery(queryInstrumentationState, (GraphQLObjectType)parent.getFieldDefinition(fieldNode.getName()).getType(), iNode, prepareResource);
+//            }
+//        } else if (node instanceof OperationDefinition) {
+//            OperationDefinition operationDefinitionNode = (OperationDefinition) node;
+//            for (Node iNode: operationDefinitionNode.getChildren()) {
+//                prepareQuery(queryInstrumentationState, parent, iNode, prepareResource);
+//            }
+//        } else if (node instanceof SelectionSet) {
+//            SelectionSet selectionSetNode = (SelectionSet) node;
+//            for (Node iNode: selectionSetNode.getChildren()) {
+//                prepareQuery(queryInstrumentationState, parent, iNode, prepareResource);
+//            }
+//        }
+//
+//    }
 }

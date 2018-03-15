@@ -1,8 +1,8 @@
 package com.infomaximum.cluster.graphql;
 
-import com.infomaximum.cluster.core.remote.AbstractRController;
 import com.infomaximum.cluster.core.remote.Remotes;
-import com.infomaximum.cluster.graphql.customtype.CustomEnvType;
+import com.infomaximum.cluster.graphql.customfieldargument.CustomFieldArgument;
+import com.infomaximum.cluster.graphql.customfield.CustomField;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQLImpl;
@@ -10,33 +10,41 @@ import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
-import com.infomaximum.cluster.querypool.QueryPoolExecutor;
 import com.infomaximum.cluster.struct.Component;
 
 import java.lang.reflect.Constructor;
+import java.util.HashSet;
 import java.util.Set;
 
 public class GraphQLEngine {
 
     private final String sdkPackagePath;
-    private final Set<CustomEnvType> customEnvTypes;
-    private final Constructor customRemoteDataFetcher;
+
+    private final Set<CustomField> customFields;
     private final TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
-    private final QueryPoolExecutor queryPoolExecutor;
+
+    private final Set<CustomFieldArgument> customArguments;
+    private final Constructor customRemoteDataFetcher;
 
     private GraphQLEngine(
             String sdkPackagePath,
-            Set<CustomEnvType> customEnvTypes,
-            Constructor customRemoteDataFetcher,
+
+            Set<CustomField> customFields,
             TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
-            QueryPoolExecutor queryPoolExecutor
+
+            Set<CustomFieldArgument> customArguments,
+
+            Constructor customRemoteDataFetcher
             ){
 
         this.sdkPackagePath = sdkPackagePath;
-        this.customEnvTypes = customEnvTypes;
-        this.customRemoteDataFetcher = customRemoteDataFetcher;
+
+        this.customFields=customFields;
         this.fieldConfigurationBuilder = fieldConfigurationBuilder;
-        this.queryPoolExecutor = queryPoolExecutor;
+
+        this.customArguments = customArguments;
+
+        this.customRemoteDataFetcher = customRemoteDataFetcher;
     }
 
     public GraphQLExecutor buildExecutor(Component component) throws GraphQLExecutorException {
@@ -44,14 +52,14 @@ public class GraphQLEngine {
                 component,
                 sdkPackagePath,
                 customRemoteDataFetcher,
-                fieldConfigurationBuilder,
-                queryPoolExecutor
+                customFields,
+                fieldConfigurationBuilder
         ).build();
     }
 
     public RControllerGraphQLImpl buildRemoteControllerGraphQL(Component component) throws GraphQLExecutorException {
         try {
-            return new RControllerGraphQLImpl(component, customEnvTypes, fieldConfigurationBuilder, queryPoolExecutor);
+            return new RControllerGraphQLImpl(component, customArguments, customFields, fieldConfigurationBuilder);
         } catch (ReflectiveOperationException e) {
             throw new GraphQLExecutorException(e);
         }
@@ -60,10 +68,13 @@ public class GraphQLEngine {
     public static class Builder {
 
         private String sdkPackagePath;
-        private Set<CustomEnvType> customEnvTypes;
-        private Constructor customRemoteDataFetcher;
+
+        private Set<CustomField> customFields;
         private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
-        private QueryPoolExecutor queryPoolExecutor;
+
+        private Set<CustomFieldArgument> customArguments;
+
+        private Constructor customRemoteDataFetcher;
 
         public Builder() {}
 
@@ -77,8 +88,22 @@ public class GraphQLEngine {
             return this;
         }
 
-        public Builder withCustomEnvTypes(Set<CustomEnvType> customEnvTypes) {
-            this.customEnvTypes=customEnvTypes;
+        public Builder withCustomField(CustomField customField) {
+            if (customFields==null) customFields = new HashSet<>();
+            customFields.add(customField);
+            return this;
+        }
+
+
+        public Builder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder){
+            this.fieldConfigurationBuilder = fieldConfigurationBuilder;
+            return this;
+        }
+
+
+        public Builder withCustomArgument(CustomFieldArgument customArgument) {
+            if (customArguments==null) customArguments = new HashSet<>();
+            customArguments.add(customArgument);
             return this;
         }
 
@@ -95,23 +120,17 @@ public class GraphQLEngine {
             return this;
         }
 
-        public Builder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder){
-            this.fieldConfigurationBuilder = fieldConfigurationBuilder;
-            return this;
-        }
-
-        public Builder withQueryPoolExecutor(QueryPoolExecutor queryPoolExecutor){
-            this.queryPoolExecutor = queryPoolExecutor;
-            return this;
-        }
 
         public GraphQLEngine build() {
             return new GraphQLEngine(
                     sdkPackagePath,
-                    customEnvTypes,
-                    customRemoteDataFetcher,
+
+                    customFields,
                     fieldConfigurationBuilder,
-                    queryPoolExecutor
+
+                    customArguments,
+
+                    customRemoteDataFetcher
             );
         }
     }
