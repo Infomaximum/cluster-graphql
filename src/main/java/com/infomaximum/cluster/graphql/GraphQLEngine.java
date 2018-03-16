@@ -83,7 +83,7 @@ public class GraphQLEngine {
             return this;
         }
 
-        public Builder withSDKPackage(String sdkPackage) {
+        public Builder withSDKPackage(String sdkPackagePath) {
             this.sdkPackagePath = sdkPackagePath;
             return this;
         }
