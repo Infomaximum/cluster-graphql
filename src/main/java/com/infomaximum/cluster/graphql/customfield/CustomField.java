@@ -1,5 +1,6 @@
 package com.infomaximum.cluster.graphql.customfield;
 
+import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.struct.Component;
 
 import java.lang.reflect.Type;
@@ -10,5 +11,5 @@ public interface CustomField<T> {
 
     Type getEndType(Type genericType);
 
-    Object getEndValue(Component component, Object source, T value);
+    Object getEndValue(Component component, Object source, T value) throws GraphQLExecutorDataFetcherException;
 }
