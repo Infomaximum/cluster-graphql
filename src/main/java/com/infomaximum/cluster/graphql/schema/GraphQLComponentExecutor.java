@@ -4,6 +4,7 @@ import com.google.common.base.Defaults;
 import com.infomaximum.cluster.graphql.anotation.GraphQLName;
 import com.infomaximum.cluster.graphql.anotation.GraphQLSource;
 import com.infomaximum.cluster.graphql.anotation.GraphQLTypeInput;
+import com.infomaximum.cluster.graphql.customfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.customfieldargument.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.customfield.CustomField;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
@@ -16,6 +17,7 @@ import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
@@ -73,18 +75,22 @@ public class GraphQLComponentExecutor {
         return rTypeGraphQLs;
     }
 
-    public Object execute(GRequest request, Object source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
+    public Object execute(GRequest request, Object source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
         try {
             Class classSchema = classSchemas.get(graphQLTypeName);
             if (classSchema == null) throw new RuntimeException("not support scheme: " + classSchema);
 
             Object object;
-            if (classSchemas.get(graphQLTypeName).isAssignableFrom(source.getClass())) {
-                object = source;
+            if (source==null) {
+                object = null;
             } else {
-                Constructor constructor = classSchema.getDeclaredConstructor();
-                constructor.setAccessible(true);
-                object = constructor.newInstance();
+                if (classSchemas.get(graphQLTypeName).isAssignableFrom(source.getClass())) {
+                    object = source;
+                } else {
+                    Constructor constructor = classSchema.getDeclaredConstructor();
+                    constructor.setAccessible(true);
+                    object = constructor.newInstance();
+                }
             }
 
 

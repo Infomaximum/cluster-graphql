@@ -58,7 +58,9 @@ public class ComponentDataFetcher implements DataFetcher {
             } else {
                 //Этот объект принадлежит определенной подсистеме - необходимо вызывать метод удаленно именно не родительской подсистеме
                 RControllerGraphQL rControllerGraphQL = remotes.getFromSSUuid(rTypeGraphQLField.componentUuid, RControllerGraphQL.class);
-                Object result = rControllerGraphQL.execute(gRequest, environment.getSource(), graphQLTypeName, rTypeGraphQLField.name, new HashMap<>(environment.getArguments()));
+                Object result = rControllerGraphQL.execute(
+                        gRequest, environment.getSource(), graphQLTypeName, rTypeGraphQLField.name,
+                        getArguments(rTypeGraphQLField, environment, gRequest.getExternalVariables()));
                 return ExtResult.get(result);
             }
         } catch (Throwable t) {

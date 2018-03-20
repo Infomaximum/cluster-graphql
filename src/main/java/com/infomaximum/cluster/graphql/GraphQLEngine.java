@@ -5,6 +5,8 @@ import com.infomaximum.cluster.graphql.customfieldargument.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.customfield.CustomField;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
+import com.infomaximum.cluster.graphql.executor.GraphQLExecutorImpl;
+import com.infomaximum.cluster.graphql.executor.builder.GraphQLExecutorBuilder;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQLImpl;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
@@ -48,7 +50,7 @@ public class GraphQLEngine {
     }
 
     public GraphQLExecutor buildExecutor(Component component) throws GraphQLExecutorException {
-        return new GraphQLExecutor.Builder(
+        return new GraphQLExecutorBuilder(
                 component,
                 sdkPackagePath,
                 customRemoteDataFetcher,
