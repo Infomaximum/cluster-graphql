@@ -4,6 +4,7 @@ import com.google.common.base.CaseFormat;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.anotation.*;
 import com.infomaximum.cluster.graphql.customfield.CustomField;
+import com.infomaximum.cluster.graphql.customfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLTypeEnum;
 import com.infomaximum.cluster.graphql.schema.struct.in.RGraphQLInputObjectTypeField;
@@ -106,7 +107,7 @@ public class TypeGraphQLBuilder {
 						fieldConfiguration = fieldConfigurationBuilder.build(field);
 					}
 
-					fields.add(new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, true, typeField, nameField, externalNameField, aGraphQLField.deprecated()));
+					fields.add(new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, false, true, typeField, nameField, externalNameField, aGraphQLField.deprecated()));
 				}
 
 				//Обрабатываем методы
@@ -240,7 +241,8 @@ public class TypeGraphQLBuilder {
 			fieldConfiguration = fieldConfigurationBuilder.build(method);
 		}
 
-		return new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, false, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
+		boolean isPrepereField = isPrepereField(customFields, method.getReturnType());
+		return new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, isPrepereField, false, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
 	}
 
 	private static String getExternalName(Method method) {
@@ -313,6 +315,19 @@ public class TypeGraphQLBuilder {
 			throw new RuntimeException("Not support type: " + type);
 		}
 	}
+
+	private static boolean isPrepereField(Set<CustomField> customFields, Class clazz){
+		if (customFields!=null) {
+			for (CustomField customField: customFields) {
+				if (customField.isSupport(clazz)) {
+					return (customField instanceof PrepareCustomField);
+				}
+			}
+		}
+		return false;
+	}
+
+
 
 	/**
 	 * Вытаскиваем у класса всех родителей - union

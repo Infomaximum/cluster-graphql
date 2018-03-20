@@ -2,24 +2,33 @@ package com.infomaximum.cluster.graphql.instrumentation;
 
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
+import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.struct.Component;
 import graphql.ExecutionResult;
+import graphql.execution.ExecutionContext;
+import graphql.execution.ValuesResolver;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.execution.instrumentation.parameters.*;
+import graphql.introspection.Introspection;
 import graphql.language.*;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLSchema;
+import graphql.schema.*;
 import graphql.validation.ValidationError;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
+
 public class QueryPoolInstrumantation implements Instrumentation {
+
+    private static String GRAPHQL_FIELD_SCHEME = "__schema";
+    private static String GRAPHQL_FIELD_TYPENAME = "__typename";
 
     private final Component component;
     private final GraphQLSchema graphQLSchema;
@@ -60,26 +69,28 @@ public class QueryPoolInstrumantation implements Instrumentation {
 
                 Document document = parameters.getDocument();
                 for (Node node: document.getChildren()) {
+                    if (!(node instanceof OperationDefinition)) continue;
+
                     GraphQLObjectType parent;
 
-//                    OperationDefinition operationDefinition = (OperationDefinition) node;
-//                    if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
-//                        parent = graphQLSchema.getQueryType();
-//                    } else if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
-//                        parent = graphQLSchema.getMutationType();
-//                    } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
-//                        parent = graphQLSchema.getSubscriptionType();
-//                    } else {
-//                        throw new RuntimeException("not support operation type: " + operationDefinition.getOperation());
-//                    }
+                    OperationDefinition operationDefinition = (OperationDefinition) node;
+                    if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
+                        parent = graphQLSchema.getQueryType();
+                    } else if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
+                        parent = graphQLSchema.getMutationType();
+                    } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
+                        parent = graphQLSchema.getSubscriptionType();
+                    } else {
+                        throw new RuntimeException("not support operation type: " + operationDefinition.getOperation());
+                    }
 
-//                    Map<Long, Boolean> prepareResource = new HashMap<Long, Boolean>();
-//                    prepareQuery(
-//                            parameters.getInstrumentationState(),
-//                            parent,
-//                            node,
-//                            prepareResource
-//                    );
+                    Map<Long, Boolean> prepareResource = new HashMap<Long, Boolean>();
+                    prepareRequest(
+                            parameters,
+                            parent,
+                            node,
+                            prepareResource
+                    );
                 }
 
             }
@@ -113,46 +124,70 @@ public class QueryPoolInstrumantation implements Instrumentation {
 
         return CompletableFuture.completedFuture(executionResult);
     }
-//
-//    private void prepareQuery(QueryInstrumentationState queryInstrumentationState, GraphQLObjectType parent, Node node, Map<Long, Boolean> prepareResource) {
-//        if (node instanceof Field) {
-//            Field fieldNode = (Field)node;
-//
-//            MergeGraphQLTypeOutObject mergeGraphQLTypeOutObject = remoteGraphQLTypeOutObjects.get(parent.getName());
-//
-//            RGraphQLObjectTypeField rGraphQLObjectTypeField = mergeGraphQLTypeOutObject.getFieldByExternalName(fieldNode.getName());
-//
-//            if (rGraphQLObjectTypeField.queryPool) {
-//                String requestQueryKey = new StringBuilder()
-//                        .append(queryInstrumentationState.id)
-//                        .toString();
-//
-//                //Собираем какие ресурсы нам необходимы для лока
-//                RControllerGraphQL rControllerGraphQL = component.getRemotes().getFromSSUuid(rGraphQLObjectTypeField.componentUuid, RControllerGraphQL.class);
-//                Map<Long, Boolean> prepareResourceRequest = rControllerGraphQL.prepareRequest(
-//                        requestQueryKey,
-//                        parent.getName(),
-//                        rGraphQLObjectTypeField.name
-//                );
+
+    private void prepareRequest(InstrumentationValidationParameters validationParameters, GraphQLType parent, Node node, Map<Long, Boolean> prepareResource) {
+        if (node instanceof Field) {
+            Field field = (Field)node;
+            if (GRAPHQL_FIELD_SCHEME.equals(field.getName())) return;
+            if (GRAPHQL_FIELD_TYPENAME.equals(field.getName())) return;
+
+            MergeGraphQLTypeOutObject mergeGraphQLTypeOutObject = remoteGraphQLTypeOutObjects.get(parent.getName());
+            if (mergeGraphQLTypeOutObject==null) return;
+
+            RGraphQLObjectTypeField rGraphQLObjectTypeField = mergeGraphQLTypeOutObject.getFieldByExternalName(field.getName());
+
+            if (rGraphQLObjectTypeField.isPrepare) {
+                QueryInstrumentationState queryInstrumentationState = validationParameters.getInstrumentationState();
+
+
+                String requestItemKey = new StringBuilder()
+                        .append(queryInstrumentationState.id)
+                        .toString();
+
+                HashMap<String, Serializable> arguments = ComponentDataFetcher.filterArguments(
+                        field,
+                        new ValuesResolver().getArgumentValues(
+                                validationParameters.getSchema().getFieldVisibility(),
+                                Introspection.getFieldDef(validationParameters.getSchema(), (GraphQLObjectType)parent, field.getName()).getArguments(),
+                                field.getArguments(),
+                                validationParameters.getVariables()
+                        ),
+                        validationParameters.getVariables().keySet()
+                );
+
+                //Собираем какие ресурсы нам необходимы для лока
+                RControllerGraphQL rControllerGraphQL = component.getRemotes().getFromSSUuid(rGraphQLObjectTypeField.componentUuid, RControllerGraphQL.class);
+                Map<Long, Boolean> prepareResourceRequest = rControllerGraphQL.prepareExecute(
+                        requestItemKey,
+                        validationParameters.getContext(),
+                        parent.getName(),
+                        rGraphQLObjectTypeField.name,
+                        arguments
+                );
 //                for (Map.Entry<Long, Boolean> entry: prepareResourceRequest.entrySet()) {
 //                    prepareResource.merge(entry.getKey(), entry.getValue(), (val1, val2) -> val1 ? val1 : val2);
 //                }
-//            }
-//
-//            for (Node iNode: fieldNode.getChildren()) {
-//                prepareQuery(queryInstrumentationState, (GraphQLObjectType)parent.getFieldDefinition(fieldNode.getName()).getType(), iNode, prepareResource);
-//            }
-//        } else if (node instanceof OperationDefinition) {
-//            OperationDefinition operationDefinitionNode = (OperationDefinition) node;
-//            for (Node iNode: operationDefinitionNode.getChildren()) {
-//                prepareQuery(queryInstrumentationState, parent, iNode, prepareResource);
-//            }
-//        } else if (node instanceof SelectionSet) {
-//            SelectionSet selectionSetNode = (SelectionSet) node;
-//            for (Node iNode: selectionSetNode.getChildren()) {
-//                prepareQuery(queryInstrumentationState, parent, iNode, prepareResource);
-//            }
-//        }
-//
-//    }
+            }
+
+            for (Node iNode: field.getChildren()) {
+                try {
+                    prepareRequest(validationParameters, ((GraphQLObjectType)parent).getFieldDefinition(field.getName()).getType(), iNode, prepareResource);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        } else if (node instanceof OperationDefinition) {
+            OperationDefinition operationDefinitionNode = (OperationDefinition) node;
+            for (Node iNode: operationDefinitionNode.getChildren()) {
+                prepareRequest(validationParameters, parent, iNode, prepareResource);
+            }
+        } else if (node instanceof SelectionSet) {
+            SelectionSet selectionSetNode = (SelectionSet) node;
+            for (Node iNode: selectionSetNode.getChildren()) {
+                prepareRequest(validationParameters, parent, iNode, prepareResource);
+            }
+        }
+
+    }
+
 }

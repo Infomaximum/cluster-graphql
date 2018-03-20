@@ -2,7 +2,6 @@ package com.infomaximum;
 
 import com.infomaximum.cluster.exception.ClusterException;
 import com.infomaximum.cluster.graphql.struct.GRequest;
-import com.infomaximum.cluster.graphql.struct.GRequestItem;
 import com.infomaximum.server.Server;
 import com.infomaximum.server.components.frontend.FrontendComponent;
 import com.infomaximum.server.sdk.GRequestContext;
@@ -13,6 +12,7 @@ import org.junit.BeforeClass;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 
 /**
  * Created by kris on 22.04.17.
@@ -38,7 +38,7 @@ public abstract class BaseTest {
                 frontendComponent.getKey(),
                 "127.0.0.1",
                 new GRequestContext(),
-                Collections.emptySet(),
+                new HashMap<>(),
                 null
         );
 
@@ -48,9 +48,6 @@ public abstract class BaseTest {
                 .root(gRequest) // This we are doing do be backwards compatible
                 .variables(Collections.emptyMap())
                 .build();
-
-
-
 
 
         return frontendComponent.getGraphQLExecutor().execute(executionInput);

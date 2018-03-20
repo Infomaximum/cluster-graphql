@@ -12,7 +12,6 @@ import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLField
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GRequest;
-import com.infomaximum.cluster.graphql.struct.GRequestItem;
 import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,14 +73,14 @@ public class GraphQLComponentExecutor {
         return rTypeGraphQLs;
     }
 
-    public Object execute(GRequest request, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
+    public Object execute(GRequest request, Object source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
         try {
             Class classSchema = classSchemas.get(graphQLTypeName);
             if (classSchema == null) throw new RuntimeException("not support scheme: " + classSchema);
 
             Object object;
-            if (classSchemas.get(graphQLTypeName).isAssignableFrom(gRequestItem.source.getClass())) {
-                object = gRequestItem.source;
+            if (classSchemas.get(graphQLTypeName).isAssignableFrom(source.getClass())) {
+                object = source;
             } else {
                 Constructor constructor = classSchema.getDeclaredConstructor();
                 constructor.setAccessible(true);
@@ -108,10 +107,11 @@ public class GraphQLComponentExecutor {
 
                 Object argumentValue = null;
                 if (aGraphQLTarget != null) {
-                    argumentValue = gRequestItem.source;
+                    argumentValue = source;
                 } else if (graphQLAnnotation != null) {
                     String argumentName = graphQLAnnotation.value();
-                    boolean isPresent = gRequestItem.receivedArguments.contains(argumentName);
+//                    boolean isPresent = gRequestItem.receivedArguments.contains(argumentName);
+                    boolean isPresent = arguments.containsKey(argumentName);
                     argumentValue = getValue(method.getGenericParameterTypes()[index], arguments.get(argumentName), isPresent);
                 } else {
                     //возможно особый аргумент
@@ -151,7 +151,7 @@ public class GraphQLComponentExecutor {
             if (result!=null && customFields != null) {
                 for (CustomField customField: customFields) {
                     if (customField.isSupport(result.getClass())) {
-                        result = customField.getEndValue(component, gRequestItem.source, result);
+                        result = customField.getEndValue(component, source, result);
                         break;
                     }
                 }

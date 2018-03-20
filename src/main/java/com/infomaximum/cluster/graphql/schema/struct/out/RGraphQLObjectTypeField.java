@@ -12,6 +12,7 @@ public class RGraphQLObjectTypeField {
     public final String componentUuid;
 
     public final boolean isField;
+    public final boolean isPrepare;
 
     public final String type;
     public final String name;
@@ -20,14 +21,15 @@ public class RGraphQLObjectTypeField {
     public final RemoteObject configuration;
     public final String deprecated;
 
-    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isField, String type, String name, String externalName, String deprecated) {
-        this(componentUuid, configuration, isField, type, name, externalName, deprecated, null);
+    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isPrepare, boolean isField, String type, String name, String externalName, String deprecated) {
+        this(componentUuid, configuration, isPrepare, isField, type, name, externalName, deprecated, null);
     }
 
-    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isField, String type, String name, String externalName, String deprecated, List<RGraphQLObjectTypeMethodArgument> arguments) {
+    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isPrepare, boolean isField, String type, String name, String externalName, String deprecated, List<RGraphQLObjectTypeMethodArgument> arguments) {
         this.componentUuid = componentUuid;
 
         this.isField = isField;
+        this.isPrepare = isPrepare;
 
         this.type = type;
         this.name = name;

@@ -8,11 +8,11 @@ import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GRequest;
-import com.infomaximum.cluster.graphql.struct.GRequestItem;
 import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.*;
 
 
@@ -37,8 +37,15 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
     }
 
     @Override
-    public Object execute(GRequest request, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
-        return graphQLItemExecutor.execute(request, gRequestItem, graphQLTypeName, graphQLTypeFieldName, arguments);
+    public HashMap<Long, Boolean> prepareExecute(String requestItemKey, GRequest request, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) {
+//        graphQLItemExecutor.execute(request, gRequestItem, graphQLTypeName, graphQLTypeFieldName, arguments)
+
+        return new HashMap<>();
+    }
+
+    @Override
+    public Object execute(GRequest request, Object source, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
+        return graphQLItemExecutor.execute(request, source, graphQLTypeName, graphQLTypeFieldName, arguments);
     }
 
 }
