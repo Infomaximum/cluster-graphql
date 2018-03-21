@@ -1,11 +1,10 @@
 package com.infomaximum.cluster.graphql.executor.builder;
 
-import com.infomaximum.cluster.graphql.customfield.CustomField;
-import com.infomaximum.cluster.graphql.customfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutorImpl;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutorPrepareImpl;
+import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.scalartype.GraphQLScalarTypeCustom;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
@@ -40,7 +39,7 @@ public class GraphQLExecutorBuilder {
     private String sdkPackagePath;
     private Constructor customRemoteDataFetcher;
 
-    private Set<CustomField> customFields;
+    private Set<PrepareCustomField> prepareCustomFields;
     private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
     GraphQLComponentExecutor sdkGraphQLItemExecutor;
@@ -49,14 +48,14 @@ public class GraphQLExecutorBuilder {
             Component component,
             String sdkPackagePath,
             Constructor customRemoteDataFetcher,
-            Set<CustomField> customFields,
+            Set<PrepareCustomField> prepareCustomFields,
             TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder
     ) {
 
         this.component = component;
         this.sdkPackagePath = sdkPackagePath;
         this.customRemoteDataFetcher = customRemoteDataFetcher;
-        this.customFields = customFields;
+        this.prepareCustomFields = prepareCustomFields;
         this.fieldConfigurationBuilder = fieldConfigurationBuilder;
     }
 
@@ -71,7 +70,7 @@ public class GraphQLExecutorBuilder {
 
             //Собираем встроенные
             if (sdkPackagePath!=null) {
-                sdkGraphQLItemExecutor = new GraphQLComponentExecutor(sdkPackagePath, customFields, fieldConfigurationBuilder);
+                sdkGraphQLItemExecutor = new GraphQLComponentExecutor(sdkPackagePath, prepareCustomFields, fieldConfigurationBuilder);
                 for (RGraphQLType rGraphQLType : sdkGraphQLItemExecutor.getGraphQLTypes()) {
                     mergeGraphQLType(
                             buildGraphQLTypeEnums,
@@ -174,15 +173,6 @@ public class GraphQLExecutorBuilder {
             }
 
 
-            //Проверяем какого типа executor нам необходимо построить
-            boolean isPrepareExecutor = false;
-            for (CustomField customField: customFields) {
-                if (customField instanceof PrepareCustomField) {
-                    isPrepareExecutor = true;
-                    break;
-                }
-            }
-
             GraphQLSchema schema = newSchema()
                     .query((GraphQLObjectType) graphQLTypes.get(TypeSchema.QUERY.getValue()))
                     .mutation((GraphQLObjectType) graphQLTypes.get(TypeSchema.MUTATION.getValue()))
@@ -190,10 +180,10 @@ public class GraphQLExecutorBuilder {
 
             GraphQL graphQL = GraphQL.newGraphQL(schema).build();
 
-            if (isPrepareExecutor) {
-                return new GraphQLExecutorPrepareImpl(component, schema, graphQL, buildGraphQLTypeOutObjects);
-            } else {
+            if (prepareCustomFields==null || prepareCustomFields.isEmpty()) {
                 return new GraphQLExecutorImpl(schema, graphQL);
+            } else {
+                return new GraphQLExecutorPrepareImpl(component, schema, graphQL, buildGraphQLTypeOutObjects);
             }
         } catch (Throwable throwable) {
             throw new GraphQLExecutorException(throwable);

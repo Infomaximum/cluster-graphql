@@ -2,11 +2,10 @@ package com.infomaximum.cluster.graphql;
 
 import com.infomaximum.cluster.core.remote.Remotes;
 import com.infomaximum.cluster.graphql.customfieldargument.CustomFieldArgument;
-import com.infomaximum.cluster.graphql.customfield.CustomField;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
-import com.infomaximum.cluster.graphql.executor.GraphQLExecutorImpl;
 import com.infomaximum.cluster.graphql.executor.builder.GraphQLExecutorBuilder;
+import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQLImpl;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
@@ -22,7 +21,7 @@ public class GraphQLEngine {
 
     private final String sdkPackagePath;
 
-    private final Set<CustomField> customFields;
+    private final Set<PrepareCustomField> prepareCustomFields;
     private final TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
     private final Set<CustomFieldArgument> customArguments;
@@ -31,7 +30,7 @@ public class GraphQLEngine {
     private GraphQLEngine(
             String sdkPackagePath,
 
-            Set<CustomField> customFields,
+            Set<PrepareCustomField> prepareCustomFields,
             TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
 
             Set<CustomFieldArgument> customArguments,
@@ -41,7 +40,7 @@ public class GraphQLEngine {
 
         this.sdkPackagePath = sdkPackagePath;
 
-        this.customFields=customFields;
+        this.prepareCustomFields = prepareCustomFields;
         this.fieldConfigurationBuilder = fieldConfigurationBuilder;
 
         this.customArguments = customArguments;
@@ -54,24 +53,20 @@ public class GraphQLEngine {
                 component,
                 sdkPackagePath,
                 customRemoteDataFetcher,
-                customFields,
+                prepareCustomFields,
                 fieldConfigurationBuilder
         ).build();
     }
 
     public RControllerGraphQLImpl buildRemoteControllerGraphQL(Component component) throws GraphQLExecutorException {
-        try {
-            return new RControllerGraphQLImpl(component, customArguments, customFields, fieldConfigurationBuilder);
-        } catch (ReflectiveOperationException e) {
-            throw new GraphQLExecutorException(e);
-        }
+        return new RControllerGraphQLImpl(component, customArguments, prepareCustomFields, fieldConfigurationBuilder);
     }
 
     public static class Builder {
 
         private String sdkPackagePath;
 
-        private Set<CustomField> customFields;
+        private Set<PrepareCustomField> prepareCustomFields;
         private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
         private Set<CustomFieldArgument> customArguments;
@@ -90,9 +85,9 @@ public class GraphQLEngine {
             return this;
         }
 
-        public Builder withCustomField(CustomField customField) {
-            if (customFields==null) customFields = new HashSet<>();
-            customFields.add(customField);
+        public Builder withPrepareCustomField(PrepareCustomField prepareCustomField) {
+            if (prepareCustomFields ==null) prepareCustomFields = new HashSet<>();
+            prepareCustomFields.add(prepareCustomField);
             return this;
         }
 
@@ -127,7 +122,7 @@ public class GraphQLEngine {
             return new GraphQLEngine(
                     sdkPackagePath,
 
-                    customFields,
+                    prepareCustomFields,
                     fieldConfigurationBuilder,
 
                     customArguments,

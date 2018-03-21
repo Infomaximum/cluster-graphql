@@ -17,8 +17,8 @@ public interface RControllerGraphQL extends RController {
 
 	public ArrayList<RGraphQLType> getGraphQLTypes();
 
-	public Serializable prepareExecute(String requestItemKey, GRequest request, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException;
+	public Serializable prepareExecute(GRequest request, String requestItemKey, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException;
 
 	@DisableValidationRemoteMethod
-    public Object execute(GRequest gRequest, Object source, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException;
+    public Object execute(GRequest gRequest, String requestItemKey, Object source, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException;
 }

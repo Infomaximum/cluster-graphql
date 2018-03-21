@@ -3,16 +3,16 @@ package com.infomaximum.cluster.graphql.schema.build.graphqltype;
 import com.google.common.base.CaseFormat;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.anotation.*;
-import com.infomaximum.cluster.graphql.customfield.CustomField;
-import com.infomaximum.cluster.graphql.customfield.PrepareCustomField;
+import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
+import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLTypeEnum;
 import com.infomaximum.cluster.graphql.schema.struct.in.RGraphQLInputObjectTypeField;
 import com.infomaximum.cluster.graphql.schema.struct.in.RGraphQLTypeInObject;
-import com.infomaximum.cluster.graphql.schema.struct.out.union.RGraphQLTypeOutObjectUnion;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeMethodArgument;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObject;
+import com.infomaximum.cluster.graphql.schema.struct.out.union.RGraphQLTypeOutObjectUnion;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.struct.Component;
 import org.reflections.Reflections;
@@ -35,7 +35,7 @@ public class TypeGraphQLBuilder {
 	private final String componentUuid;
 	private final String packageName;
 
-	private Set<CustomField> customFields;
+	private Set<PrepareCustomField> prepareCustomFields;
 	private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
 	public TypeGraphQLBuilder(Component component) {
@@ -48,8 +48,8 @@ public class TypeGraphQLBuilder {
 		this.packageName = packageName;
 	}
 
-	public TypeGraphQLBuilder withCustomFields(Set<CustomField> customFields){
-		this.customFields=customFields;
+	public TypeGraphQLBuilder withCustomFields(Set<PrepareCustomField> prepareCustomFields){
+		this.prepareCustomFields = prepareCustomFields;
 		return this;
 	}
 
@@ -58,7 +58,7 @@ public class TypeGraphQLBuilder {
 		return this;
 	}
 
-	public Map<Class, RGraphQLType> build() throws ClassNotFoundException {
+	public Map<Class, RGraphQLType> build() throws GraphQLExecutorException {
 		Reflections reflections = new Reflections(packageName);
 
 		Map<Class, RGraphQLType> rTypeGraphQLItems = new HashMap<Class, RGraphQLType>();
@@ -92,7 +92,7 @@ public class TypeGraphQLBuilder {
 
 					String typeField;
 					try {
-						typeField = getGraphQLType(customFields, field.getGenericType());
+						typeField = getGraphQLType(prepareCustomFields, field.getGenericType());
 					} catch (Exception e) {
 						throw new RuntimeException("Exception build type, class: " + classRTypeGraphQL.getName() + ", field: " + field.getName(), e);
 					}
@@ -165,7 +165,7 @@ public class TypeGraphQLBuilder {
 
 				String typeField;
 				try{
-					typeField = getGraphQLType(customFields, field.getGenericType());
+					typeField = getGraphQLType(prepareCustomFields, field.getGenericType());
 				} catch (Exception e) {
 					throw new RuntimeException("Exception build type, class: " + classRTypeGraphQL.getName() + ", field: " + field.getName(), e);
 				}
@@ -187,12 +187,17 @@ public class TypeGraphQLBuilder {
 		return rTypeGraphQLItems;
 	}
 
-	private RGraphQLObjectTypeField buildRGraphQLObjectTypeField(String componentUuid, Class classRTypeGraphQL, Method method, GraphQLField aGraphQLTypeMethod) throws ClassNotFoundException {
+	private RGraphQLObjectTypeField buildRGraphQLObjectTypeField(String componentUuid, Class classRTypeGraphQL, Method method, GraphQLField aGraphQLTypeMethod) throws GraphQLExecutorException {
+		//Если родительский класс не реализовывает интерфейс RemoteObject, то все его поля могут быть только статическими
+		if (!RemoteObject.class.isAssignableFrom(method.getDeclaringClass())) {
+			if (!Modifier.isStatic(method.getModifiers())) throw new GraphQLExecutorException("Method " + method.getName() + " in class " + method.getDeclaringClass().getName() + " is not static");
+		}
+
 		String typeField;
 		try{
-			typeField = getGraphQLType(customFields, method.getGenericReturnType());
+			typeField = getGraphQLType(prepareCustomFields, method.getGenericReturnType());
 		} catch (Exception e) {
-			throw new RuntimeException("Exception build type, class: " + classRTypeGraphQL.getName() + ", method: " + method.getName(), e);
+			throw new GraphQLExecutorException("Exception build type, class: " + classRTypeGraphQL.getName() + ", method: " + method.getName(), e);
 		}
 
 		String nameMethod = method.getName();
@@ -227,7 +232,7 @@ public class TypeGraphQLBuilder {
 
 			String typeArgument;
 			try{
-				typeArgument = getGraphQLType(customFields, method.getGenericParameterTypes()[index]);
+				typeArgument = getGraphQLType(prepareCustomFields, method.getGenericParameterTypes()[index]);
 			} catch (Exception e) {
 				throw new RuntimeException("Exception build type, class: " + classRTypeGraphQL.getName() + ", method: " + method.getName(), e);
 			}
@@ -241,7 +246,11 @@ public class TypeGraphQLBuilder {
 			fieldConfiguration = fieldConfigurationBuilder.build(method);
 		}
 
-		boolean isPrepereField = isPrepereField(customFields, method.getReturnType());
+		boolean isPrepereField = isPrepareField(prepareCustomFields, method.getReturnType());
+		if (isPrepereField) {//Prepere поля должны быть обязательно static
+			if (!Modifier.isStatic(method.getModifiers())) throw new GraphQLExecutorException("Method " + method.getName() + " in class " + method.getDeclaringClass().getName() + " is not static");
+		}
+
 		return new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, isPrepereField, false, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
 	}
 
@@ -259,7 +268,7 @@ public class TypeGraphQLBuilder {
 		return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name);
 	}
 
-	private static String getGraphQLType(Set<CustomField> customFields, Type type) throws ClassNotFoundException {
+	private static String getGraphQLType(Set<PrepareCustomField> prepareCustomFields, Type type) throws ClassNotFoundException {
 		Class rawType;
 		if (type instanceof ParameterizedTypeImpl) {
 			rawType = ((ParameterizedTypeImpl) type).getRawType();
@@ -286,10 +295,10 @@ public class TypeGraphQLBuilder {
 		} else if (rawType == ArrayList.class || rawType == HashSet.class) {
 			String genericTypeName = ((ParameterizedType) type).getActualTypeArguments()[0].getTypeName();
 			Class clazzGenericType = Class.forName(genericTypeName, true, Thread.currentThread().getContextClassLoader());
-			return "collection:" + getGraphQLType(customFields, clazzGenericType);
+			return "collection:" + getGraphQLType(prepareCustomFields, clazzGenericType);
 		} else if (rawType == GOptional.class) {
 			Type iGenericType = ((ParameterizedType) type).getActualTypeArguments()[0];
-			return getGraphQLType(customFields, iGenericType);
+			return getGraphQLType(prepareCustomFields, iGenericType);
 		} else {
 
 			//Возможно это сложный GraphQL объект
@@ -304,10 +313,10 @@ public class TypeGraphQLBuilder {
 			if (aGraphQLTypeOutUnion != null) return aGraphQLTypeOutUnion.value();
 
 			//Проверяем принадлежность к кастомным полям
-			if (customFields!=null) {
-				for (CustomField customField: customFields) {
+			if (prepareCustomFields!=null) {
+				for (PrepareCustomField customField: prepareCustomFields) {
 					if (customField.isSupport(rawType)) {
-						return getGraphQLType(customFields, customField.getEndType(type));
+						return getGraphQLType(prepareCustomFields, customField.getEndType(type));
 					}
 				}
 			}
@@ -316,9 +325,9 @@ public class TypeGraphQLBuilder {
 		}
 	}
 
-	private static boolean isPrepereField(Set<CustomField> customFields, Class clazz){
-		if (customFields!=null) {
-			for (CustomField customField: customFields) {
+	private static boolean isPrepareField(Set<PrepareCustomField> prepareCustomFields, Class clazz){
+		if (prepareCustomFields!=null) {
+			for (PrepareCustomField customField: prepareCustomFields) {
 				if (customField.isSupport(clazz)) {
 					return (customField instanceof PrepareCustomField);
 				}
@@ -326,8 +335,6 @@ public class TypeGraphQLBuilder {
 		}
 		return false;
 	}
-
-
 
 	/**
 	 * Вытаскиваем у класса всех родителей - union

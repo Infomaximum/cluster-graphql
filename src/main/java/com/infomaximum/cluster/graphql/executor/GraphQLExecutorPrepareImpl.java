@@ -1,6 +1,7 @@
 package com.infomaximum.cluster.graphql.executor;
 
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
+import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomFieldUtils;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
@@ -17,10 +18,8 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionPara
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 import graphql.introspection.Introspection;
-import graphql.language.Document;
-import graphql.language.Node;
-import graphql.language.OperationDefinition;
-import graphql.language.SelectionSet;
+import graphql.language.*;
+import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -51,9 +50,9 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
 
     public static class PrepareDocumentRequest {
 
-        private final ExecutionInput executionInput;
-        private final PreparsedDocumentEntry preparsedDocumentEntry;
-        private final InstrumentationState instrumentationState;
+        public final ExecutionInput executionInput;
+        public final PreparsedDocumentEntry preparsedDocumentEntry;
+        public final InstrumentationState instrumentationState;
 
         public PrepareDocumentRequest(ExecutionInput executionInput, PreparsedDocumentEntry preparsedDocumentEntry, InstrumentationState instrumentationState) {
             this.executionInput = executionInput;
@@ -123,31 +122,49 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             }
         });
 
+        if (preparsedDocumentEntry.hasErrors()) {
+            //Произошла ошибка парсинга
+            return new PrepareDocumentRequest(
+                    executionInput,
+                    preparsedDocumentEntry,
+                    instrumentationState
+            );
+        }
 
         //Документ распарсен - вызываем prepare
         Document document = preparsedDocumentEntry.getDocument();
         for (Node node: document.getChildren()) {
-            if (!(node instanceof OperationDefinition)) continue;
+            if (node instanceof OperationDefinition) {
+                OperationDefinition operationDefinition = (OperationDefinition) node;
 
-            GraphQLObjectType parent;
+                GraphQLObjectType parent;
+                if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
+                    parent = schema.getQueryType();
+                } else if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
+                    parent = schema.getMutationType();
+                } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
+                    parent = schema.getSubscriptionType();
+                } else {
+                    throw new RuntimeException("not support operation type: " + operationDefinition.getOperation());
+                }
 
-            OperationDefinition operationDefinition = (OperationDefinition) node;
-            if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
-                parent = schema.getQueryType();
-            } else if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
-                parent = schema.getMutationType();
-            } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
-                parent = schema.getSubscriptionType();
-            } else {
-                throw new RuntimeException("not support operation type: " + operationDefinition.getOperation());
+                prepareRequest(
+                        (GRequest) executionInput.getContext(),
+                        parent,
+                        node,
+                        executionInput.getVariables()
+                );
+            } else if (node instanceof FragmentDefinition) {
+                FragmentDefinition fragmentDefinition = (FragmentDefinition) node;
+
+                GraphQLObjectType parent = schema.getObjectType(fragmentDefinition.getTypeCondition().getName());
+                prepareRequest(
+                        (GRequest) executionInput.getContext(),
+                        parent,
+                        node,
+                        executionInput.getVariables()
+                );
             }
-
-            prepareRequest(
-                    (GRequest) executionInput.getContext(),
-                    parent,
-                    node,
-                    executionInput.getVariables()
-            );
         }
 
         return new PrepareDocumentRequest(
@@ -177,11 +194,16 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         return graphQL.execute(executionInput);
     }
 
+    private static String GRAPHQL_TYPE = "__Type";
+    private static String GRAPHQL_INPUT_VALUE = "__InputValue";
 
     private static String GRAPHQL_FIELD_SCHEME = "__schema";
     private static String GRAPHQL_FIELD_TYPENAME = "__typename";
 
     private void prepareRequest(GRequest request, GraphQLType parent, Node node, Map<String, Object> variables) throws GraphQLExecutorDataFetcherException {
+        if (GRAPHQL_TYPE.equals(parent.getName())) return;
+        if (GRAPHQL_INPUT_VALUE.equals(parent.getName())) return;
+
         if (node instanceof graphql.language.Field) {
             graphql.language.Field field = (graphql.language.Field)node;
             if (GRAPHQL_FIELD_SCHEME.equals(field.getName())) return;
@@ -193,8 +215,6 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             RGraphQLObjectTypeField rGraphQLObjectTypeField = mergeGraphQLTypeOutObject.getFieldByExternalName(field.getName());
 
             if (rGraphQLObjectTypeField.isPrepare) {
-                String requestItemKey = "";
-
                 HashMap<String, Serializable> arguments = ComponentDataFetcher.filterArguments(
                         field,
                         new ValuesResolver().getArgumentValues(
@@ -209,8 +229,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                 //Собираем какие ресурсы нам необходимы для лока
                 RControllerGraphQL rControllerGraphQL = component.getRemotes().getFromSSUuid(rGraphQLObjectTypeField.componentUuid, RControllerGraphQL.class);
                 Serializable prepareRequest = rControllerGraphQL.prepareExecute(
-                        requestItemKey,
                         request,
+                        PrepareCustomFieldUtils.uniqueFieldKey(request, field),
                         parent.getName(),
                         rGraphQLObjectTypeField.name,
                         arguments
@@ -220,24 +240,46 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
 //                }
             }
 
+
+
+
             for (Node iNode: field.getChildren()) {
-                try {
-                    prepareRequest(request, ((GraphQLObjectType)parent).getFieldDefinition(field.getName()).getType(), iNode, variables);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                if (parent instanceof GraphQLObjectType) {
+                    try {
+                        prepareRequest(request, ((GraphQLObjectType) parent).getFieldDefinition(field.getName()).getType(), iNode, variables);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                } else if (parent instanceof GraphQLList) {
+                    prepareRequest(request, parent, iNode, variables);
+                } else {
+                    throw new RuntimeException("not support parent type: " + parent);
                 }
-            }
-        } else if (node instanceof OperationDefinition) {
-            OperationDefinition operationDefinitionNode = (OperationDefinition) node;
-            for (Node iNode: operationDefinitionNode.getChildren()) {
-                prepareRequest(request, parent, iNode, variables);
             }
         } else if (node instanceof SelectionSet) {
             SelectionSet selectionSetNode = (SelectionSet) node;
             for (Node iNode: selectionSetNode.getChildren()) {
+                if (parent instanceof GraphQLList) {
+                    prepareRequest(request, ((GraphQLList)parent).getWrappedType(), iNode, variables);
+                } else {
+                    prepareRequest(request, parent, iNode, variables);
+                }
+            }
+        } else if (node instanceof OperationDefinition) {
+            OperationDefinition operationDefinitionNode = (OperationDefinition) node;
+            for (Node iNode : operationDefinitionNode.getChildren()) {
                 prepareRequest(request, parent, iNode, variables);
             }
+        } else if (node instanceof FragmentDefinition) {
+            FragmentDefinition fragmentDefinition = (FragmentDefinition) node;
+            for (Node iNode : fragmentDefinition.getChildren()) {
+                prepareRequest(request, parent, iNode, variables);
+            }
+        } else if (node instanceof InlineFragment) {
+            InlineFragment inlineFragment = (InlineFragment) node;
+            for (Node iNode : inlineFragment.getChildren()) {
+                prepareRequest(request, schema.getObjectType(inlineFragment.getTypeCondition().getName()), iNode, variables);
+            }
         }
-
     }
 }

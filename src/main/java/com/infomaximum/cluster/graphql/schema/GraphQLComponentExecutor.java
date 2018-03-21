@@ -1,13 +1,14 @@
 package com.infomaximum.cluster.graphql.schema;
 
 import com.google.common.base.Defaults;
+import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.anotation.GraphQLName;
 import com.infomaximum.cluster.graphql.anotation.GraphQLSource;
 import com.infomaximum.cluster.graphql.anotation.GraphQLTypeInput;
-import com.infomaximum.cluster.graphql.customfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.customfieldargument.CustomFieldArgument;
-import com.infomaximum.cluster.graphql.customfield.CustomField;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
+import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
+import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLBuilder;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
@@ -28,36 +29,36 @@ public class GraphQLComponentExecutor {
 
     private final Component component;
 
-    private final Set<CustomField> customFields;
+    private final Set<PrepareCustomField> prepareCustomFields;
 
     private final Set<CustomFieldArgument> customArguments;
 
     private ArrayList<RGraphQLType> rTypeGraphQLs;
     private Map<String, Class> classSchemas;
 
-    public GraphQLComponentExecutor(Component component, Set<CustomFieldArgument> customArguments, Set<CustomField> customFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws ReflectiveOperationException {
+    public GraphQLComponentExecutor(Component component, Set<CustomFieldArgument> customArguments, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws GraphQLExecutorException {
         this.component = component;
         this.customArguments = customArguments;
-        this.customFields = customFields;
+        this.prepareCustomFields = prepareCustomFields;
 
         TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(component)
-                .withCustomFields(customFields)
+                .withCustomFields(prepareCustomFields)
                 .withFieldConfigurationBuilder(fieldConfigurationBuilder);
         build(typeGraphQLBuilder);
     }
 
-    public GraphQLComponentExecutor(String packageName, Set<CustomField> customFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
+    public GraphQLComponentExecutor(String packageName, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws GraphQLExecutorException {
         this.component = null;
         this.customArguments = null;
-        this.customFields = customFields;
+        this.prepareCustomFields = prepareCustomFields;
 
         TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName)
-                .withCustomFields(customFields)
+                .withCustomFields(prepareCustomFields)
                 .withFieldConfigurationBuilder(fieldConfigurationBuilder);
         build(typeGraphQLBuilder);
     }
 
-    private void build(TypeGraphQLBuilder typeGraphQLBuilder) throws ClassNotFoundException {
+    private void build(TypeGraphQLBuilder typeGraphQLBuilder) throws GraphQLExecutorException {
         Map<Class, RGraphQLType> rTypeGraphQLItems = typeGraphQLBuilder.build();
         rTypeGraphQLs = new ArrayList<>(typeGraphQLBuilder.build().values());
 
@@ -75,13 +76,13 @@ public class GraphQLComponentExecutor {
         return rTypeGraphQLs;
     }
 
-    public Object execute(GRequest request, Object source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+    public Object execute(GRequest request, String keyFieldRequest, Object source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments, boolean isPrepare) throws GraphQLExecutorDataFetcherException {
         try {
             Class classSchema = classSchemas.get(graphQLTypeName);
             if (classSchema == null) throw new RuntimeException("not support scheme: " + classSchema);
 
             Object object;
-            if (source==null) {
+            if (source == null) {
                 object = null;
             } else {
                 if (classSchemas.get(graphQLTypeName).isAssignableFrom(source.getClass())) {
@@ -92,7 +93,6 @@ public class GraphQLComponentExecutor {
                     object = constructor.newInstance();
                 }
             }
-
 
             Method method = getMethod(classSchema, graphQLTypeFieldName);
 
@@ -150,14 +150,21 @@ public class GraphQLComponentExecutor {
                 Throwable cause = te.getTargetException();
                 throw new GraphQLExecutorDataFetcherException(cause);
             } catch (Throwable e) {
-                log.error("Ошибка вызова метода: {}, у объекта: {}", method.getName(), object.getClass().getName(), e);
                 throw new RuntimeException(e);
             }
 
-            if (result!=null && customFields != null) {
-                for (CustomField customField: customFields) {
-                    if (customField.isSupport(result.getClass())) {
-                        result = customField.getEndValue(component, source, result);
+            if (result!=null && prepareCustomFields != null) {
+                for (PrepareCustomField prepareCustomField: prepareCustomFields) {
+                    if (prepareCustomField.isSupport(result.getClass())) {
+                        if (isPrepare) {
+                            result = prepareCustomField.prepare(keyFieldRequest, result);
+                        } else {
+                            RemoteObject sourceObject = null;
+                            if (object instanceof RemoteObject) {
+                                sourceObject = (RemoteObject) object;
+                            }
+                            result = prepareCustomField.execute(request, keyFieldRequest, sourceObject);
+                        }
                         break;
                     }
                 }
