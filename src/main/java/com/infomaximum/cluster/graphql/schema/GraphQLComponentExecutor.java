@@ -159,11 +159,11 @@ public class GraphQLComponentExecutor {
                         if (isPrepare) {
                             result = prepareCustomField.prepare(keyFieldRequest, result);
                         } else {
-                            RemoteObject sourceObject = null;
-                            if (object instanceof RemoteObject) {
-                                sourceObject = (RemoteObject) object;
+                            RemoteObject remoteObjectSource = null;
+                            if (source instanceof RemoteObject) {
+                                remoteObjectSource = (RemoteObject) source;
                             }
-                            result = prepareCustomField.execute(request, keyFieldRequest, sourceObject);
+                            result = prepareCustomField.execute(request, keyFieldRequest, remoteObjectSource);
                         }
                         break;
                     }
