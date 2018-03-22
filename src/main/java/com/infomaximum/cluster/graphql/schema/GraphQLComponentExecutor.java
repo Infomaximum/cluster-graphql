@@ -147,8 +147,7 @@ public class GraphQLComponentExecutor {
             try {
                 result = method.invoke(object, methodParameters);
             } catch (InvocationTargetException te) {
-                Throwable cause = te.getTargetException();
-                throw new GraphQLExecutorDataFetcherException(cause);
+                throw new GraphQLExecutorDataFetcherException(te.getTargetException());
             } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
@@ -229,8 +228,24 @@ public class GraphQLComponentExecutor {
             }
 
             return value;
+        } else if (clazz == Long.class || clazz == long.class) {
+            if (inputValue instanceof String) {
+                return Long.parseLong((String) inputValue);
+            } else {
+                return ((Number)inputValue).longValue();
+            }
         } else if (clazz == Double.class || clazz == double.class) {
-            return ((Number)inputValue).doubleValue();
+            if (inputValue instanceof String) {
+                return Double.parseDouble((String) inputValue);
+            } else {
+                return ((Number)inputValue).doubleValue();
+            }
+        } else if (clazz == Integer.class || clazz == int.class) {
+            if (inputValue instanceof String) {
+                return Integer.parseInt((String) inputValue);
+            } else {
+                return ((Number)inputValue).intValue();
+            }
         } else {
             return inputValue;
         }
