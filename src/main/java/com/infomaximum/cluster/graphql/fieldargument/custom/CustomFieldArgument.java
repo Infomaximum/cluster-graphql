@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.graphql.customfieldargument;
+package com.infomaximum.cluster.graphql.fieldargument.custom;
 
 import com.infomaximum.cluster.graphql.struct.GRequest;
 

@@ -1,17 +1,21 @@
 package com.infomaximum.cluster.graphql;
 
 import com.infomaximum.cluster.core.remote.Remotes;
-import com.infomaximum.cluster.graphql.customfieldargument.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.builder.GraphQLExecutorBuilder;
+import com.infomaximum.cluster.graphql.fieldargument.FieldArgumentConverter;
+import com.infomaximum.cluster.graphql.fieldargument.custom.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQLImpl;
+import com.infomaximum.cluster.graphql.scalartype.GraphQLScalarTypeCustom;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.struct.Component;
+import graphql.Scalars;
+import graphql.schema.GraphQLScalarType;
 
 import java.lang.reflect.Constructor;
 import java.util.HashSet;
@@ -24,7 +28,8 @@ public class GraphQLEngine {
     private final Set<PrepareCustomField> prepareCustomFields;
     private final TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
-    private final Set<CustomFieldArgument> customArguments;
+    private final FieldArgumentConverter fieldArgumentConverter;
+
     private final Constructor customRemoteDataFetcher;
 
     private GraphQLEngine(
@@ -33,7 +38,7 @@ public class GraphQLEngine {
             Set<PrepareCustomField> prepareCustomFields,
             TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
 
-            Set<CustomFieldArgument> customArguments,
+            FieldArgumentConverter fieldArgumentConverter,
 
             Constructor customRemoteDataFetcher
             ){
@@ -43,7 +48,7 @@ public class GraphQLEngine {
         this.prepareCustomFields = prepareCustomFields;
         this.fieldConfigurationBuilder = fieldConfigurationBuilder;
 
-        this.customArguments = customArguments;
+        this.fieldArgumentConverter = fieldArgumentConverter;
 
         this.customRemoteDataFetcher = customRemoteDataFetcher;
     }
@@ -59,7 +64,7 @@ public class GraphQLEngine {
     }
 
     public RControllerGraphQLImpl buildRemoteControllerGraphQL(Component component) throws GraphQLExecutorException {
-        return new RControllerGraphQLImpl(component, customArguments, prepareCustomFields, fieldConfigurationBuilder);
+        return new RControllerGraphQLImpl(component, prepareCustomFields, fieldConfigurationBuilder, fieldArgumentConverter);
     }
 
     public static class Builder {
@@ -73,7 +78,18 @@ public class GraphQLEngine {
 
         private Constructor customRemoteDataFetcher;
 
-        public Builder() {}
+        private Set<GraphQLScalarType> scalarTypes;
+
+        public Builder() {
+            scalarTypes = new HashSet<GraphQLScalarType>();
+            scalarTypes.add(Scalars.GraphQLBoolean);
+            scalarTypes.add(Scalars.GraphQLInt);
+            scalarTypes.add(Scalars.GraphQLLong);
+            scalarTypes.add(Scalars.GraphQLBigDecimal);
+            scalarTypes.add(GraphQLScalarTypeCustom.GraphQLFloat);
+            scalarTypes.add(Scalars.GraphQLString);
+            scalarTypes.add(GraphQLScalarTypeCustom.GraphQLDate);
+        }
 
         public Builder withSDKPackage(Package sdkPackage) {
             this.sdkPackagePath = sdkPackage.getName();
@@ -125,7 +141,10 @@ public class GraphQLEngine {
                     prepareCustomFields,
                     fieldConfigurationBuilder,
 
-                    customArguments,
+                    new FieldArgumentConverter(
+                            scalarTypes,
+                            customArguments
+                    ),
 
                     customRemoteDataFetcher
             );

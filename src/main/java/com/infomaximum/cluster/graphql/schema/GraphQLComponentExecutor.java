@@ -5,9 +5,10 @@ import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.anotation.GraphQLName;
 import com.infomaximum.cluster.graphql.anotation.GraphQLSource;
 import com.infomaximum.cluster.graphql.anotation.GraphQLTypeInput;
-import com.infomaximum.cluster.graphql.customfieldargument.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
+import com.infomaximum.cluster.graphql.fieldargument.FieldArgumentConverter;
+import com.infomaximum.cluster.graphql.fieldargument.custom.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLBuilder;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
@@ -31,14 +32,14 @@ public class GraphQLComponentExecutor {
 
     private final Set<PrepareCustomField> prepareCustomFields;
 
-    private final Set<CustomFieldArgument> customArguments;
+    private final FieldArgumentConverter fieldArgumentConverter;
 
     private ArrayList<RGraphQLType> rTypeGraphQLs;
     private Map<String, Class> classSchemas;
 
-    public GraphQLComponentExecutor(Component component, Set<CustomFieldArgument> customArguments, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws GraphQLExecutorException {
+    public GraphQLComponentExecutor(Component component, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, FieldArgumentConverter fieldArgumentConverter) throws GraphQLExecutorException {
         this.component = component;
-        this.customArguments = customArguments;
+        this.fieldArgumentConverter = fieldArgumentConverter;
         this.prepareCustomFields = prepareCustomFields;
 
         TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(component)
@@ -49,8 +50,8 @@ public class GraphQLComponentExecutor {
 
     public GraphQLComponentExecutor(String packageName, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws GraphQLExecutorException {
         this.component = null;
-        this.customArguments = null;
         this.prepareCustomFields = prepareCustomFields;
+        this.fieldArgumentConverter = null;
 
         TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName)
                 .withCustomFields(prepareCustomFields)
@@ -126,8 +127,8 @@ public class GraphQLComponentExecutor {
                         argumentValue = request;
                     } else {
                         boolean isSuccessFindEnvironment = false;
-                        if (customArguments !=null) {
-                            for (CustomFieldArgument customArgument: customArguments) {
+                        if (fieldArgumentConverter != null) {
+                            for (CustomFieldArgument customArgument : fieldArgumentConverter.customArguments) {
                                 if (customArgument.isSupport(classType)) {
                                     argumentValue = customArgument.getValue(request, classType);
                                     isSuccessFindEnvironment = true;
@@ -245,7 +246,11 @@ public class GraphQLComponentExecutor {
                 return ((Number)inputValue).intValue();
             }
         } else if (clazz == Boolean.class || clazz == boolean.class) {
-            return (((Number)inputValue).intValue() == 1);
+            if (inputValue instanceof Boolean) {
+                return inputValue;
+            } else {
+                return (((Number) inputValue).intValue() == 1);
+            }
         } else {
             return inputValue;
         }

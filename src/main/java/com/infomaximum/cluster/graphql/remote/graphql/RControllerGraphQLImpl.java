@@ -1,9 +1,9 @@
 package com.infomaximum.cluster.graphql.remote.graphql;
 
 import com.infomaximum.cluster.core.remote.AbstractRController;
-import com.infomaximum.cluster.graphql.customfieldargument.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
+import com.infomaximum.cluster.graphql.fieldargument.FieldArgumentConverter;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
@@ -28,9 +28,9 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
 
     private final GraphQLComponentExecutor graphQLItemExecutor;
 
-    public RControllerGraphQLImpl(T component, Set<CustomFieldArgument> customEnvTypes, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws GraphQLExecutorException {
+    public RControllerGraphQLImpl(T component, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, FieldArgumentConverter fieldArgumentConverter) throws GraphQLExecutorException {
         super(component);
-        graphQLItemExecutor = new GraphQLComponentExecutor(component, customEnvTypes, prepareCustomFields, fieldConfigurationBuilder);
+        graphQLItemExecutor = new GraphQLComponentExecutor(component, prepareCustomFields, fieldConfigurationBuilder, fieldArgumentConverter);
     }
 
     @Override
