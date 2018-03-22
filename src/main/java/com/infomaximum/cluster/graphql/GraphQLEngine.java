@@ -59,7 +59,8 @@ public class GraphQLEngine {
                 sdkPackagePath,
                 customRemoteDataFetcher,
                 prepareCustomFields,
-                fieldConfigurationBuilder
+                fieldConfigurationBuilder,
+                fieldArgumentConverter
         ).build();
     }
 
@@ -107,12 +108,10 @@ public class GraphQLEngine {
             return this;
         }
 
-
         public Builder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder){
             this.fieldConfigurationBuilder = fieldConfigurationBuilder;
             return this;
         }
-
 
         public Builder withCustomArgument(CustomFieldArgument customArgument) {
             if (customArguments==null) customArguments = new HashSet<>();
@@ -121,7 +120,7 @@ public class GraphQLEngine {
         }
 
         public Builder withDataFetcher(Class<? extends ComponentDataFetcher> clazzComponentDataFetcher) throws GraphQLExecutorException {
-            Constructor constructor = null;
+            Constructor constructor;
             try {
                 constructor = clazzComponentDataFetcher.getConstructor(Remotes.class, GraphQLComponentExecutor.class, String.class, RGraphQLObjectTypeField.class);
             } catch (NoSuchMethodException e) {
@@ -133,6 +132,10 @@ public class GraphQLEngine {
             return this;
         }
 
+        public Builder withScalarType(GraphQLScalarType scalarType) {
+            scalarTypes.add(scalarType);
+            return this;
+        }
 
         public GraphQLEngine build() {
             return new GraphQLEngine(

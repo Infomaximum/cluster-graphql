@@ -48,10 +48,10 @@ public class GraphQLComponentExecutor {
         build(typeGraphQLBuilder);
     }
 
-    public GraphQLComponentExecutor(String packageName, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws GraphQLExecutorException {
+    public GraphQLComponentExecutor(String packageName, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, FieldArgumentConverter fieldArgumentConverter) throws GraphQLExecutorException {
         this.component = null;
         this.prepareCustomFields = prepareCustomFields;
-        this.fieldArgumentConverter = null;
+        this.fieldArgumentConverter = fieldArgumentConverter;
 
         TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName)
                 .withCustomFields(prepareCustomFields)
@@ -176,7 +176,7 @@ public class GraphQLComponentExecutor {
         }
     }
 
-    private static Object getValue(Type type, Object inputValue, boolean isPresent) throws ReflectiveOperationException {
+    private Object getValue(Type type, Object inputValue, boolean isPresent) throws ReflectiveOperationException {
         Class clazz;
         if (type instanceof ParameterizedType) {
             clazz = (Class) ((ParameterizedType) type).getRawType();

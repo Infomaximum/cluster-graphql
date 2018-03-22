@@ -4,9 +4,9 @@ import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutorImpl;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutorPrepareImpl;
+import com.infomaximum.cluster.graphql.fieldargument.FieldArgumentConverter;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
-import com.infomaximum.cluster.graphql.scalartype.GraphQLScalarTypeCustom;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.TypeSchema;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
@@ -24,7 +24,6 @@ import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.struct.out.union.RGraphQLTypeOutObjectUnion;
 import com.infomaximum.cluster.struct.Component;
 import graphql.GraphQL;
-import graphql.Scalars;
 import graphql.TypeResolutionEnvironment;
 import graphql.schema.*;
 
@@ -35,21 +34,24 @@ import static graphql.schema.GraphQLSchema.newSchema;
 
 public class GraphQLExecutorBuilder {
 
-    private Component component;
-    private String sdkPackagePath;
-    private Constructor customRemoteDataFetcher;
+    private final Component component;
+    private final String sdkPackagePath;
+    private final Constructor customRemoteDataFetcher;
 
-    private Set<PrepareCustomField> prepareCustomFields;
-    private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
+    private final Set<PrepareCustomField> prepareCustomFields;
+    private final TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
-    GraphQLComponentExecutor sdkGraphQLItemExecutor;
+    private GraphQLComponentExecutor sdkGraphQLItemExecutor;
+
+    private final FieldArgumentConverter fieldArgumentConverter;
 
     public GraphQLExecutorBuilder(
             Component component,
             String sdkPackagePath,
             Constructor customRemoteDataFetcher,
             Set<PrepareCustomField> prepareCustomFields,
-            TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder
+            TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
+            FieldArgumentConverter fieldArgumentConverter
     ) {
 
         this.component = component;
@@ -57,6 +59,7 @@ public class GraphQLExecutorBuilder {
         this.customRemoteDataFetcher = customRemoteDataFetcher;
         this.prepareCustomFields = prepareCustomFields;
         this.fieldConfigurationBuilder = fieldConfigurationBuilder;
+        this.fieldArgumentConverter = fieldArgumentConverter;
     }
 
     public GraphQLExecutor build() throws GraphQLExecutorException {
@@ -70,7 +73,9 @@ public class GraphQLExecutorBuilder {
 
             //Собираем встроенные
             if (sdkPackagePath!=null) {
-                sdkGraphQLItemExecutor = new GraphQLComponentExecutor(sdkPackagePath, prepareCustomFields, fieldConfigurationBuilder);
+                sdkGraphQLItemExecutor = new GraphQLComponentExecutor(
+                        sdkPackagePath, prepareCustomFields, fieldConfigurationBuilder, fieldArgumentConverter
+                );
                 for (RGraphQLType rGraphQLType : sdkGraphQLItemExecutor.getGraphQLTypes()) {
                     mergeGraphQLType(
                             buildGraphQLTypeEnums,
@@ -98,20 +103,13 @@ public class GraphQLExecutorBuilder {
 
             //В этот map добавляются все построенные типы
             Map<String, GraphQLType> graphQLTypes = new HashMap<String, GraphQLType>();
-            graphQLTypes.put("boolean", Scalars.GraphQLBoolean);
-            graphQLTypes.put("collection:boolean", new GraphQLList(Scalars.GraphQLBoolean));
-            graphQLTypes.put("int", Scalars.GraphQLInt);
-            graphQLTypes.put("collection:int", new GraphQLList(Scalars.GraphQLInt));
-            graphQLTypes.put("long", Scalars.GraphQLLong);
-            graphQLTypes.put("collection:long", new GraphQLList(Scalars.GraphQLLong));
-            graphQLTypes.put("bigdecimal", Scalars.GraphQLBigDecimal);
-            graphQLTypes.put("collection:bigdecimal", new GraphQLList(Scalars.GraphQLBigDecimal));
-            graphQLTypes.put("float", GraphQLScalarTypeCustom.GraphQLFloat);
-            graphQLTypes.put("collection:float", new GraphQLList(GraphQLScalarTypeCustom.GraphQLFloat));
-            graphQLTypes.put("string", Scalars.GraphQLString);
-            graphQLTypes.put("collection:string", new GraphQLList(Scalars.GraphQLString));
-            graphQLTypes.put("date", GraphQLScalarTypeCustom.GraphQLDate);
-            graphQLTypes.put("collection:date", new GraphQLList(GraphQLScalarTypeCustom.GraphQLDate));
+
+            //Добавляем все скаляры
+            for (GraphQLScalarType graphQLScalarType : fieldArgumentConverter.scalarTypes) {
+                String name = graphQLScalarType.getName().toLowerCase();
+                graphQLTypes.put(name, graphQLScalarType);
+                graphQLTypes.put("collection:" + name, new GraphQLList(graphQLScalarType));
+            }
 
             //Добавляем все enum
             for (RGraphQLTypeEnum rGraphQLEnumType: buildGraphQLTypeEnums) {
