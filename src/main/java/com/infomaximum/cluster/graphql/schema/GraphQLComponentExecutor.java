@@ -208,8 +208,6 @@ public class GraphQLComponentExecutor {
             }
             return collection;
         } else if (clazz.getAnnotation(GraphQLTypeInput.class) != null) {
-            if (inputValue == null) return null;
-
             Map<String, Object> fieldValues = (Map<String, Object>) inputValue;
 
             Constructor constructor = clazz.getConstructor();
@@ -246,6 +244,8 @@ public class GraphQLComponentExecutor {
             } else {
                 return ((Number)inputValue).intValue();
             }
+        } else if (clazz == Boolean.class || clazz == boolean.class) {
+            return (((Number)inputValue).intValue() == 1);
         } else {
             return inputValue;
         }
