@@ -25,6 +25,8 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -49,6 +51,13 @@ import java.util.concurrent.CompletableFuture;
  *
  */
 public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
+
+    private final static Logger log = LoggerFactory.getLogger(GraphQLExecutorPrepareImpl.class);
+
+    @FunctionalInterface
+    public interface Function<T extends Serializable> {
+        void prepare(T t);
+    }
 
     public static class PrepareDocumentRequest {
 
@@ -106,7 +115,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         return schema;
     }
 
-    public PrepareDocumentRequest prepare(ExecutionInput executionInput) throws GraphQLExecutorDataFetcherException {
+    public PrepareDocumentRequest prepare(ExecutionInput executionInput, Function fn) throws GraphQLExecutorDataFetcherException {
         InstrumentationState instrumentationState = instrumentation.createState();
 
         InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInput, schema, instrumentationState);
@@ -156,7 +165,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                         (GRequest) executionInput.getContext(),
                         parent,
                         node,
-                        executionInput.getVariables()
+                        executionInput.getVariables(),
+                        fn
                 );
             } else if (node instanceof FragmentDefinition) {
                 FragmentDefinition fragmentDefinition = (FragmentDefinition) node;
@@ -166,7 +176,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                         (GRequest) executionInput.getContext(),
                         parent,
                         node,
-                        executionInput.getVariables()
+                        executionInput.getVariables(),
+                        fn
                 );
             }
         }
@@ -218,7 +229,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
     private static String GRAPHQL_FIELD_SCHEME = "__schema";
     private static String GRAPHQL_FIELD_TYPENAME = "__typename";
 
-    private void prepareRequest(GRequest request, GraphQLType parent, Node node, Map<String, Object> variables) throws GraphQLExecutorDataFetcherException {
+    private void prepareRequest(GRequest request, GraphQLType parent, Node node, Map<String, Object> variables, Function fn) throws GraphQLExecutorDataFetcherException {
         if (GRAPHQL_TYPE.equals(parent.getName())) return;
         if (GRAPHQL_INPUT_VALUE.equals(parent.getName())) return;
 
@@ -253,23 +264,18 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                         rGraphQLObjectTypeField.name,
                         arguments
                 );
-//                for (Map.Entry<Long, Boolean> entry: prepareResourceRequest.entrySet()) {
-//                    prepareResource.merge(entry.getKey(), entry.getValue(), (val1, val2) -> val1 ? val1 : val2);
-//                }
+                fn.prepare(prepareRequest);
             }
-
-
-
 
             for (Node iNode: field.getChildren()) {
                 if (parent instanceof GraphQLObjectType) {
                     try {
-                        prepareRequest(request, ((GraphQLObjectType) parent).getFieldDefinition(field.getName()).getType(), iNode, variables);
+                        prepareRequest(request, ((GraphQLObjectType) parent).getFieldDefinition(field.getName()).getType(), iNode, variables, fn);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 } else if (parent instanceof GraphQLList) {
-                    prepareRequest(request, parent, iNode, variables);
+                    prepareRequest(request, parent, iNode, variables, fn);
                 } else {
                     throw new RuntimeException("not support parent type: " + parent);
                 }
@@ -278,25 +284,25 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             SelectionSet selectionSetNode = (SelectionSet) node;
             for (Node iNode: selectionSetNode.getChildren()) {
                 if (parent instanceof GraphQLList) {
-                    prepareRequest(request, ((GraphQLList)parent).getWrappedType(), iNode, variables);
+                    prepareRequest(request, ((GraphQLList) parent).getWrappedType(), iNode, variables, fn);
                 } else {
-                    prepareRequest(request, parent, iNode, variables);
+                    prepareRequest(request, parent, iNode, variables, fn);
                 }
             }
         } else if (node instanceof OperationDefinition) {
             OperationDefinition operationDefinitionNode = (OperationDefinition) node;
             for (Node iNode : operationDefinitionNode.getChildren()) {
-                prepareRequest(request, parent, iNode, variables);
+                prepareRequest(request, parent, iNode, variables, fn);
             }
         } else if (node instanceof FragmentDefinition) {
             FragmentDefinition fragmentDefinition = (FragmentDefinition) node;
             for (Node iNode : fragmentDefinition.getChildren()) {
-                prepareRequest(request, parent, iNode, variables);
+                prepareRequest(request, parent, iNode, variables, fn);
             }
         } else if (node instanceof InlineFragment) {
             InlineFragment inlineFragment = (InlineFragment) node;
             for (Node iNode : inlineFragment.getChildren()) {
-                prepareRequest(request, schema.getObjectType(inlineFragment.getTypeCondition().getName()), iNode, variables);
+                prepareRequest(request, schema.getObjectType(inlineFragment.getTypeCondition().getName()), iNode, variables, fn);
             }
         }
     }
