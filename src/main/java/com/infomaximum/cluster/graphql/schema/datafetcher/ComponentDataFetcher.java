@@ -107,14 +107,8 @@ public class ComponentDataFetcher implements DataFetcher {
                 VariableReference variableReference = (VariableReference) argument.getValue();
                 if (!externalNameVariables.contains(variableReference.getName())) continue;
             }
-
-
             result.put(entry.getKey(), (Serializable) entry.getValue());
         }
-
-        //TODO Необходима предварительная конвертация скаляров!!!
-//        fieldArgumentConverter
-
         return result;
     }
 

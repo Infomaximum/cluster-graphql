@@ -117,7 +117,6 @@ public class GraphQLComponentExecutor {
                     argumentValue = source;
                 } else if (graphQLAnnotation != null) {
                     String argumentName = graphQLAnnotation.value();
-//                    boolean isPresent = gRequestItem.receivedArguments.contains(argumentName);
                     boolean isPresent = arguments.containsKey(argumentName);
                     argumentValue = getValue(method.getGenericParameterTypes()[index], arguments.get(argumentName), isPresent);
                 } else {

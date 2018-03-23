@@ -224,11 +224,9 @@ public class TypeGraphQLBuilder {
 			boolean isNotNull = false;
 			for (Annotation annotation : parametersAnnotations[index]) {
 				if (annotation.annotationType() == GraphQLSource.class) {
-					//TODO Ulitin V. Как только избавимся от RemoteObjectOld сразу включить - этот контроль обязателен!!!
-//					if (
-//							!RemoteObject.class.isAssignableFrom(parameterTypes[index])) {
-//						throw new RuntimeException("Class does not implement interface RemoteObject: " + parameterTypes[index]);
-//					}
+					if (!RemoteObject.class.isAssignableFrom(parameterTypes[index])) {
+						throw new RuntimeException("Class does not implement interface RemoteObject: " + parameterTypes[index]);
+					}
 					aGraphQLTarget = (GraphQLSource) annotation;
 				} else if (annotation.annotationType() == GraphQLName.class) {
 					aGraphQLName = (GraphQLName) annotation;
