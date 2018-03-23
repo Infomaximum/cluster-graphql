@@ -4,9 +4,8 @@ import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutorImpl;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutorPrepareImpl;
-import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
+import com.infomaximum.cluster.graphql.executor.component.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
-import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObjectUnion;
@@ -38,28 +37,25 @@ public class GraphQLExecutorBuilder {
     private final String sdkPackagePath;
     private final Constructor customRemoteDataFetcher;
 
-    private final Set<PrepareCustomField> prepareCustomFields;
     private final TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
     private GraphQLComponentExecutor sdkGraphQLItemExecutor;
 
-    private final GraphQLSchemaType fieldArgumentConverter;
+    private final GraphQLSchemaType graphQLSchemaType;
 
     public GraphQLExecutorBuilder(
             Component component,
             String sdkPackagePath,
             Constructor customRemoteDataFetcher,
-            Set<PrepareCustomField> prepareCustomFields,
             TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
-            GraphQLSchemaType fieldArgumentConverter
+            GraphQLSchemaType graphQLSchemaType
     ) {
 
         this.component = component;
         this.sdkPackagePath = sdkPackagePath;
         this.customRemoteDataFetcher = customRemoteDataFetcher;
-        this.prepareCustomFields = prepareCustomFields;
         this.fieldConfigurationBuilder = fieldConfigurationBuilder;
-        this.fieldArgumentConverter = fieldArgumentConverter;
+        this.graphQLSchemaType = graphQLSchemaType;
     }
 
     public GraphQLExecutor build() throws GraphQLExecutorException {
@@ -74,7 +70,7 @@ public class GraphQLExecutorBuilder {
             //Собираем встроенные
             if (sdkPackagePath!=null) {
                 sdkGraphQLItemExecutor = new GraphQLComponentExecutor(
-                        sdkPackagePath, prepareCustomFields, fieldConfigurationBuilder, fieldArgumentConverter
+                        sdkPackagePath, fieldConfigurationBuilder, graphQLSchemaType
                 );
                 for (RGraphQLType rGraphQLType : sdkGraphQLItemExecutor.getGraphQLTypes()) {
                     mergeGraphQLType(
@@ -105,7 +101,7 @@ public class GraphQLExecutorBuilder {
             Map<String, GraphQLType> graphQLTypes = new HashMap<String, GraphQLType>();
 
             //Добавляем все скаляры
-            for (GraphQLTypeScalar graphQLScalarType : fieldArgumentConverter.typeScalars) {
+            for (GraphQLTypeScalar graphQLScalarType : graphQLSchemaType.typeScalars) {
                 String name = graphQLScalarType.getName();
                 graphQLTypes.put(name, graphQLScalarType.getGraphQLScalarType());
                 graphQLTypes.put("collection:" + name, new GraphQLList(graphQLScalarType.getGraphQLScalarType()));
@@ -178,10 +174,10 @@ public class GraphQLExecutorBuilder {
 
             GraphQL graphQL = GraphQL.newGraphQL(schema).build();
 
-            if (prepareCustomFields==null || prepareCustomFields.isEmpty()) {
+            if (graphQLSchemaType.prepareCustomFields == null || graphQLSchemaType.prepareCustomFields.isEmpty()) {
                 return new GraphQLExecutorImpl(schema, graphQL);
             } else {
-                return new GraphQLExecutorPrepareImpl(component, schema, graphQL, buildGraphQLTypeOutObjects);
+                return new GraphQLExecutorPrepareImpl(component, schema, graphQL, buildGraphQLTypeOutObjects, graphQLSchemaType);
             }
         } catch (Throwable throwable) {
             throw new GraphQLExecutorException(throwable);

@@ -4,8 +4,7 @@ import com.infomaximum.cluster.core.remote.AbstractRController;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
-import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
-import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
+import com.infomaximum.cluster.graphql.executor.component.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
@@ -17,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Set;
 
 
 /**
@@ -29,9 +27,9 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
 
     private final GraphQLComponentExecutor graphQLItemExecutor;
 
-    public RControllerGraphQLImpl(T component, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType fieldArgumentConverter) throws GraphQLExecutorException {
+    public RControllerGraphQLImpl(T component, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType fieldArgumentConverter) throws GraphQLExecutorException {
         super(component);
-        graphQLItemExecutor = new GraphQLComponentExecutor(component, prepareCustomFields, fieldConfigurationBuilder, fieldArgumentConverter);
+        graphQLItemExecutor = new GraphQLComponentExecutor(component, fieldConfigurationBuilder, fieldArgumentConverter);
     }
 
     @Override

@@ -2,9 +2,9 @@ package com.infomaximum.cluster.graphql.schema.datafetcher;
 
 import com.infomaximum.cluster.core.remote.Remotes;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
+import com.infomaximum.cluster.graphql.executor.component.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomFieldUtils;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
-import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.schema.datafetcher.utils.ExtResult;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.struct.GRequest;
@@ -70,7 +70,7 @@ public class ComponentDataFetcher implements DataFetcher {
                 if (rTypeGraphQLField.isPrepare) {
                     result = rControllerGraphQL.executePrepare(
                             gRequest,
-                            PrepareCustomFieldUtils.uniqueFieldKey(gRequest, environment),
+                            PrepareCustomFieldUtils.getKeyField(environment),
                             source
                     );
                 } else {

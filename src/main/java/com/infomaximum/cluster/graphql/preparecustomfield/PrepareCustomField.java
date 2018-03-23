@@ -13,8 +13,12 @@ public interface PrepareCustomField<T> {
 
     Type getEndType(Type genericType);
 
-    Serializable prepare(String keyFieldRequest, T value);
+    Serializable prepare(GRequest request, String keyField, T value);
+
+    void prepareException(GRequest request, Throwable throwable);
 
     //TODO Когда для построения иерархии перейдем на классы необходимо заменить на Serializable
-    Object execute(GRequest request, String keyFieldRequest, RemoteObject source) throws GraphQLExecutorDataFetcherException;
+    Object execute(GRequest request, String keyField, RemoteObject source) throws GraphQLExecutorDataFetcherException;
+
+    void requestCompleted(GRequest request, Throwable throwable);
 }

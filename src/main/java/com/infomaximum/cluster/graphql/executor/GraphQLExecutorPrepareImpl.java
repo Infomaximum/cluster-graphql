@@ -1,8 +1,10 @@
 package com.infomaximum.cluster.graphql.executor;
 
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
+import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomFieldUtils;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
+import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
@@ -64,6 +66,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
     private final Component component;
     private final GraphQLSchema schema;
     private final GraphQL graphQL;
+    private final GraphQLSchemaType graphQLSchemaType;
 
     private final Instrumentation instrumentation;
     private final PreparsedDocumentProvider preparsedDocumentProvider;
@@ -72,11 +75,12 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
 
     private final Map<String, MergeGraphQLTypeOutObject> remoteGraphQLTypeOutObjects;
 
-    public GraphQLExecutorPrepareImpl(Component component, GraphQLSchema schema, GraphQL graphQL, Map<String, MergeGraphQLTypeOutObject> remoteGraphQLTypeOutObjects) {
+    public GraphQLExecutorPrepareImpl(Component component, GraphQLSchema schema, GraphQL graphQL, Map<String, MergeGraphQLTypeOutObject> remoteGraphQLTypeOutObjects, GraphQLSchemaType graphQLSchemaType) {
         this.component = component;
         this.schema = schema;
         this.graphQL = graphQL;
         this.remoteGraphQLTypeOutObjects = remoteGraphQLTypeOutObjects;
+        this.graphQLSchemaType = graphQLSchemaType;
 
         try {
             Field fieldInstrumentation = graphQL.getClass().getDeclaredField("instrumentation");
@@ -188,10 +192,24 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         }
     }
 
+    public void prepareException(GRequest request, Throwable throwable) {
+        //Ulitin V. В будущем необходимо решить вопрос с удаленым вызовым
+        for (PrepareCustomField prepareCustomField : graphQLSchemaType.prepareCustomFields) {
+            prepareCustomField.prepareException(request, throwable);
+        }
+    }
 
     @Override
     public ExecutionResult execute(ExecutionInput executionInput) {
         return graphQL.execute(executionInput);
+    }
+
+    @Override
+    public void requestCompleted(GRequest request, Throwable ex) {
+        //Ulitin V. В будущем необходимо решить вопрос с удаленым вызовым
+        for (PrepareCustomField prepareCustomField : graphQLSchemaType.prepareCustomFields) {
+            prepareCustomField.requestCompleted(request, ex);
+        }
     }
 
     private static String GRAPHQL_TYPE = "__Type";
@@ -230,7 +248,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                 RControllerGraphQL rControllerGraphQL = component.getRemotes().getFromSSUuid(rGraphQLObjectTypeField.componentUuid, RControllerGraphQL.class);
                 Serializable prepareRequest = rControllerGraphQL.prepare(
                         request,
-                        PrepareCustomFieldUtils.uniqueFieldKey(request, field),
+                        PrepareCustomFieldUtils.getKeyField(field),
                         parent.getName(),
                         rGraphQLObjectTypeField.name,
                         arguments

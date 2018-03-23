@@ -38,7 +38,6 @@ public class TypeGraphQLBuilder {
 
 	private final GraphQLSchemaType graphQLSchemaType;
 
-	private Set<PrepareCustomField> prepareCustomFields;
 	private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
 	public TypeGraphQLBuilder(Component component, GraphQLSchemaType graphQLSchemaType) {
@@ -53,11 +52,6 @@ public class TypeGraphQLBuilder {
 		this.packageName = packageName;
 
 		this.graphQLSchemaType = graphQLSchemaType;
-	}
-
-	public TypeGraphQLBuilder withCustomFields(Set<PrepareCustomField> prepareCustomFields){
-		this.prepareCustomFields = prepareCustomFields;
-		return this;
 	}
 
 	public TypeGraphQLBuilder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder){
@@ -253,7 +247,7 @@ public class TypeGraphQLBuilder {
 			fieldConfiguration = fieldConfigurationBuilder.build(method);
 		}
 
-		boolean isPrepereField = isPrepareField(prepareCustomFields, method.getReturnType());
+		boolean isPrepereField = isPrepareField(graphQLSchemaType.prepareCustomFields, method.getReturnType());
 		if (isPrepereField) {//Prepere поля должны быть обязательно static
 			if (!Modifier.isStatic(method.getModifiers())) throw new GraphQLExecutorException("Method " + method.getName() + " in class " + method.getDeclaringClass().getName() + " is not static");
 		}
@@ -301,8 +295,8 @@ public class TypeGraphQLBuilder {
 		if (aGraphQLTypeOutUnion != null) return aGraphQLTypeOutUnion.value();
 
 		//Проверяем принадлежность к кастомным полям
-		if (prepareCustomFields != null) {
-			for (PrepareCustomField customField : prepareCustomFields) {
+		if (graphQLSchemaType.prepareCustomFields != null) {
+			for (PrepareCustomField customField : graphQLSchemaType.prepareCustomFields) {
 				if (customField.isSupport(rawType)) {
 					return getGraphQLType(customField.getEndType(type));
 				}

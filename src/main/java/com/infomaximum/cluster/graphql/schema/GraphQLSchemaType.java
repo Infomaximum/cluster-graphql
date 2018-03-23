@@ -3,6 +3,7 @@ package com.infomaximum.cluster.graphql.schema;
 import com.google.common.base.CaseFormat;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.fieldargument.custom.CustomFieldArgument;
+import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.schema.scalartype.GraphQLTypeScalar;
 
 import java.util.Collections;
@@ -14,9 +15,15 @@ public class GraphQLSchemaType {
     public final Set<GraphQLTypeScalar> typeScalars;
     private final HashMap<Class, GraphQLTypeScalar> hashTypeScalarByClass;
 
+    public final Set<PrepareCustomField> prepareCustomFields;
+
     public final Set<CustomFieldArgument> customArguments;
 
-    public GraphQLSchemaType(Set<GraphQLTypeScalar> scalarTypes, Set<CustomFieldArgument> customArguments) throws GraphQLExecutorException {
+    public GraphQLSchemaType(
+            Set<GraphQLTypeScalar> scalarTypes,
+            Set<PrepareCustomField> prepareCustomFields,
+            Set<CustomFieldArgument> customArguments
+    ) throws GraphQLExecutorException {
         this.typeScalars = Collections.unmodifiableSet(scalarTypes);
         this.hashTypeScalarByClass = new HashMap<>();
         for (GraphQLTypeScalar typeScalar : typeScalars) {
@@ -27,9 +34,10 @@ public class GraphQLSchemaType {
             }
         }
 
+        this.prepareCustomFields = Collections.unmodifiableSet(prepareCustomFields);
+
         this.customArguments = Collections.unmodifiableSet(customArguments);
     }
-
 
     public GraphQLTypeScalar getTypeScalarByClass(Class clazz) {
         return hashTypeScalarByClass.get(clazz);
@@ -38,4 +46,5 @@ public class GraphQLSchemaType {
     public static String convertToGraphQLName(String name) {
         return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name);
     }
+
 }
