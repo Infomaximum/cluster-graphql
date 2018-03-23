@@ -52,7 +52,7 @@ public class GraphQLScalarTypeCustom {
                     } else if (isNumber(input)) {
                         return toNumber(input).floatValue();
                     } else {
-                        return null;
+                        throw new RuntimeException("Not support type argument: " + input);
                     }
                 }
 
@@ -68,7 +68,7 @@ public class GraphQLScalarTypeCustom {
                     } else if (input instanceof FloatValue) {
                         return ((FloatValue) input).getValue().floatValue();
                     } else {
-                        return null;
+                        throw new RuntimeException("Not support type argument: " + input);
                     }
                 }
             }
@@ -96,7 +96,7 @@ public class GraphQLScalarTypeCustom {
                     if (input instanceof Number) {
                         return new Date(((Number) input).longValue());
                     } else {
-                        return null;
+                        throw new RuntimeException("Not support type argument: " + input);
                     }
                 }
 
@@ -105,7 +105,7 @@ public class GraphQLScalarTypeCustom {
                     if (input instanceof IntValue) {
                         return new Date(((IntValue) input).getValue().longValue());
                     } else {
-                        return null;
+                        throw new RuntimeException("Not support type argument: " + input);
                     }
                 }
             }
