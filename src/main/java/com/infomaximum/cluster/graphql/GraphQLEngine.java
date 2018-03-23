@@ -4,18 +4,17 @@ import com.infomaximum.cluster.core.remote.Remotes;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.builder.GraphQLExecutorBuilder;
-import com.infomaximum.cluster.graphql.fieldargument.FieldArgumentConverter;
 import com.infomaximum.cluster.graphql.fieldargument.custom.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQLImpl;
-import com.infomaximum.cluster.graphql.scalartype.GraphQLScalarTypeCustom;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
+import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
+import com.infomaximum.cluster.graphql.schema.scalartype.GraphQLScalarTypeCustom;
+import com.infomaximum.cluster.graphql.schema.scalartype.GraphQLTypeScalar;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.struct.Component;
-import graphql.Scalars;
-import graphql.schema.GraphQLScalarType;
 
 import java.lang.reflect.Constructor;
 import java.util.HashSet;
@@ -28,7 +27,7 @@ public class GraphQLEngine {
     private final Set<PrepareCustomField> prepareCustomFields;
     private final TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
-    private final FieldArgumentConverter fieldArgumentConverter;
+    private final GraphQLSchemaType fieldArgumentConverter;
 
     private final Constructor customRemoteDataFetcher;
 
@@ -38,7 +37,7 @@ public class GraphQLEngine {
             Set<PrepareCustomField> prepareCustomFields,
             TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
 
-            FieldArgumentConverter fieldArgumentConverter,
+            GraphQLSchemaType fieldArgumentConverter,
 
             Constructor customRemoteDataFetcher
             ){
@@ -79,17 +78,17 @@ public class GraphQLEngine {
 
         private Constructor customRemoteDataFetcher;
 
-        private Set<GraphQLScalarType> scalarTypes;
+        private Set<GraphQLTypeScalar> typeScalars;
 
         public Builder() {
-            scalarTypes = new HashSet<GraphQLScalarType>();
-            scalarTypes.add(Scalars.GraphQLBoolean);
-            scalarTypes.add(Scalars.GraphQLInt);
-            scalarTypes.add(Scalars.GraphQLLong);
-            scalarTypes.add(Scalars.GraphQLBigDecimal);
-            scalarTypes.add(GraphQLScalarTypeCustom.GraphQLFloat);
-            scalarTypes.add(Scalars.GraphQLString);
-            scalarTypes.add(GraphQLScalarTypeCustom.GraphQLDate);
+            typeScalars = new HashSet<GraphQLTypeScalar>();
+            typeScalars.add(GraphQLScalarTypeCustom.GraphQLBoolean);
+            typeScalars.add(GraphQLScalarTypeCustom.GraphQLString);
+            typeScalars.add(GraphQLScalarTypeCustom.GraphQLInt);
+            typeScalars.add(GraphQLScalarTypeCustom.GraphQLLong);
+            typeScalars.add(GraphQLScalarTypeCustom.GraphQLBigDecimal);
+            typeScalars.add(GraphQLScalarTypeCustom.GraphQLFloat);
+            typeScalars.add(GraphQLScalarTypeCustom.GraphQLDate);
         }
 
         public Builder withSDKPackage(Package sdkPackage) {
@@ -132,8 +131,8 @@ public class GraphQLEngine {
             return this;
         }
 
-        public Builder withScalarType(GraphQLScalarType scalarType) {
-            scalarTypes.add(scalarType);
+        public Builder withTypeScalar(GraphQLTypeScalar typeScalar) {
+            typeScalars.add(typeScalar);
             return this;
         }
 
@@ -144,8 +143,8 @@ public class GraphQLEngine {
                     prepareCustomFields,
                     fieldConfigurationBuilder,
 
-                    new FieldArgumentConverter(
-                            scalarTypes,
+                    new GraphQLSchemaType(
+                            typeScalars,
                             customArguments
                     ),
 

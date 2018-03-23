@@ -7,11 +7,11 @@ import com.infomaximum.cluster.graphql.anotation.GraphQLSource;
 import com.infomaximum.cluster.graphql.anotation.GraphQLTypeInput;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
-import com.infomaximum.cluster.graphql.fieldargument.FieldArgumentConverter;
 import com.infomaximum.cluster.graphql.fieldargument.custom.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLBuilder;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
+import com.infomaximum.cluster.graphql.schema.scalartype.GraphQLTypeScalar;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GRequest;
@@ -32,28 +32,28 @@ public class GraphQLComponentExecutor {
 
     private final Set<PrepareCustomField> prepareCustomFields;
 
-    private final FieldArgumentConverter fieldArgumentConverter;
+    private final GraphQLSchemaType graphQLSchemaType;
 
     private ArrayList<RGraphQLType> rTypeGraphQLs;
     private Map<String, Class> classSchemas;
 
-    public GraphQLComponentExecutor(Component component, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, FieldArgumentConverter fieldArgumentConverter) throws GraphQLExecutorException {
+    public GraphQLComponentExecutor(Component component, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType graphQLSchemaType) throws GraphQLExecutorException {
         this.component = component;
-        this.fieldArgumentConverter = fieldArgumentConverter;
+        this.graphQLSchemaType = graphQLSchemaType;
         this.prepareCustomFields = prepareCustomFields;
 
-        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(component)
+        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(component, graphQLSchemaType)
                 .withCustomFields(prepareCustomFields)
                 .withFieldConfigurationBuilder(fieldConfigurationBuilder);
         build(typeGraphQLBuilder);
     }
 
-    public GraphQLComponentExecutor(String packageName, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, FieldArgumentConverter fieldArgumentConverter) throws GraphQLExecutorException {
+    public GraphQLComponentExecutor(String packageName, Set<PrepareCustomField> prepareCustomFields, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType graphQLSchemaType) throws GraphQLExecutorException {
         this.component = null;
         this.prepareCustomFields = prepareCustomFields;
-        this.fieldArgumentConverter = fieldArgumentConverter;
+        this.graphQLSchemaType = graphQLSchemaType;
 
-        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName)
+        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName, graphQLSchemaType)
                 .withCustomFields(prepareCustomFields)
                 .withFieldConfigurationBuilder(fieldConfigurationBuilder);
         build(typeGraphQLBuilder);
@@ -127,8 +127,8 @@ public class GraphQLComponentExecutor {
                         argumentValue = request;
                     } else {
                         boolean isSuccessFindEnvironment = false;
-                        if (fieldArgumentConverter != null) {
-                            for (CustomFieldArgument customArgument : fieldArgumentConverter.customArguments) {
+                        if (graphQLSchemaType != null) {
+                            for (CustomFieldArgument customArgument : graphQLSchemaType.customArguments) {
                                 if (customArgument.isSupport(classType)) {
                                     argumentValue = customArgument.getValue(request, classType);
                                     isSuccessFindEnvironment = true;
@@ -190,6 +190,11 @@ public class GraphQLComponentExecutor {
             return null;
         }
 
+        //Проверяем на скалярный тип объекта
+        GraphQLTypeScalar graphQLTypeScalar = graphQLSchemaType.getTypeScalarByClass(clazz);
+        if (graphQLTypeScalar != null)
+            return graphQLTypeScalar.getGraphQLScalarType().getCoercing().parseValue(inputValue);
+
 
         if (clazz.isEnum()) {
             return Enum.valueOf(clazz, (String) inputValue);
@@ -227,32 +232,8 @@ public class GraphQLComponentExecutor {
             }
 
             return value;
-        } else if (clazz == Long.class || clazz == long.class) {
-            if (inputValue instanceof String) {
-                return Long.parseLong((String) inputValue);
-            } else {
-                return ((Number)inputValue).longValue();
-            }
-        } else if (clazz == Double.class || clazz == double.class) {
-            if (inputValue instanceof String) {
-                return Double.parseDouble((String) inputValue);
-            } else {
-                return ((Number)inputValue).doubleValue();
-            }
-        } else if (clazz == Integer.class || clazz == int.class) {
-            if (inputValue instanceof String) {
-                return Integer.parseInt((String) inputValue);
-            } else {
-                return ((Number)inputValue).intValue();
-            }
-        } else if (clazz == Boolean.class || clazz == boolean.class) {
-            if (inputValue instanceof Boolean) {
-                return inputValue;
-            } else {
-                return (((Number) inputValue).intValue() == 1);
-            }
         } else {
-            return inputValue;
+            throw new GraphQLExecutorException("Not support type: " + type);
         }
     }
 

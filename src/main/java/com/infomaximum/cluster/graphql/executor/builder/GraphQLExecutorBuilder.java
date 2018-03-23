@@ -4,16 +4,16 @@ import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutorImpl;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutorPrepareImpl;
-import com.infomaximum.cluster.graphql.fieldargument.FieldArgumentConverter;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
-import com.infomaximum.cluster.graphql.schema.TypeSchema;
+import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObjectUnion;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ExtPropertyDataFetcher;
+import com.infomaximum.cluster.graphql.schema.scalartype.GraphQLTypeScalar;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLTypeEnum;
 import com.infomaximum.cluster.graphql.schema.struct.in.RGraphQLInputObjectTypeField;
@@ -43,7 +43,7 @@ public class GraphQLExecutorBuilder {
 
     private GraphQLComponentExecutor sdkGraphQLItemExecutor;
 
-    private final FieldArgumentConverter fieldArgumentConverter;
+    private final GraphQLSchemaType fieldArgumentConverter;
 
     public GraphQLExecutorBuilder(
             Component component,
@@ -51,7 +51,7 @@ public class GraphQLExecutorBuilder {
             Constructor customRemoteDataFetcher,
             Set<PrepareCustomField> prepareCustomFields,
             TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
-            FieldArgumentConverter fieldArgumentConverter
+            GraphQLSchemaType fieldArgumentConverter
     ) {
 
         this.component = component;
@@ -105,10 +105,10 @@ public class GraphQLExecutorBuilder {
             Map<String, GraphQLType> graphQLTypes = new HashMap<String, GraphQLType>();
 
             //Добавляем все скаляры
-            for (GraphQLScalarType graphQLScalarType : fieldArgumentConverter.scalarTypes) {
-                String name = graphQLScalarType.getName().toLowerCase();
-                graphQLTypes.put(name, graphQLScalarType);
-                graphQLTypes.put("collection:" + name, new GraphQLList(graphQLScalarType));
+            for (GraphQLTypeScalar graphQLScalarType : fieldArgumentConverter.typeScalars) {
+                String name = graphQLScalarType.getName();
+                graphQLTypes.put(name, graphQLScalarType.getGraphQLScalarType());
+                graphQLTypes.put("collection:" + name, new GraphQLList(graphQLScalarType.getGraphQLScalarType()));
             }
 
             //Добавляем все enum
@@ -172,8 +172,8 @@ public class GraphQLExecutorBuilder {
 
 
             GraphQLSchema schema = newSchema()
-                    .query((GraphQLObjectType) graphQLTypes.get(TypeSchema.QUERY.getValue()))
-                    .mutation((GraphQLObjectType) graphQLTypes.get(TypeSchema.MUTATION.getValue()))
+                    .query((GraphQLObjectType) graphQLTypes.get("query"))
+                    .mutation((GraphQLObjectType) graphQLTypes.get("mutation"))
                     .build(new HashSet<GraphQLType>(graphQLTypes.values()));
 
             GraphQL graphQL = GraphQL.newGraphQL(schema).build();
