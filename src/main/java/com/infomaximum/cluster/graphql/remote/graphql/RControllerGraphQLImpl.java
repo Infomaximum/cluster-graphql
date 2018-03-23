@@ -1,6 +1,7 @@
 package com.infomaximum.cluster.graphql.remote.graphql;
 
 import com.infomaximum.cluster.core.remote.AbstractRController;
+import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
@@ -39,13 +40,20 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
     }
 
     @Override
-    public Serializable prepareExecute(GRequest request, String keyFieldRequest, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
-        return (Serializable) graphQLItemExecutor.execute(request, keyFieldRequest, null, graphQLTypeName, graphQLTypeFieldName, arguments, true);
+    public Serializable prepare(GRequest request, String keyFieldRequest, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+        return graphQLItemExecutor.prepare(request, keyFieldRequest, graphQLTypeName, graphQLTypeFieldName, arguments);
     }
 
     @Override
-    public Object execute(GRequest request, String requestItemKey, Object source, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
-        return graphQLItemExecutor.execute(request, requestItemKey, source, graphQLTypeName, graphQLTypeFieldName, arguments, false);
+    //TODO Когда для построения иерархии перейдем на классы необходимо Object заменить на Serializable
+    public Object executePrepare(GRequest request, String keyFieldRequest, RemoteObject source) throws GraphQLExecutorDataFetcherException {
+        return graphQLItemExecutor.executePrepare(request, keyFieldRequest, source);
+    }
+
+    @Override
+    //TODO Когда для построения иерархии перейдем на классы необходимо Object заменить на Serializable
+    public Object execute(GRequest request, RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+        return graphQLItemExecutor.execute(request, source, graphQLTypeName, graphQLTypeFieldName, arguments);
     }
 
 }

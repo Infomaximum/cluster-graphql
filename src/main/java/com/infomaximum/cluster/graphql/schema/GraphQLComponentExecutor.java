@@ -77,25 +77,40 @@ public class GraphQLComponentExecutor {
         return rTypeGraphQLs;
     }
 
-    public Object execute(GRequest request, String keyFieldRequest, Object source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments, boolean isPrepare) throws GraphQLExecutorDataFetcherException {
-        try {
-            Class classSchema = classSchemas.get(graphQLTypeName);
-            if (classSchema == null) throw new RuntimeException("not support scheme: " + classSchema);
-
-            Object object;
-            if (source == null) {
-                object = null;
-            } else {
-                if (classSchemas.get(graphQLTypeName).isAssignableFrom(source.getClass())) {
-                    object = source;
-                } else {
-                    Constructor constructor = classSchema.getDeclaredConstructor();
-                    constructor.setAccessible(true);
-                    object = constructor.newInstance();
-                }
+    public Serializable prepare(GRequest request, String keyFieldRequest, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+        Object prepareResultObject = executeGraphQLMethod(request, null, graphQLTypeName, graphQLTypeFieldName, arguments);
+        for (PrepareCustomField prepareCustomField : prepareCustomFields) {
+            if (prepareCustomField.isSupport(prepareResultObject.getClass())) {
+                return prepareCustomField.prepare(keyFieldRequest, prepareResultObject);
             }
+        }
+        throw new GraphQLExecutorException("Not found prepare handler for: " + prepareResultObject);
+    }
 
-            Method method = getMethod(classSchema, graphQLTypeFieldName);
+    //TODO Когда для построения иерархии перейдем на классы необходимо Object заменить на Serializable
+    public Object executePrepare(GRequest request, String keyFieldRequest, RemoteObject source) {
+        if (prepareCustomFields.size() != 1)
+            throw new RuntimeException("Not implemented support many prepareCustomFields");
+
+        PrepareCustomField prepareCustomField = prepareCustomFields.iterator().next();
+        return prepareCustomField.execute(request, keyFieldRequest, source);
+    }
+
+    //TODO Когда для построения иерархии перейдем на классы необходимо Object заменить на Serializable
+    public Object execute(GRequest request, RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+        return executeGraphQLMethod(request, source, graphQLTypeName, graphQLTypeFieldName, arguments);
+    }
+
+    private Object executeGraphQLMethod(GRequest request, Object source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+        try {
+            Method method = getMethod(graphQLTypeName, graphQLTypeFieldName);
+
+            Class classSchema = classSchemas.get(graphQLTypeName);
+
+            Object object = null;
+            if (source == null || classSchema.isAssignableFrom(source.getClass())) {
+                object = source;
+            }
 
             Class[] methodParameterTypes = method.getParameterTypes();
             Annotation[][] parametersAnnotations = method.getParameterAnnotations();
@@ -142,34 +157,13 @@ public class GraphQLComponentExecutor {
                 methodParameters[index] = argumentValue;
             }
 
-
-            Object result;
             try {
-                result = method.invoke(object, methodParameters);
+                return method.invoke(object, methodParameters);
             } catch (InvocationTargetException te) {
                 throw new GraphQLExecutorDataFetcherException(te.getTargetException());
             } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
-
-            if (result!=null && prepareCustomFields != null) {
-                for (PrepareCustomField prepareCustomField: prepareCustomFields) {
-                    if (prepareCustomField.isSupport(result.getClass())) {
-                        if (isPrepare) {
-                            result = prepareCustomField.prepare(keyFieldRequest, result);
-                        } else {
-                            RemoteObject remoteObjectSource = null;
-                            if (source instanceof RemoteObject) {
-                                remoteObjectSource = (RemoteObject) source;
-                            }
-                            result = prepareCustomField.execute(request, keyFieldRequest, remoteObjectSource);
-                        }
-                        break;
-                    }
-                }
-            }
-
-            return result;
         } catch (ReflectiveOperationException re) {
             throw new RuntimeException(re);
         }
@@ -237,20 +231,24 @@ public class GraphQLComponentExecutor {
     }
 
     //TODO Ulitin V. Если когда нибудь у нас появится перегрузка методов, переписать
-    private static Method getMethod(Class classSchema, String methodName) {
+    private Method getMethod(String graphQLTypeName, String graphQLTypeFieldName) {
+        Class classSchema = classSchemas.get(graphQLTypeName);
+        if (classSchema == null) throw new RuntimeException("not support scheme: " + classSchema);
+
         Method findMethod=null;
         for (Method method: classSchema.getMethods()) {
             if (method.isSynthetic()) continue; //Игнорируем генерируемые методы
-            if (method.getName().equals(methodName)) {
+            if (method.getName().equals(graphQLTypeFieldName)) {
                 if (findMethod==null) {
                     findMethod=method;
                 } else {
-                    throw new RuntimeException("not support overload method: " + methodName + " in class: " + classSchema);
+                    throw new RuntimeException("not support overload method: " + graphQLTypeFieldName + " in class: " + classSchema);
                 }
             }
         }
 
-        if (findMethod==null) throw new RuntimeException("not found method: " + methodName + " in " + classSchema);
+        if (findMethod == null)
+            throw new RuntimeException("not found method: " + graphQLTypeFieldName + " in " + classSchema);
         return findMethod;
     }
 }

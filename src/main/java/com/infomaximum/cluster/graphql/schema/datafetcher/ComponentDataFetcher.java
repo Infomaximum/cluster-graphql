@@ -1,6 +1,7 @@
 package com.infomaximum.cluster.graphql.schema.datafetcher;
 
 import com.infomaximum.cluster.core.remote.Remotes;
+import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomFieldUtils;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.schema.GraphQLComponentExecutor;
@@ -52,21 +53,33 @@ public class ComponentDataFetcher implements DataFetcher {
                 //У этого объекта нет родительской подсистемы - вызываем прямо тут
                 Object result = sdkGraphQLItemExecutor.execute(
                         gRequest,
-                        PrepareCustomFieldUtils.uniqueFieldKey(gRequest, environment),
                         environment.getSource(), graphQLTypeName, rTypeGraphQLField.name,
-                        getArguments(rTypeGraphQLField, environment, gRequest.getExternalVariables()),
-                        false
+                        getArguments(rTypeGraphQLField, environment, gRequest.getExternalVariables())
                 );
                 return ExtResult.get(result);
             } else {
                 //Этот объект принадлежит определенной подсистеме - необходимо вызывать метод удаленно именно не родительской подсистеме
                 RControllerGraphQL rControllerGraphQL = remotes.getFromSSUuid(rTypeGraphQLField.componentUuid, RControllerGraphQL.class);
-                Object result = rControllerGraphQL.execute(
-                        gRequest,
-                        PrepareCustomFieldUtils.uniqueFieldKey(gRequest, environment),
-                        environment.getSource(), graphQLTypeName, rTypeGraphQLField.name,
-                        getArguments(rTypeGraphQLField, environment, gRequest.getExternalVariables())
-                );
+
+                RemoteObject source = null;
+                if (environment.getSource() instanceof RemoteObject) {
+                    source = environment.getSource();
+                }
+
+                Object result;
+                if (rTypeGraphQLField.isPrepare) {
+                    result = rControllerGraphQL.executePrepare(
+                            gRequest,
+                            PrepareCustomFieldUtils.uniqueFieldKey(gRequest, environment),
+                            source
+                    );
+                } else {
+                    result = rControllerGraphQL.execute(
+                            gRequest,
+                            source, graphQLTypeName, rTypeGraphQLField.name,
+                            getArguments(rTypeGraphQLField, environment, gRequest.getExternalVariables())
+                    );
+                }
                 return ExtResult.get(result);
             }
         } catch (Throwable t) {

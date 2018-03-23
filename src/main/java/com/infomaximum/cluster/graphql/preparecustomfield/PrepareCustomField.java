@@ -15,5 +15,6 @@ public interface PrepareCustomField<T> {
 
     Serializable prepare(String keyFieldRequest, T value);
 
+    //TODO Когда для построения иерархии перейдем на классы необходимо заменить на Serializable
     Object execute(GRequest request, String keyFieldRequest, RemoteObject source) throws GraphQLExecutorDataFetcherException;
 }

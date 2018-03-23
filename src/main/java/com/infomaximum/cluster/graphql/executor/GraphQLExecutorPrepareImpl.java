@@ -228,7 +228,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
 
                 //Собираем какие ресурсы нам необходимы для лока
                 RControllerGraphQL rControllerGraphQL = component.getRemotes().getFromSSUuid(rGraphQLObjectTypeField.componentUuid, RControllerGraphQL.class);
-                Serializable prepareRequest = rControllerGraphQL.prepareExecute(
+                Serializable prepareRequest = rControllerGraphQL.prepare(
                         request,
                         PrepareCustomFieldUtils.uniqueFieldKey(request, field),
                         parent.getName(),
