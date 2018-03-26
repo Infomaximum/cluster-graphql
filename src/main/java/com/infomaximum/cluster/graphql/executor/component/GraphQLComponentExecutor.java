@@ -82,8 +82,7 @@ public class GraphQLComponentExecutor {
         throw new GraphQLExecutorException("Not found prepare handler for: " + prepareResultObject);
     }
 
-    //TODO Когда для построения иерархии перейдем на классы необходимо Object заменить на Serializable
-    public Object executePrepare(GRequest request, String keyField, RemoteObject source) {
+    public Serializable executePrepare(GRequest request, String keyField, RemoteObject source) {
         if (graphQLSchemaType.prepareCustomFields.size() != 1)
             throw new RuntimeException("Not implemented support many prepareCustomFields");
 
@@ -91,9 +90,8 @@ public class GraphQLComponentExecutor {
         return prepareCustomField.execute(request, keyField, source);
     }
 
-    //TODO Когда для построения иерархии перейдем на классы необходимо Object заменить на Serializable
-    public Object execute(GRequest request, RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
-        return executeGraphQLMethod(request, source, graphQLTypeName, graphQLTypeFieldName, arguments);
+    public Serializable execute(GRequest request, RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+        return (Serializable) executeGraphQLMethod(request, source, graphQLTypeName, graphQLTypeFieldName, arguments);
     }
 
     private Object executeGraphQLMethod(GRequest request, Object source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {

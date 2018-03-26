@@ -43,14 +43,12 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
     }
 
     @Override
-    //TODO Когда для построения иерархии перейдем на классы необходимо Object заменить на Serializable
-    public Object executePrepare(GRequest request, String keyFieldRequest, RemoteObject source) throws GraphQLExecutorDataFetcherException {
+    public Serializable executePrepare(GRequest request, String keyFieldRequest, RemoteObject source) throws GraphQLExecutorDataFetcherException {
         return graphQLItemExecutor.executePrepare(request, keyFieldRequest, source);
     }
 
     @Override
-    //TODO Когда для построения иерархии перейдем на классы необходимо Object заменить на Serializable
-    public Object execute(GRequest request, RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+    public Serializable execute(GRequest request, RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
         return graphQLItemExecutor.execute(request, source, graphQLTypeName, graphQLTypeFieldName, arguments);
     }
 

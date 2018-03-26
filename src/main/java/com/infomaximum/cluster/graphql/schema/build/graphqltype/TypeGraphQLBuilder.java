@@ -1,6 +1,8 @@
 package com.infomaximum.cluster.graphql.schema.build.graphqltype;
 
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
+import com.infomaximum.cluster.core.remote.utils.validatorremoteobject.RemoteObjectValidator;
+import com.infomaximum.cluster.core.remote.utils.validatorremoteobject.ResultValidator;
 import com.infomaximum.cluster.graphql.anotation.*;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
@@ -16,12 +18,14 @@ import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.struct.out.union.RGraphQLTypeOutObjectUnion;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.struct.Component;
+import com.infomaximum.cluster.utils.ReflectionUtils;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
@@ -90,6 +94,12 @@ public class TypeGraphQLBuilder {
 				for (Field field: classRTypeGraphQL.getDeclaredFields()) {
 					GraphQLField aGraphQLField = field.getAnnotation(GraphQLField.class);
 					if (aGraphQLField == null) continue;
+
+					//Проверяем, что возвращаемый тип сериализуем
+					if (!RemoteObject.class.isAssignableFrom(field.getDeclaringClass())
+							&& !Serializable.class.isAssignableFrom(field.getType())) {
+						throw new GraphQLExecutorException("Field: " + field.getName() + " in class " + classRTypeGraphQL.getName() + " return type is not serializable");
+					}
 
 					String typeField;
 					try {
@@ -196,6 +206,30 @@ public class TypeGraphQLBuilder {
 			if (!Modifier.isStatic(method.getModifiers())) throw new GraphQLExecutorException("Method " + method.getName() + " in class " + method.getDeclaringClass().getName() + " is not static");
 		}
 
+		PrepareCustomField prepareCustomField = checkPrepareField(graphQLSchemaType, method.getReturnType());
+		boolean isPrepereField = (prepareCustomField != null);
+
+		//Prepere поля должны быть обязательно static
+		if (isPrepereField) {
+			if (!Modifier.isStatic(method.getModifiers()))
+				throw new GraphQLExecutorException("Method " + method.getName() + " in class " + method.getDeclaringClass().getName() + " is not static");
+		}
+
+		//Проверяем, что возвращаемый тип сериализуем
+		if (isPrepereField) {
+			Type endType = prepareCustomField.getEndType(method.getGenericReturnType());
+//			RemoteObjectValidator.validation(endType);
+			Class endClazz = ReflectionUtils.getRawClass(endType);
+			if (!(endClazz instanceof Serializable)) {
+				throw new GraphQLExecutorException("Method: " + method.getName() + " in class " + method.getDeclaringClass().getName() + " return type is not serializable");
+			}
+		} else {
+			ResultValidator resultValidator = RemoteObjectValidator.validation(method.getGenericReturnType());
+			if (!resultValidator.isSuccess()) {
+				throw new GraphQLExecutorException("Method: " + method.getName() + " in class " + method.getDeclaringClass().getName() + " return type is not serializable. ResultValidator: " + resultValidator.toString());
+			}
+		}
+
 		String typeField;
 		try{
 			typeField = getGraphQLType(method.getGenericReturnType());
@@ -247,11 +281,6 @@ public class TypeGraphQLBuilder {
 			fieldConfiguration = fieldConfigurationBuilder.build(method);
 		}
 
-		boolean isPrepereField = isPrepareField(graphQLSchemaType.prepareCustomFields, method.getReturnType());
-		if (isPrepereField) {//Prepere поля должны быть обязательно static
-			if (!Modifier.isStatic(method.getModifiers())) throw new GraphQLExecutorException("Method " + method.getName() + " in class " + method.getDeclaringClass().getName() + " is not static");
-		}
-
 		return new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, isPrepereField, false, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
 	}
 
@@ -263,6 +292,12 @@ public class TypeGraphQLBuilder {
 			rawType = (Class) type;
 		} else {
 			throw new RuntimeException("Not support type: " + type);
+		}
+
+		//Проверяем на "иерархию" через классы
+		if (rawType == Class.class) {
+			Type iGenericType = ((ParameterizedType) type).getActualTypeArguments()[0];
+			return getGraphQLType(iGenericType);
 		}
 
 		//Проверяем на скалярный тип объекта
@@ -296,10 +331,9 @@ public class TypeGraphQLBuilder {
 
 		//Проверяем принадлежность к кастомным полям
 		if (graphQLSchemaType.prepareCustomFields != null) {
-			for (PrepareCustomField customField : graphQLSchemaType.prepareCustomFields) {
-				if (customField.isSupport(rawType)) {
-					return getGraphQLType(customField.getEndType(type));
-				}
+			PrepareCustomField prepareCustomField = checkPrepareField(graphQLSchemaType, rawType);
+			if (prepareCustomField != null) {
+				return getGraphQLType(prepareCustomField.getEndType(type));
 			}
 		}
 
@@ -317,16 +351,13 @@ public class TypeGraphQLBuilder {
 		return GraphQLSchemaType.convertToGraphQLName(nameMethod);
 	}
 
-
-	private static boolean isPrepareField(Set<PrepareCustomField> prepareCustomFields, Class clazz){
-		if (prepareCustomFields!=null) {
-			for (PrepareCustomField customField: prepareCustomFields) {
-				if (customField.isSupport(clazz)) {
-					return (customField instanceof PrepareCustomField);
-				}
+	private static PrepareCustomField checkPrepareField(GraphQLSchemaType graphQLSchemaType, Class clazz) {
+		if (graphQLSchemaType.prepareCustomFields != null) {
+			for (PrepareCustomField customField : graphQLSchemaType.prepareCustomFields) {
+				if (customField.isSupport(clazz)) return customField;
 			}
 		}
-		return false;
+		return null;
 	}
 
 	/**

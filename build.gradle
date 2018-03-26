@@ -1,5 +1,5 @@
 group 'com.infomaximum'
-version '0.0.23RC24'
+version '0.0.23RC25'
 
 repositories {
     mavenCentral()
@@ -40,7 +40,7 @@ configurations {
 }
 
 dependencies {
-    compile 'com.infomaximum:cluster:0.0.51'
+    compile 'com.infomaximum:cluster:0.0.55'
 //    compile project(':cluster')
 
     compile 'com.graphql-java:graphql-java:7.0'

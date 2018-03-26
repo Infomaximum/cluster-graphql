@@ -17,8 +17,7 @@ public interface PrepareCustomField<T> {
 
     void prepareException(GRequest request, Throwable throwable);
 
-    //TODO Когда для построения иерархии перейдем на классы необходимо заменить на Serializable
-    Object execute(GRequest request, String keyField, RemoteObject source) throws GraphQLExecutorDataFetcherException;
+    Serializable execute(GRequest request, String keyField, RemoteObject source) throws GraphQLExecutorDataFetcherException;
 
     void requestCompleted(GRequest request, Throwable throwable);
 }
