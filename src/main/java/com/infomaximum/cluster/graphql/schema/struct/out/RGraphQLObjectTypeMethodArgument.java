@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.graphql.schema.struct.output;
+package com.infomaximum.cluster.graphql.schema.struct.out;
 
 /**
  * Created by kris on 29.12.16.

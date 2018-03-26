@@ -1,6 +1,6 @@
 package com.infomaximum.cluster.graphql.schema.build;
 
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeField;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 
 import java.util.*;
 
