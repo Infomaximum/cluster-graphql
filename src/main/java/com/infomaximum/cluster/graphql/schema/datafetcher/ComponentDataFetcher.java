@@ -51,6 +51,9 @@ public class ComponentDataFetcher implements DataFetcher {
         try {
             if (rTypeGraphQLField.componentUuid==null) {
                 //У этого объекта нет родительской подсистемы - вызываем прямо тут
+
+                if (rTypeGraphQLField.isPrepare) throw new RuntimeException("Not implemented");
+
                 Object result = sdkGraphQLItemExecutor.execute(
                         gRequest,
                         environment.getSource(), graphQLTypeName, rTypeGraphQLField.name,
