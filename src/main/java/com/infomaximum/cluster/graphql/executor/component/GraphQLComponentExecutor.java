@@ -17,6 +17,9 @@ import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.struct.Component;
+import graphql.InvalidSyntaxError;
+import graphql.execution.AbortExecutionException;
+import graphql.language.SourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -187,6 +190,11 @@ public class GraphQLComponentExecutor {
         } else if (clazz == GOptional.class) {
             return new GOptional(getValue(((ParameterizedType) type).getActualTypeArguments()[0], inputValue, true), isPresent);
         } else if (Collection.class.isAssignableFrom(clazz)) {
+            if (!(inputValue instanceof Collections)) {
+                throw new AbortExecutionException(Collections.singleton(
+                        new InvalidSyntaxError(new SourceLocation(0, 0), "Invalid type")
+                ));
+            }
             Collection collection;
             if (clazz.isAssignableFrom(ArrayList.class)) {
                 collection = new ArrayList();
