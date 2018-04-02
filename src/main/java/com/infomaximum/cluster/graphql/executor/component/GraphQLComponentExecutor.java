@@ -1,19 +1,25 @@
-package com.infomaximum.cluster.graphql.schema;
+package com.infomaximum.cluster.graphql.executor.component;
 
 import com.google.common.base.Defaults;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.anotation.GraphQLName;
 import com.infomaximum.cluster.graphql.anotation.GraphQLSource;
 import com.infomaximum.cluster.graphql.anotation.GraphQLTypeInput;
-import com.infomaximum.cluster.graphql.customtype.CustomEnvType;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
+import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
+import com.infomaximum.cluster.graphql.fieldargument.custom.CustomFieldArgument;
+import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
+import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLBuilder;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
+import com.infomaximum.cluster.graphql.schema.scalartype.GraphQLTypeScalar;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GRequest;
-import com.infomaximum.cluster.graphql.struct.GRequestItem;
 import com.infomaximum.cluster.struct.Component;
+import graphql.InvalidSyntaxError;
+import graphql.execution.AbortExecutionException;
+import graphql.language.SourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,40 +32,32 @@ public class GraphQLComponentExecutor {
 
     private final static Logger log = LoggerFactory.getLogger(GraphQLComponentExecutor.class);
 
-    private final Set<CustomEnvType> customEnvTypes;
+    private final Component component;
+
+    private final GraphQLSchemaType graphQLSchemaType;
 
     private ArrayList<RGraphQLType> rTypeGraphQLs;
     private Map<String, Class> classSchemas;
 
-    public GraphQLComponentExecutor(Component component) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
-        this(component, null, null);
-    }
+    public GraphQLComponentExecutor(Component component, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType graphQLSchemaType) throws GraphQLExecutorException {
+        this.component = component;
+        this.graphQLSchemaType = graphQLSchemaType;
 
-    public GraphQLComponentExecutor(Component component, Set<CustomEnvType> customEnvTypes, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
-        this.customEnvTypes = customEnvTypes;
-
-        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(component);
-        if (fieldConfigurationBuilder != null) {
-            typeGraphQLBuilder.withFieldConfigurationBuilder(fieldConfigurationBuilder);
-        }
+        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(component, graphQLSchemaType)
+                .withFieldConfigurationBuilder(fieldConfigurationBuilder);
         build(typeGraphQLBuilder);
     }
 
-    public GraphQLComponentExecutor(String packageName) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
-        this(packageName, null);
-    }
+    public GraphQLComponentExecutor(String packageName, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType graphQLSchemaType) throws GraphQLExecutorException {
+        this.component = null;
+        this.graphQLSchemaType = graphQLSchemaType;
 
-    public GraphQLComponentExecutor(String packageName, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
-        this.customEnvTypes = null;
-
-        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName);
-        if (fieldConfigurationBuilder != null) {
-            typeGraphQLBuilder.withFieldConfigurationBuilder(fieldConfigurationBuilder);
-        }
+        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName, graphQLSchemaType)
+                .withFieldConfigurationBuilder(fieldConfigurationBuilder);
         build(typeGraphQLBuilder);
     }
 
-    private void build(TypeGraphQLBuilder typeGraphQLBuilder) throws ClassNotFoundException {
+    private void build(TypeGraphQLBuilder typeGraphQLBuilder) throws GraphQLExecutorException {
         Map<Class, RGraphQLType> rTypeGraphQLItems = typeGraphQLBuilder.build();
         rTypeGraphQLs = new ArrayList<>(typeGraphQLBuilder.build().values());
 
@@ -73,26 +71,42 @@ public class GraphQLComponentExecutor {
         }
     }
 
-    public ArrayList<RGraphQLType> getCustomTypes() {
+    public ArrayList<RGraphQLType> getGraphQLTypes() {
         return rTypeGraphQLs;
     }
 
-    public Object execute(GRequest request, GRequestItem gRequestItem, String graphQLTypeName, String graphQLTypeMethodName, Map<String, Object> arguments) throws GraphQLExecutorDataFetcherException {
-        try {
-            Class classSchema = classSchemas.get(graphQLTypeName);
-            if (classSchema == null) throw new RuntimeException("not support scheme: " + classSchema);
-
-            Object object;
-            if (classSchemas.get(graphQLTypeName).isAssignableFrom(gRequestItem.source.getClass())) {
-                object = gRequestItem.source;
-            } else {
-                Constructor constructor = classSchema.getDeclaredConstructor();
-                constructor.setAccessible(true);
-                object = constructor.newInstance();
+    public Serializable prepare(GRequest request, String keyField, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+        Object prepareResultObject = executeGraphQLMethod(request, null, graphQLTypeName, graphQLTypeFieldName, arguments);
+        for (PrepareCustomField prepareCustomField : graphQLSchemaType.prepareCustomFields) {
+            if (prepareCustomField.isSupport(prepareResultObject.getClass())) {
+                return prepareCustomField.prepare(request, keyField, prepareResultObject);
             }
+        }
+        throw new GraphQLExecutorException("Not found prepare handler for: " + prepareResultObject);
+    }
 
+    public Serializable executePrepare(GRequest request, String keyField, RemoteObject source) {
+        if (graphQLSchemaType.prepareCustomFields.size() != 1)
+            throw new RuntimeException("Not implemented support many prepareCustomFields");
 
-            Method method = getMethod(classSchema, graphQLTypeMethodName);
+        PrepareCustomField prepareCustomField = graphQLSchemaType.prepareCustomFields.iterator().next();
+        return prepareCustomField.execute(request, keyField, source);
+    }
+
+    public Serializable execute(GRequest request, RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+        return (Serializable) executeGraphQLMethod(request, source, graphQLTypeName, graphQLTypeFieldName, arguments);
+    }
+
+    private Object executeGraphQLMethod(GRequest request, Object source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+        try {
+            Method method = getMethod(graphQLTypeName, graphQLTypeFieldName);
+
+            Class classSchema = classSchemas.get(graphQLTypeName);
+
+            Object object = null;
+            if (source == null || classSchema.isAssignableFrom(source.getClass())) {
+                object = source;
+            }
 
             Class[] methodParameterTypes = method.getParameterTypes();
             Annotation[][] parametersAnnotations = method.getParameterAnnotations();
@@ -111,52 +125,47 @@ public class GraphQLComponentExecutor {
 
                 Object argumentValue = null;
                 if (aGraphQLTarget != null) {
-                    argumentValue = gRequestItem.source;
+                    argumentValue = source;
                 } else if (graphQLAnnotation != null) {
                     String argumentName = graphQLAnnotation.value();
-                    boolean isPresent = gRequestItem.receivedArguments.contains(argumentName);
+                    boolean isPresent = arguments.containsKey(argumentName);
                     argumentValue = getValue(method.getGenericParameterTypes()[index], arguments.get(argumentName), isPresent);
                 } else {
                     //возможно особый аргумент
                     Class classType = methodParameterTypes[index];
-                    if (classType == GRequest.class) {
+                    if (GRequest.class.isAssignableFrom(classType)) {
                         argumentValue = request;
                     } else {
                         boolean isSuccessFindEnvironment = false;
-                        if (customEnvTypes !=null) {
-                            for (CustomEnvType customEnvironment: customEnvTypes) {
-                                if (customEnvironment.isSupport(classType)) {
-                                    argumentValue = customEnvironment.getValue(request, classType);
+                        if (graphQLSchemaType != null) {
+                            for (CustomFieldArgument customArgument : graphQLSchemaType.customArguments) {
+                                if (customArgument.isSupport(classType)) {
+                                    argumentValue = customArgument.getValue(request, classType);
                                     isSuccessFindEnvironment = true;
                                 }
                             }
                         }
                         if (!isSuccessFindEnvironment) {
-                            throw new RuntimeException("Nothing argument index: " + index);
+                            throw new RuntimeException("Nothing argument type: " + classType + ", index: " + index + ", method: " + method + ", class: " + classSchema);
                         }
                     }
                 }
                 methodParameters[index] = argumentValue;
             }
 
-
-            Object result;
             try {
-                result = method.invoke(object, methodParameters);
+                return method.invoke(object, methodParameters);
             } catch (InvocationTargetException te) {
-                Throwable cause = te.getTargetException();
-                throw new GraphQLExecutorDataFetcherException(cause);
+                throw new GraphQLExecutorDataFetcherException(te.getTargetException());
             } catch (Throwable e) {
-                log.error("Ошибка вызова метода: {}, у объекта: {}", method.getName(), object.getClass().getName(), e);
                 throw new RuntimeException(e);
             }
-            return result;
         } catch (ReflectiveOperationException re) {
             throw new RuntimeException(re);
         }
     }
 
-    private static Object getValue(Type type, Object inputValue, boolean isPresent) throws ReflectiveOperationException {
+    private Object getValue(Type type, Object inputValue, boolean isPresent) throws ReflectiveOperationException {
         Class clazz;
         if (type instanceof ParameterizedType) {
             clazz = (Class) ((ParameterizedType) type).getRawType();
@@ -170,12 +179,22 @@ public class GraphQLComponentExecutor {
             return null;
         }
 
+        //Проверяем на скалярный тип объекта
+        GraphQLTypeScalar graphQLTypeScalar = graphQLSchemaType.getTypeScalarByClass(clazz);
+        if (graphQLTypeScalar != null)
+            return graphQLTypeScalar.getGraphQLScalarType().getCoercing().parseValue(inputValue);
+
 
         if (clazz.isEnum()) {
             return Enum.valueOf(clazz, (String) inputValue);
         } else if (clazz == GOptional.class) {
             return new GOptional(getValue(((ParameterizedType) type).getActualTypeArguments()[0], inputValue, true), isPresent);
         } else if (Collection.class.isAssignableFrom(clazz)) {
+            if (!(inputValue instanceof Collections)) {
+                throw new AbortExecutionException(Collections.singleton(
+                        new InvalidSyntaxError(new SourceLocation(0, 0), "Invalid type")
+                ));
+            }
             Collection collection;
             if (clazz.isAssignableFrom(ArrayList.class)) {
                 collection = new ArrayList();
@@ -189,8 +208,6 @@ public class GraphQLComponentExecutor {
             }
             return collection;
         } else if (clazz.getAnnotation(GraphQLTypeInput.class) != null) {
-            if (inputValue == null) return null;
-
             Map<String, Object> fieldValues = (Map<String, Object>) inputValue;
 
             Constructor constructor = clazz.getConstructor();
@@ -209,28 +226,30 @@ public class GraphQLComponentExecutor {
             }
 
             return value;
-        } else if (clazz == Double.class || clazz == double.class) {
-            return ((Number)inputValue).doubleValue();
         } else {
-            return inputValue;
+            throw new GraphQLExecutorException("Not support type: " + type);
         }
     }
 
     //TODO Ulitin V. Если когда нибудь у нас появится перегрузка методов, переписать
-    private static Method getMethod(Class classSchema, String methodName) {
+    private Method getMethod(String graphQLTypeName, String graphQLTypeFieldName) {
+        Class classSchema = classSchemas.get(graphQLTypeName);
+        if (classSchema == null) throw new RuntimeException("not support scheme: " + classSchema);
+
         Method findMethod=null;
         for (Method method: classSchema.getMethods()) {
             if (method.isSynthetic()) continue; //Игнорируем генерируемые методы
-            if (method.getName().equals(methodName)) {
+            if (method.getName().equals(graphQLTypeFieldName)) {
                 if (findMethod==null) {
                     findMethod=method;
                 } else {
-                    throw new RuntimeException("not support overload method: " + methodName + " in class: " + classSchema);
+                    throw new RuntimeException("not support overload method: " + graphQLTypeFieldName + " in class: " + classSchema);
                 }
             }
         }
 
-        if (findMethod==null) throw new RuntimeException("not found method: " + methodName + " in " + classSchema);
+        if (findMethod == null)
+            throw new RuntimeException("not found method: " + graphQLTypeFieldName + " in " + classSchema);
         return findMethod;
     }
 }

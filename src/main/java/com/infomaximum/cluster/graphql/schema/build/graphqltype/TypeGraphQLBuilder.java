@@ -1,23 +1,31 @@
 package com.infomaximum.cluster.graphql.schema.build.graphqltype;
 
-import com.google.common.base.CaseFormat;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
+import com.infomaximum.cluster.core.remote.utils.validatorremoteobject.RemoteObjectValidator;
+import com.infomaximum.cluster.core.remote.utils.validatorremoteobject.ResultValidator;
 import com.infomaximum.cluster.graphql.anotation.*;
+import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
+import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
+import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
+import com.infomaximum.cluster.graphql.schema.scalartype.GraphQLTypeScalar;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLTypeEnum;
-import com.infomaximum.cluster.graphql.schema.struct.input.RGraphQLInputObjectTypeField;
-import com.infomaximum.cluster.graphql.schema.struct.input.RGraphQLTypeInObject;
-import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObjectUnion;
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeField;
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeMethodArgument;
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLTypeOutObject;
+import com.infomaximum.cluster.graphql.schema.struct.in.RGraphQLInputObjectTypeField;
+import com.infomaximum.cluster.graphql.schema.struct.in.RGraphQLTypeInObject;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeMethodArgument;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObject;
+import com.infomaximum.cluster.graphql.schema.struct.out.union.RGraphQLTypeOutObjectUnion;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.struct.Component;
+import com.infomaximum.cluster.utils.ReflectionUtils;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
@@ -32,16 +40,22 @@ public class TypeGraphQLBuilder {
 	private final String componentUuid;
 	private final String packageName;
 
+	private final GraphQLSchemaType graphQLSchemaType;
+
 	private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
-	public TypeGraphQLBuilder(Component component) {
+	public TypeGraphQLBuilder(Component component, GraphQLSchemaType graphQLSchemaType) {
 		this.componentUuid = component.getInfo().getUuid();
 		this.packageName = componentUuid;
+
+		this.graphQLSchemaType = graphQLSchemaType;
 	}
 
-	public TypeGraphQLBuilder(String packageName) {
+	public TypeGraphQLBuilder(String packageName, GraphQLSchemaType graphQLSchemaType) {
 		this.componentUuid = null;
 		this.packageName = packageName;
+
+		this.graphQLSchemaType = graphQLSchemaType;
 	}
 
 	public TypeGraphQLBuilder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder){
@@ -49,7 +63,7 @@ public class TypeGraphQLBuilder {
 		return this;
 	}
 
-	public Map<Class, RGraphQLType> build() throws ClassNotFoundException {
+	public Map<Class, RGraphQLType> build() throws GraphQLExecutorException {
 		Reflections reflections = new Reflections(packageName);
 
 		Map<Class, RGraphQLType> rTypeGraphQLItems = new HashMap<Class, RGraphQLType>();
@@ -79,11 +93,17 @@ public class TypeGraphQLBuilder {
 				//Обрабытываем поля
 				for (Field field: classRTypeGraphQL.getDeclaredFields()) {
 					GraphQLField aGraphQLField = field.getAnnotation(GraphQLField.class);
-					if (aGraphQLField ==null) continue;
+					if (aGraphQLField == null) continue;
+
+					//Проверяем, что возвращаемый тип сериализуем
+					if (!RemoteObject.class.isAssignableFrom(field.getDeclaringClass())
+							&& !Serializable.class.isAssignableFrom(field.getType())) {
+						throw new GraphQLExecutorException("Field: " + field.getName() + " in class " + classRTypeGraphQL.getName() + " return type is not serializable");
+					}
 
 					String typeField;
 					try {
-						typeField = getGraphQLType(field.getType(), field.getGenericType());
+						typeField = getGraphQLType(field.getGenericType());
 					} catch (Exception e) {
 						throw new RuntimeException("Exception build type, class: " + classRTypeGraphQL.getName() + ", field: " + field.getName(), e);
 					}
@@ -91,14 +111,15 @@ public class TypeGraphQLBuilder {
 					String nameField = field.getName();
 
 					String externalNameField = aGraphQLField.value();
-					if (externalNameField.trim().length() == 0) externalNameField = getExternalName(nameField);
+					if (externalNameField.trim().length() == 0)
+						externalNameField = GraphQLSchemaType.convertToGraphQLName(nameField);
 
 					RemoteObject fieldConfiguration = null;
 					if (fieldConfigurationBuilder!=null) {
 						fieldConfiguration = fieldConfigurationBuilder.build(field);
 					}
 
-					fields.add(new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, true, typeField, nameField, externalNameField, aGraphQLField.deprecated()));
+					fields.add(new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, false, true, typeField, nameField, externalNameField, aGraphQLField.deprecated()));
 				}
 
 				//Обрабатываем методы
@@ -156,7 +177,7 @@ public class TypeGraphQLBuilder {
 
 				String typeField;
 				try{
-					typeField = getGraphQLType(field.getType(), field.getGenericType());
+					typeField = getGraphQLType(field.getGenericType());
 				} catch (Exception e) {
 					throw new RuntimeException("Exception build type, class: " + classRTypeGraphQL.getName() + ", field: " + field.getName(), e);
 				}
@@ -164,7 +185,8 @@ public class TypeGraphQLBuilder {
 				String nameField = field.getName();
 
 				String externalNameField = aGraphQLTypeInputField.value();
-				if (externalNameField.trim().length() == 0) externalNameField = getExternalName(nameField);
+				if (externalNameField.trim().length() == 0)
+					externalNameField = GraphQLSchemaType.convertToGraphQLName(nameField);
 
 				boolean isNotNull = (field.getAnnotation(NotNull.class) != null);
 
@@ -178,12 +200,41 @@ public class TypeGraphQLBuilder {
 		return rTypeGraphQLItems;
 	}
 
-	private RGraphQLObjectTypeField buildRGraphQLObjectTypeField(String componentUuid, Class classRTypeGraphQL, Method method, GraphQLField aGraphQLTypeMethod) throws ClassNotFoundException {
+	private RGraphQLObjectTypeField buildRGraphQLObjectTypeField(String componentUuid, Class classRTypeGraphQL, Method method, GraphQLField aGraphQLTypeMethod) throws GraphQLExecutorException {
+		//Если родительский класс не реализовывает интерфейс RemoteObject, то все его поля могут быть только статическими
+		if (!RemoteObject.class.isAssignableFrom(method.getDeclaringClass())) {
+			if (!Modifier.isStatic(method.getModifiers())) throw new GraphQLExecutorException("Method " + method.getName() + " in class " + method.getDeclaringClass().getName() + " is not static");
+		}
+
+		PrepareCustomField prepareCustomField = checkPrepareField(graphQLSchemaType, method.getReturnType());
+		boolean isPrepereField = (prepareCustomField != null);
+
+		//Prepere поля должны быть обязательно static
+		if (isPrepereField) {
+			if (!Modifier.isStatic(method.getModifiers()))
+				throw new GraphQLExecutorException("Method " + method.getName() + " in class " + method.getDeclaringClass().getName() + " is not static");
+		}
+
+		//Проверяем, что возвращаемый тип сериализуем
+		if (isPrepereField) {
+			Type endType = prepareCustomField.getEndType(method.getGenericReturnType());
+//			RemoteObjectValidator.validation(endType);
+			Class endClazz = ReflectionUtils.getRawClass(endType);
+			if (!(endClazz instanceof Serializable)) {
+				throw new GraphQLExecutorException("Method: " + method.getName() + " in class " + method.getDeclaringClass().getName() + " return type is not serializable");
+			}
+		} else {
+			ResultValidator resultValidator = RemoteObjectValidator.validation(method.getGenericReturnType());
+			if (!resultValidator.isSuccess()) {
+				throw new GraphQLExecutorException("Method: " + method.getName() + " in class " + method.getDeclaringClass().getName() + " return type is not serializable. ResultValidator: " + resultValidator.toString());
+			}
+		}
+
 		String typeField;
 		try{
-			typeField = getGraphQLType(method.getReturnType(), method.getGenericReturnType());
+			typeField = getGraphQLType(method.getGenericReturnType());
 		} catch (Exception e) {
-			throw new RuntimeException("Exception build type, class: " + classRTypeGraphQL.getName() + ", method: " + method.getName(), e);
+			throw new GraphQLExecutorException("Exception build type, class: " + classRTypeGraphQL.getName() + ", method: " + method.getName(), e);
 		}
 
 		String nameMethod = method.getName();
@@ -201,11 +252,9 @@ public class TypeGraphQLBuilder {
 			boolean isNotNull = false;
 			for (Annotation annotation : parametersAnnotations[index]) {
 				if (annotation.annotationType() == GraphQLSource.class) {
-					//TODO Ulitin V. Как только избавимся от RemoteObjectOld сразу включить - этот контроль обязателен!!!
-//					if (
-//							!RemoteObject.class.isAssignableFrom(parameterTypes[index])) {
-//						throw new RuntimeException("Class does not implement interface RemoteObject: " + parameterTypes[index]);
-//					}
+					if (!RemoteObject.class.isAssignableFrom(parameterTypes[index])) {
+						throw new RuntimeException("Class does not implement interface RemoteObject: " + parameterTypes[index]);
+					}
 					aGraphQLTarget = (GraphQLSource) annotation;
 				} else if (annotation.annotationType() == GraphQLName.class) {
 					aGraphQLName = (GraphQLName) annotation;
@@ -218,7 +267,7 @@ public class TypeGraphQLBuilder {
 
 			String typeArgument;
 			try{
-				typeArgument = getGraphQLType(parameterTypes[index], method.getGenericParameterTypes()[index]);
+				typeArgument = getGraphQLType(method.getGenericParameterTypes()[index]);
 			} catch (Exception e) {
 				throw new RuntimeException("Exception build type, class: " + classRTypeGraphQL.getName() + ", method: " + method.getName(), e);
 			}
@@ -232,8 +281,65 @@ public class TypeGraphQLBuilder {
 			fieldConfiguration = fieldConfigurationBuilder.build(method);
 		}
 
-		return new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, false, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
+		return new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, isPrepereField, false, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
 	}
+
+	private String getGraphQLType(Type type) throws ClassNotFoundException {
+		Class rawType;
+		if (type instanceof ParameterizedTypeImpl) {
+			rawType = ((ParameterizedTypeImpl) type).getRawType();
+		} else if (type instanceof Class){
+			rawType = (Class) type;
+		} else {
+			throw new RuntimeException("Not support type: " + type);
+		}
+
+		//Проверяем на "иерархию" через классы
+		if (rawType == Class.class) {
+			Type iGenericType = ((ParameterizedType) type).getActualTypeArguments()[0];
+			return getGraphQLType(iGenericType);
+		}
+
+		//Проверяем на скалярный тип объекта
+		GraphQLTypeScalar graphQLTypeScalar = graphQLSchemaType.getTypeScalarByClass(rawType);
+		if (graphQLTypeScalar != null) return graphQLTypeScalar.getName();
+
+		//Проверяем на коллекцию
+		if (rawType == ArrayList.class || rawType == HashSet.class) {
+			String genericTypeName = ((ParameterizedType) type).getActualTypeArguments()[0].getTypeName();
+			Class clazzGenericType = Class.forName(genericTypeName, true, Thread.currentThread().getContextClassLoader());
+			return "collection:" + getGraphQLType(clazzGenericType);
+		}
+
+		//Проверяем на GOptional
+		if (rawType == GOptional.class) {
+			Type iGenericType = ((ParameterizedType) type).getActualTypeArguments()[0];
+			return getGraphQLType(iGenericType);
+		}
+
+		//Проверяем на input объект
+		GraphQLTypeInput aGraphQLTypeInput = (GraphQLTypeInput) rawType.getAnnotation(GraphQLTypeInput.class);
+		if (aGraphQLTypeInput != null) return aGraphQLTypeInput.value();
+
+		//Проверяем на out объект
+		GraphQLTypeOutObject aGraphQLType = (GraphQLTypeOutObject) rawType.getAnnotation(GraphQLTypeOutObject.class);
+		if (aGraphQLType != null) return aGraphQLType.value();
+
+		//Проверяем на union объект
+		GraphQLTypeOutObjectUnion aGraphQLTypeOutUnion = (GraphQLTypeOutObjectUnion) rawType.getAnnotation(GraphQLTypeOutObjectUnion.class);
+		if (aGraphQLTypeOutUnion != null) return aGraphQLTypeOutUnion.value();
+
+		//Проверяем принадлежность к кастомным полям
+		if (graphQLSchemaType.prepareCustomFields != null) {
+			PrepareCustomField prepareCustomField = checkPrepareField(graphQLSchemaType, rawType);
+			if (prepareCustomField != null) {
+				return getGraphQLType(prepareCustomField.getEndType(type));
+			}
+		}
+
+		throw new RuntimeException("Not support type: " + type);
+	}
+
 
 	private static String getExternalName(Method method) {
 		String nameMethod = method.getName();
@@ -242,66 +348,16 @@ public class TypeGraphQLBuilder {
 		} else if (nameMethod.startsWith("is")) {
 			nameMethod = nameMethod.substring(2);
 		}
-		return getExternalName(nameMethod);
+		return GraphQLSchemaType.convertToGraphQLName(nameMethod);
 	}
 
-	private static String getExternalName(String name) {
-		return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name);
-	}
-
-	private static String getGraphQLType(Class clazz, Type genericType) throws ClassNotFoundException {
-		if (clazz == boolean.class || clazz == Boolean.class) {
-			return "boolean";
-		} else if (clazz == long.class || clazz == Long.class) {
-			return "long";
-		} else if (clazz == int.class || clazz == Integer.class) {
-			return "int";
-		} else if (clazz == double.class || clazz == Double.class) {
-			return "bigdecimal";
-		} else if (clazz == float.class || clazz == Float.class) {
-			return "float";
-		} else if (clazz == String.class) {
-			return "string";
-		} else if (clazz == Date.class) {
-			return "date";
-		} else if (clazz == ArrayList.class || clazz == HashSet.class) {
-			String genericTypeName = ((ParameterizedType) genericType).getActualTypeArguments()[0].getTypeName();
-			Class clazzGenericType = Class.forName(genericTypeName, true, Thread.currentThread().getContextClassLoader());
-			return "collection:" + getGraphQLType(clazzGenericType, null);
-		} else if (clazz == GOptional.class) {
-			Type iGenericType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
-			if (iGenericType instanceof ParameterizedType) {
-				ParameterizedType iPGenericType = (ParameterizedType) iGenericType;
-				return getGraphQLType((Class) iPGenericType.getRawType(), iPGenericType);
-			} else {
-				return getGraphQLType((Class) iGenericType, null);
+	private static PrepareCustomField checkPrepareField(GraphQLSchemaType graphQLSchemaType, Class clazz) {
+		if (graphQLSchemaType.prepareCustomFields != null) {
+			for (PrepareCustomField customField : graphQLSchemaType.prepareCustomFields) {
+				if (customField.isSupport(clazz)) return customField;
 			}
-		} else {
-			//Возможно это сложный GraphQL объект
-
-			//Возможно обертка
-			GraphQLTypeWrapper aGraphQLTypeWrapper = (GraphQLTypeWrapper) clazz.getAnnotation(GraphQLTypeWrapper.class);
-			if (aGraphQLTypeWrapper != null) {
-				Type iGenericType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
-				if (iGenericType instanceof ParameterizedType) {
-					ParameterizedType iPGenericType = (ParameterizedType) iGenericType;
-					return getGraphQLType((Class) iPGenericType.getRawType(), iPGenericType);
-				} else {
-					return getGraphQLType((Class) iGenericType, null);
-				}
-			}
-
-			GraphQLTypeInput aGraphQLTypeInput = (GraphQLTypeInput) clazz.getAnnotation(GraphQLTypeInput.class);
-			if (aGraphQLTypeInput != null) return aGraphQLTypeInput.value();
-
-			GraphQLTypeOutObject aGraphQLType = (GraphQLTypeOutObject) clazz.getAnnotation(GraphQLTypeOutObject.class);
-			if (aGraphQLType != null) return aGraphQLType.value();
-
-			GraphQLTypeOutObjectUnion aGraphQLTypeOutUnion = (GraphQLTypeOutObjectUnion) clazz.getAnnotation(GraphQLTypeOutObjectUnion.class);
-			if (aGraphQLTypeOutUnion != null) return aGraphQLTypeOutUnion.value();
-
-			throw new RuntimeException("Not support type: " + clazz);
 		}
+		return null;
 	}
 
 	/**

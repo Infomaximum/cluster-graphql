@@ -13,6 +13,7 @@ public class SingleRequestTest extends BaseTest {
         Assert.assertTrue(true);
 
         ExecutionResult executionResult = grapqhlExecutor("{value}");
+        Assert.assertTrue(executionResult.getErrors().isEmpty());
 
         Assert.assertEquals(0, ((Map)executionResult.getData()).get("value"));
     }

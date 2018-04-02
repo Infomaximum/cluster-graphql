@@ -13,7 +13,7 @@ public abstract class RGraphQLType implements RemoteObject {
     private final String name;
 
     public RGraphQLType(String name) {
-        this.name=name;
+        this.name = name;
     }
 
     public String getName() {
@@ -23,7 +23,7 @@ public abstract class RGraphQLType implements RemoteObject {
 //    @Override
 //    public JSONObject serialize(Component component) {
 //        JSONObject out = new JSONObject();
-//        out.put("name", name);
+//        out.put(FIELD_NAME, name);
 //
 //        serializeNative(component, out);
 //
@@ -31,9 +31,9 @@ public abstract class RGraphQLType implements RemoteObject {
 //    }
 //
 //    public abstract void serializeNative(Component component, JSONObject out);
-
+//
 //    public static RGraphQLType deserialize(Component component, Class classType, JSONObject json) throws ReflectiveOperationException {
-//        String name = json.getAsString("name");
+//        String name = json.getAsString(FIELD_NAME);
 //
 //        RGraphQLType rGraphQLType;
 //        if (classType.isAssignableFrom(RGraphQLTypeEnum.class)) {
@@ -76,7 +76,7 @@ public abstract class RGraphQLType implements RemoteObject {
 //
 //        return rGraphQLType;
 //    }
-
+//
 //    private static Set<RGraphQLObjectTypeField> deserializeField(Component component, JSONArray jFields) throws ReflectiveOperationException{
 //        Set<RGraphQLObjectTypeField> fields = new HashSet<>();
 //        for (Object oField : jFields) {
@@ -110,6 +110,7 @@ public abstract class RGraphQLType implements RemoteObject {
 //                    jField.getAsString(FIELD_COMPONENT_UUID),
 //                    fieldConfiguration,
 //                    (boolean) jField.get("is_field"),
+//                    (boolean) jField.get(RGraphQLObjectTypeField.FIELD_QUERY_POOL),
 //                    jField.getAsString("type"),
 //                    jField.getAsString("name"),
 //                    jField.getAsString("ext_name"),
@@ -121,7 +122,7 @@ public abstract class RGraphQLType implements RemoteObject {
 //
 //        return fields;
 //    }
-
+//
 //    public static JSONArray serializeFields(Component component, Set<RGraphQLObjectTypeField> fields) {
 //        JSONArray outFields =new JSONArray();
 //        for (RGraphQLObjectTypeField field: fields) {
@@ -136,6 +137,7 @@ public abstract class RGraphQLType implements RemoteObject {
 //                outField.put("configuration", outFieldConfiguration);
 //            }
 //            outField.put("is_field", field.isField);
+//            outField.put(RGraphQLObjectTypeField.FIELD_QUERY_POOL, field.queryPool);
 //            outField.put("type", field.type);
 //            outField.put("name", field.name);
 //            outField.put("ext_name", field.externalName);

@@ -3,15 +3,19 @@ package com.infomaximum.cluster.graphql.struct;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.struct.Component;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by kris on 23.01.17.
  */
 public class GRequest<C extends RemoteObject> implements RemoteObject {
 
-    public static class UploadFile {
+    private static final AtomicLong uuids = new AtomicLong();
+
+    public static class UploadFile implements RemoteObject {
         public final String fieldname;
         public final String filename;
         public final URI uri;
@@ -23,26 +27,34 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
         }
     }
 
+    private final String uuid;
+
     private final String frontendComponentKey;
     private final String remoteAddress;
     private final C requestContext;
 
-    private Set<String> externalNameVariables;
-    private List<UploadFile> uploadFiles;
+    private HashMap<String, Serializable> externalVariables;
+    private ArrayList<UploadFile> uploadFiles;
 
     public GRequest(
             String frontendComponentKey,
             String remoteAddress,
             C requestContext,
-            Set<String> externalNameVariables,
-            List<UploadFile> uploadFiles
+            HashMap<String, Serializable> externalVariables,
+            ArrayList<UploadFile> uploadFiles
     ) {
+        this.uuid = new StringBuilder().append(frontendComponentKey).append(':').append(uuids.incrementAndGet()).toString();
+
         this.frontendComponentKey = frontendComponentKey;
         this.remoteAddress = remoteAddress;
         this.requestContext = requestContext;
 
-        this.externalNameVariables = externalNameVariables;
-        this.uploadFiles = (uploadFiles==null)?null:Collections.unmodifiableList(uploadFiles);
+        this.externalVariables = externalVariables;
+        this.uploadFiles = uploadFiles;
+    }
+
+    public String getUuid() {
+        return uuid;
     }
 
     public String getFrontendComponentKey() {
@@ -57,11 +69,11 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
         return requestContext;
     }
 
-    public Set<String> getExternalNameVariables() {
-        return externalNameVariables;
+    public HashMap<String, Serializable> getExternalVariables() {
+        return externalVariables;
     }
 
-    public List<UploadFile> getUploadFiles() {
+    public ArrayList<UploadFile> getUploadFiles() {
         return uploadFiles;
     }
 

@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.graphql.schema.struct.input;
+package com.infomaximum.cluster.graphql.schema.struct.in;
 
 /**
  * Created by kris on 20.07.17.
