@@ -190,7 +190,7 @@ public class GraphQLComponentExecutor {
         } else if (clazz == GOptional.class) {
             return new GOptional(getValue(((ParameterizedType) type).getActualTypeArguments()[0], inputValue, true), isPresent);
         } else if (Collection.class.isAssignableFrom(clazz)) {
-            if (!(inputValue instanceof Collections)) {
+            if (!Collection.class.isAssignableFrom(inputValue.getClass())) {
                 throw new AbortExecutionException(Collections.singleton(
                         new InvalidSyntaxError(new SourceLocation(0, 0), "Invalid type")
                 ));
