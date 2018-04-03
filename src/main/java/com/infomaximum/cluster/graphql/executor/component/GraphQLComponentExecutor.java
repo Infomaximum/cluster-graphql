@@ -7,6 +7,7 @@ import com.infomaximum.cluster.graphql.anotation.GraphQLSource;
 import com.infomaximum.cluster.graphql.anotation.GraphQLTypeInput;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
+import com.infomaximum.cluster.graphql.exception.GraphQLExecutorInvalidSyntaxException;
 import com.infomaximum.cluster.graphql.fieldargument.custom.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
@@ -17,9 +18,6 @@ import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.struct.Component;
-import graphql.InvalidSyntaxError;
-import graphql.execution.AbortExecutionException;
-import graphql.language.SourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -191,9 +189,7 @@ public class GraphQLComponentExecutor {
             return new GOptional(getValue(((ParameterizedType) type).getActualTypeArguments()[0], inputValue, true), isPresent);
         } else if (Collection.class.isAssignableFrom(clazz)) {
             if (!Collection.class.isAssignableFrom(inputValue.getClass())) {
-                throw new AbortExecutionException(Collections.singleton(
-                        new InvalidSyntaxError(new SourceLocation(0, 0), "Invalid type")
-                ));
+                throw new GraphQLExecutorInvalidSyntaxException();
             }
             Collection collection;
             if (clazz.isAssignableFrom(ArrayList.class)) {

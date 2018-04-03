@@ -1,6 +1,7 @@
 package com.infomaximum.cluster.graphql.executor;
 
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
+import com.infomaximum.cluster.graphql.exception.GraphQLExecutorInvalidSyntaxException;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomFieldUtils;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
@@ -13,6 +14,7 @@ import com.infomaximum.cluster.struct.Component;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.InvalidSyntaxError;
 import graphql.execution.ValuesResolver;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -145,48 +147,59 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         }
 
         //Документ распарсен - вызываем prepare
-        Document document = preparsedDocumentEntry.getDocument();
-        for (Node node: document.getChildren()) {
-            if (node instanceof OperationDefinition) {
-                OperationDefinition operationDefinition = (OperationDefinition) node;
+        try {
+            Document document = preparsedDocumentEntry.getDocument();
+            for (Node node : document.getChildren()) {
+                if (node instanceof OperationDefinition) {
+                    OperationDefinition operationDefinition = (OperationDefinition) node;
 
-                GraphQLObjectType parent;
-                if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
-                    parent = schema.getQueryType();
-                } else if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
-                    parent = schema.getMutationType();
-                } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
-                    parent = schema.getSubscriptionType();
-                } else {
-                    throw new RuntimeException("not support operation type: " + operationDefinition.getOperation());
+                    GraphQLObjectType parent;
+                    if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
+                        parent = schema.getQueryType();
+                    } else if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
+                        parent = schema.getMutationType();
+                    } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
+                        parent = schema.getSubscriptionType();
+                    } else {
+                        throw new RuntimeException("not support operation type: " + operationDefinition.getOperation());
+                    }
+
+                    prepareRequest(
+                            (GRequest) executionInput.getContext(),
+                            parent,
+                            node,
+                            executionInput.getVariables(),
+                            fn
+                    );
+                } else if (node instanceof FragmentDefinition) {
+                    FragmentDefinition fragmentDefinition = (FragmentDefinition) node;
+
+                    GraphQLObjectType parent = schema.getObjectType(fragmentDefinition.getTypeCondition().getName());
+                    prepareRequest(
+                            (GRequest) executionInput.getContext(),
+                            parent,
+                            node,
+                            executionInput.getVariables(),
+                            fn
+                    );
                 }
-
-                prepareRequest(
-                        (GRequest) executionInput.getContext(),
-                        parent,
-                        node,
-                        executionInput.getVariables(),
-                        fn
-                );
-            } else if (node instanceof FragmentDefinition) {
-                FragmentDefinition fragmentDefinition = (FragmentDefinition) node;
-
-                GraphQLObjectType parent = schema.getObjectType(fragmentDefinition.getTypeCondition().getName());
-                prepareRequest(
-                        (GRequest) executionInput.getContext(),
-                        parent,
-                        node,
-                        executionInput.getVariables(),
-                        fn
-                );
             }
-        }
 
-        return new PrepareDocumentRequest(
-                executionInput,
-                preparsedDocumentEntry,
-                instrumentationState
-        );
+            return new PrepareDocumentRequest(
+                    executionInput,
+                    preparsedDocumentEntry,
+                    instrumentationState
+            );
+        } catch (GraphQLExecutorInvalidSyntaxException e) {
+            //Произошла ошибка парсинга
+            return new PrepareDocumentRequest(
+                    executionInput,
+                    new PreparsedDocumentEntry(new InvalidSyntaxError(
+                            new SourceLocation(0, 0),
+                            e.getMessage())),
+                    instrumentationState
+            );
+        }
     }
 
     public ExecutionResult execute(PrepareDocumentRequest prepareDocumentRequest) {
