@@ -282,11 +282,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
 
             for (Node iNode: field.getChildren()) {
                 if (parent instanceof GraphQLObjectType) {
-                    try {
-                        prepareRequest(request, ((GraphQLObjectType) parent).getFieldDefinition(field.getName()).getType(), iNode, variables, fn);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+                    prepareRequest(request, ((GraphQLObjectType) parent).getFieldDefinition(field.getName()).getType(), iNode, variables, fn);
                 } else if (parent instanceof GraphQLList) {
                     prepareRequest(request, parent, iNode, variables, fn);
                 } else {
