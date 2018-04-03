@@ -191,6 +191,7 @@ public class GraphQLComponentExecutor {
             if (!Collection.class.isAssignableFrom(inputValue.getClass())) {
                 throw new GraphQLExecutorInvalidSyntaxException();
             }
+
             Collection collection;
             if (clazz.isAssignableFrom(ArrayList.class)) {
                 collection = new ArrayList();
@@ -204,6 +205,10 @@ public class GraphQLComponentExecutor {
             }
             return collection;
         } else if (clazz.getAnnotation(GraphQLTypeInput.class) != null) {
+            if (!Map.class.isAssignableFrom(inputValue.getClass())) {
+                throw new GraphQLExecutorInvalidSyntaxException();
+            }
+
             Map<String, Object> fieldValues = (Map<String, Object>) inputValue;
 
             Constructor constructor = clazz.getConstructor();
