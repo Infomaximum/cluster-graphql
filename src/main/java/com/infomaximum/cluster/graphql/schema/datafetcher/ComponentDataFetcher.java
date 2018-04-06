@@ -46,10 +46,22 @@ public class ComponentDataFetcher implements DataFetcher {
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
+        try {
+            return execute(environment);
+        } catch (Throwable t) {
+            if (t instanceof RuntimeException) {
+                throw (RuntimeException) t;
+            } else {
+                throw new RuntimeException(t);
+            }
+        }
+    }
+
+    protected Object execute(DataFetchingEnvironment environment) throws Throwable {
         GRequest gRequest = environment.getContext();
 
         try {
-            if (rTypeGraphQLField.componentUuid==null) {
+            if (rTypeGraphQLField.componentUuid == null) {
                 //У этого объекта нет родительской подсистемы - вызываем прямо тут
 
                 if (rTypeGraphQLField.isPrepare) throw new RuntimeException("Not implemented");
@@ -94,9 +106,10 @@ public class ComponentDataFetcher implements DataFetcher {
             } else {
                 e = t;
             }
-            throw new RuntimeException(e);
+            throw e;
         }
     }
+
 
     /** Вытаскиваем из запроса пришедшие аргументы */
     protected static HashMap<String, Serializable> getArguments(RGraphQLObjectTypeField rTypeGraphQLField, DataFetchingEnvironment environment, HashMap<String, Serializable> externalVariables) {
