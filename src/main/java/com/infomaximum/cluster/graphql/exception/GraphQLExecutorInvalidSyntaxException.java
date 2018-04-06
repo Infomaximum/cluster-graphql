@@ -6,4 +6,8 @@ public class GraphQLExecutorInvalidSyntaxException extends GraphQLExecutorExcept
         super();
     }
 
+    public GraphQLExecutorInvalidSyntaxException(String message) {
+        super(message);
+    }
+
 }
