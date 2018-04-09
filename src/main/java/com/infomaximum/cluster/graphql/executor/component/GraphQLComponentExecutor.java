@@ -183,12 +183,16 @@ public class GraphQLComponentExecutor {
 
         //Проверяем на скалярный тип объекта
         GraphQLTypeScalar graphQLTypeScalar = graphQLSchemaType.getTypeScalarByClass(clazz);
-        if (graphQLTypeScalar != null)
+        if (graphQLTypeScalar != null) {
             return graphQLTypeScalar.getGraphQLScalarType().getCoercing().parseValue(inputValue);
-
+        }
 
         if (clazz.isEnum()) {
-            return Enum.valueOf(clazz, (String) inputValue);
+            try {
+                return Enum.valueOf(clazz, (String) inputValue);
+            } catch (Exception e) {
+                throw new GraphQLExecutorInvalidSyntaxException(e);
+            }
         } else if (clazz == GOptional.class) {
             return new GOptional(getValue(((ParameterizedType) type).getActualTypeArguments()[0], inputValue, true), isPresent);
         } else if (Collection.class.isAssignableFrom(clazz)) {

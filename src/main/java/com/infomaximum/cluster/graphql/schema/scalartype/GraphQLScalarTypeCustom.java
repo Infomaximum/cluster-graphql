@@ -6,7 +6,6 @@ import graphql.Scalars;
 import graphql.language.FloatValue;
 import graphql.language.IntValue;
 import graphql.schema.Coercing;
-import graphql.schema.GraphQLScalarType;
 
 import java.util.Date;
 
@@ -111,39 +110,6 @@ public class GraphQLScalarTypeCustom {
             }
     );
 
-
-    public static GraphQLScalarType GraphQLDateOld = new GraphQLScalarType("Date", "Built-in Date", new Coercing() {
-
-        @Override
-        public Object serialize(Object input) {
-            if (input == null) return null;
-            if (input instanceof Date) {
-                return ((Date) input).getTime();
-            } else if (input instanceof Number) {
-                return ((Number) input).longValue();
-            } else {
-                throw new RuntimeException("Not support type argument: " + input);
-            }
-        }
-
-        @Override
-        public Object parseValue(Object input) {
-            if (input instanceof Number) {
-                return new Date(((Number) input).longValue());
-            } else {
-                return null;
-            }
-        }
-
-        @Override
-        public Object parseLiteral(Object input) {
-            if (input instanceof IntValue) {
-                return new Date(((IntValue) input).getValue().longValue());
-            } else {
-                return null;
-            }
-        }
-    });
 
 
     private static boolean isNumber(Object input) {
