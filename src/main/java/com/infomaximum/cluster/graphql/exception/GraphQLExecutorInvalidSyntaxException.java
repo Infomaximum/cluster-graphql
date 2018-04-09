@@ -10,4 +10,7 @@ public class GraphQLExecutorInvalidSyntaxException extends GraphQLExecutorExcept
         super(message);
     }
 
+    public GraphQLExecutorInvalidSyntaxException(Throwable cause) {
+        super(cause);
+    }
 }
