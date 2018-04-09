@@ -2,6 +2,7 @@ package com.infomaximum.cluster.graphql.schema.datafetcher;
 
 import com.infomaximum.cluster.core.remote.Remotes;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
+import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.executor.component.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomFieldUtils;
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
@@ -102,6 +103,8 @@ public class ComponentDataFetcher implements DataFetcher {
             if (t instanceof InvocationTargetException) {
                 e = ((InvocationTargetException) t).getTargetException();
             } else if (t instanceof ExecutionException) {
+                e = t.getCause();
+            } else if (t instanceof GraphQLExecutorDataFetcherException) {
                 e = t.getCause();
             } else {
                 e = t;
