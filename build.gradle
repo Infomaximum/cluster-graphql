@@ -1,5 +1,5 @@
 group 'com.infomaximum'
-version '0.0.23RC36'
+version '0.0.23RC37'
 
 repositories {
     mavenCentral()

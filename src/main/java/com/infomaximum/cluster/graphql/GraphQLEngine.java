@@ -49,6 +49,10 @@ public class GraphQLEngine {
         this.customRemoteDataFetcher = customRemoteDataFetcher;
     }
 
+    public GraphQLSchemaType getGraphQLSchemaType() {
+        return graphQLSchemaType;
+    }
+
     public GraphQLExecutor buildExecutor(Component component) throws GraphQLExecutorException {
         return new GraphQLExecutorBuilder(
                 component,
