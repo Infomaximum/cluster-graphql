@@ -124,7 +124,11 @@ public class GraphQLScalarTypeCustom {
             return (Number) input;
         }
         if (input instanceof String) {
-            return Double.parseDouble((String) input);
+            try {
+                return Double.parseDouble((String) input);
+            } catch (NumberFormatException e) {
+                throw new GraphQLExecutorInvalidSyntaxException(e);
+            }
         }
         throw new AssertException("Unexpected case - this call should be protected by a previous call to isNumberIsh()");
     }
