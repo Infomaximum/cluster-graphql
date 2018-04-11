@@ -44,11 +44,10 @@ public class GraphQLScalarTypeCustom {
             "Float", "Built-in Float",
             ImmutableSet.of(Float.class, float.class),
             new Coercing<Float, Float>() {
+
                 @Override
                 public Float serialize(Object input) {
-                    if (input instanceof Float) {
-                        return (Float) input;
-                    } else if (isNumber(input)) {
+                    if (isConvertToNumber(input)) {
                         return toNumber(input).floatValue();
                     } else {
                         throw new RuntimeException("Not support type argument: " + input);
@@ -57,7 +56,11 @@ public class GraphQLScalarTypeCustom {
 
                 @Override
                 public Float parseValue(Object input) {
-                    return serialize(input);
+                    if (isConvertToNumber(input)) {
+                        return toNumber(input).floatValue();
+                    } else {
+                        throw new RuntimeException("Not support type argument: " + input);
+                    }
                 }
 
                 @Override
@@ -92,8 +95,8 @@ public class GraphQLScalarTypeCustom {
 
                 @Override
                 public Object parseValue(Object input) {
-                    if (input instanceof Number) {
-                        return new Date(((Number) input).longValue());
+                    if (isConvertToNumber(input)) {
+                        return new Date(toNumber(input).longValue());
                     } else {
                         throw new RuntimeException("Not support type argument: " + input);
                     }
@@ -111,12 +114,11 @@ public class GraphQLScalarTypeCustom {
     );
 
 
-
-    private static boolean isNumber(Object input) {
+    public static boolean isConvertToNumber(Object input) {
         return input instanceof Number || input instanceof String;
     }
 
-    private static Number toNumber(Object input) {
+    public static Number toNumber(Object input) {
         if (input instanceof Number) {
             return (Number) input;
         }
