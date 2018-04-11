@@ -1,6 +1,7 @@
 package com.infomaximum.cluster.graphql.schema.scalartype;
 
 import com.google.common.collect.ImmutableSet;
+import com.infomaximum.cluster.graphql.exception.GraphQLExecutorInvalidSyntaxException;
 import graphql.AssertException;
 import graphql.Scalars;
 import graphql.language.FloatValue;
@@ -70,7 +71,7 @@ public class GraphQLScalarTypeCustom {
                     } else if (input instanceof FloatValue) {
                         return ((FloatValue) input).getValue().floatValue();
                     } else {
-                        throw new RuntimeException("Not support type argument: " + input);
+                        throw new GraphQLExecutorInvalidSyntaxException("Not support type argument: " + input);
                     }
                 }
             }
@@ -107,7 +108,7 @@ public class GraphQLScalarTypeCustom {
                     if (input instanceof IntValue) {
                         return new Date(((IntValue) input).getValue().longValue());
                     } else {
-                        throw new RuntimeException("Not support type argument: " + input);
+                        throw new GraphQLExecutorInvalidSyntaxException("Not support type argument: " + input);
                     }
                 }
             }
