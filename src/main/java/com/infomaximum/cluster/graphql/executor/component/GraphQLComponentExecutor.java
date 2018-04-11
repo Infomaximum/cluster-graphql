@@ -73,7 +73,7 @@ public class GraphQLComponentExecutor {
         return rTypeGraphQLs;
     }
 
-    public Serializable prepare(GRequest request, String keyField, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+    public Serializable prepare(Component component, GRequest request, String keyField, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
         Object prepareResultObject = executeGraphQLMethod(request, null, graphQLTypeName, graphQLTypeFieldName, arguments);
         if (prepareResultObject == null) {
             throw new GraphQLExecutorException("Class: " + classSchemas.get(graphQLTypeName) + ", method: " + graphQLTypeFieldName + " returning is null prepare object");
@@ -81,7 +81,7 @@ public class GraphQLComponentExecutor {
 
         for (PrepareCustomField prepareCustomField : graphQLSchemaType.prepareCustomFields) {
             if (prepareCustomField.isSupport(prepareResultObject.getClass())) {
-                return prepareCustomField.prepare(request, keyField, prepareResultObject);
+                return prepareCustomField.prepare(component, request, keyField, prepareResultObject);
             }
         }
         throw new GraphQLExecutorException("Not found prepare handler for: " + prepareResultObject);

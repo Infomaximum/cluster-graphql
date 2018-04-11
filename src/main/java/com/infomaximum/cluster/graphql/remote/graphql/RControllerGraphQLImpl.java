@@ -39,7 +39,7 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
 
     @Override
     public Serializable prepare(GRequest request, String keyFieldRequest, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
-        return graphQLItemExecutor.prepare(request, keyFieldRequest, graphQLTypeName, graphQLTypeFieldName, arguments);
+        return graphQLItemExecutor.prepare(component, request, keyFieldRequest, graphQLTypeName, graphQLTypeFieldName, arguments);
     }
 
     @Override
