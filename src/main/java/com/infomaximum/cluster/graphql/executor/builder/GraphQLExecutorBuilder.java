@@ -109,7 +109,7 @@ public class GraphQLExecutorBuilder {
 
             //Добавляем все enum
             for (RGraphQLTypeEnum rGraphQLEnumType: buildGraphQLTypeEnums) {
-                buildGraphQLTypeEnum(graphQLTypes, rGraphQLEnumType.getName(), rGraphQLEnumType.getEnumValues());
+                buildGraphQLTypeEnum(graphQLTypes, rGraphQLEnumType);
             }
 
             //Разбираемся с зависимостями input объектами
@@ -201,7 +201,7 @@ public class GraphQLExecutorBuilder {
 
             MergeGraphQLTypeOutObject mergeGraphQLTypeOutObject = buildGraphQLTypeOutObjects.get(rTypeGraphQLName);
             if (mergeGraphQLTypeOutObject == null) {
-                mergeGraphQLTypeOutObject = new MergeGraphQLTypeOutObject(rTypeGraphQLName);
+                mergeGraphQLTypeOutObject = new MergeGraphQLTypeOutObject(rTypeGraphQLName, rGraphQLType.getDescription());
                 buildGraphQLTypeOutObjects.put(rTypeGraphQLName, mergeGraphQLTypeOutObject);
             }
 
@@ -209,7 +209,7 @@ public class GraphQLExecutorBuilder {
             for (String graphQLTypeUnionName : rGraphQLObjectType.getUnionGraphQLTypeNames()) {
                 MergeGraphQLTypeOutObjectUnion mergeGraphQLTypeOutObjectUnion = buildGraphQLTypeOutObjectUnions.get(graphQLTypeUnionName);
                 if (mergeGraphQLTypeOutObjectUnion == null) {
-                    mergeGraphQLTypeOutObjectUnion = new MergeGraphQLTypeOutObjectUnion(graphQLTypeUnionName);
+                    mergeGraphQLTypeOutObjectUnion = new MergeGraphQLTypeOutObjectUnion(graphQLTypeUnionName, rGraphQLType.getDescription());
                     buildGraphQLTypeOutObjectUnions.put(graphQLTypeUnionName, mergeGraphQLTypeOutObjectUnion);
                 }
                 mergeGraphQLTypeOutObjectUnion.mergePossible(rGraphQLObjectType.getClassName(), rTypeGraphQLName);
@@ -225,7 +225,7 @@ public class GraphQLExecutorBuilder {
 
             MergeGraphQLTypeOutObjectUnion mergeGraphQLTypeOutObjectUnion = buildGraphQLTypeOutObjectUnions.get(rTypeGraphQLName);
             if (mergeGraphQLTypeOutObjectUnion == null) {
-                mergeGraphQLTypeOutObjectUnion = new MergeGraphQLTypeOutObjectUnion(rTypeGraphQLName);
+                mergeGraphQLTypeOutObjectUnion = new MergeGraphQLTypeOutObjectUnion(rTypeGraphQLName, rGraphQLType.getDescription());
                 buildGraphQLTypeOutObjectUnions.put(rTypeGraphQLName, mergeGraphQLTypeOutObjectUnion);
             }
 
@@ -251,11 +251,20 @@ public class GraphQLExecutorBuilder {
     private GraphQLObjectType buildGraphQLTypeOutObject(Map<String, GraphQLType> graphQLTypes, MergeGraphQLTypeOutObject graphQLTypeOutObject) throws GraphQLExecutorException {
         GraphQLObjectType.Builder graphQLObjectTypeBuilder = GraphQLObjectType.newObject();
         graphQLObjectTypeBuilder.name(graphQLTypeOutObject.name);
+
+        if (graphQLTypeOutObject.description != null) {
+            graphQLObjectTypeBuilder.description(graphQLTypeOutObject.description);
+        }
+
         for (RGraphQLObjectTypeField typeGraphQLField : graphQLTypeOutObject.getFields()) {
             GraphQLFieldDefinition.Builder graphQLFieldDefinitionBuilder = GraphQLFieldDefinition.newFieldDefinition();
 
             graphQLFieldDefinitionBuilder.type(getGraphQLOutputType(graphQLTypes, typeGraphQLField.type))
                     .name(typeGraphQLField.externalName);
+
+            if (typeGraphQLField.description != null) {
+                graphQLFieldDefinitionBuilder.description(typeGraphQLField.description);
+            }
 
             if (typeGraphQLField.deprecated != null) {
                 graphQLFieldDefinitionBuilder.deprecate(typeGraphQLField.deprecated);
@@ -311,6 +320,10 @@ public class GraphQLExecutorBuilder {
 
         GraphQLUnionType.Builder builder = GraphQLUnionType.newUnionType().name(mergeGraphQLTypeOutObjectUnion.name);
 
+        if (mergeGraphQLTypeOutObjectUnion.description != null) {
+            builder.description(mergeGraphQLTypeOutObjectUnion.description);
+        }
+
         for (String possibleTypeName : mergeGraphQLTypeOutObjectUnion.getPossibleTypeNames()) {
             GraphQLObjectType possibleObject = (GraphQLObjectType) graphQLTypes.get(possibleTypeName);
             builder.possibleType(possibleObject);
@@ -339,17 +352,21 @@ public class GraphQLExecutorBuilder {
         return graphQLUnionType;
     }
 
-    private GraphQLEnumType buildGraphQLTypeEnum(Map<String, GraphQLType> graphQLTypes, String graphQLTypeName, Set<String> enumValues) {
+    private GraphQLEnumType buildGraphQLTypeEnum(Map<String, GraphQLType> graphQLTypes, RGraphQLTypeEnum rGraphQLEnumType) {
         GraphQLEnumType.Builder graphQLObjectTypeEnumBuilder = GraphQLEnumType.newEnum();
-        graphQLObjectTypeEnumBuilder.name(graphQLTypeName);
-        for (String enumValue : enumValues) {
+        graphQLObjectTypeEnumBuilder.name(rGraphQLEnumType.getName());
+        for (String enumValue : rGraphQLEnumType.getEnumValues()) {
             graphQLObjectTypeEnumBuilder.value(enumValue);
+        }
+
+        if (rGraphQLEnumType.getDescription() != null) {
+            graphQLObjectTypeEnumBuilder.description(rGraphQLEnumType.getDescription());
         }
 
         GraphQLEnumType graphQLObjectTypeEnum = graphQLObjectTypeEnumBuilder.build();
 
         //Регистрируем этот тип
-        graphQLTypes.put(graphQLTypeName, graphQLObjectTypeEnum);
+        graphQLTypes.put(rGraphQLEnumType.getName(), graphQLObjectTypeEnum);
 
         return graphQLObjectTypeEnum;
     }

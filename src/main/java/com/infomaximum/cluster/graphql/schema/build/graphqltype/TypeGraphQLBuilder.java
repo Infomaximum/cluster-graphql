@@ -81,7 +81,10 @@ public class TypeGraphQLBuilder {
 					enumValues.add(((Enum) oEnum).name());
 				}
 
-				rGraphQLType = new RGraphQLTypeEnum(name, enumValues);
+				GraphQLDescription aGraphQLDescription = (GraphQLDescription) classRTypeGraphQL.getAnnotation(GraphQLDescription.class);
+				String description = (aGraphQLDescription != null && !aGraphQLDescription.value().isEmpty()) ? aGraphQLDescription.value() : null;
+
+				rGraphQLType = new RGraphQLTypeEnum(name, description, enumValues);
 			} else {
 				//Собираем union типы
 				Set<String> unionGraphQLTypeNames = new HashSet<String>();
@@ -119,7 +122,12 @@ public class TypeGraphQLBuilder {
 						fieldConfiguration = fieldConfigurationBuilder.build(field);
 					}
 
-					fields.add(new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, false, true, typeField, nameField, externalNameField, aGraphQLField.deprecated()));
+					GraphQLDescription aGraphQLDescription = field.getAnnotation(GraphQLDescription.class);
+					String description = (aGraphQLDescription != null && !aGraphQLDescription.value().isEmpty()) ? aGraphQLDescription.value() : null;
+
+					String deprecated = (aGraphQLField.deprecated() != null && !aGraphQLField.deprecated().isEmpty()) ? aGraphQLField.deprecated() : null;
+
+					fields.add(new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, false, true, typeField, nameField, externalNameField, description, deprecated));
 				}
 
 				//Обрабатываем методы
@@ -132,7 +140,10 @@ public class TypeGraphQLBuilder {
 					fields.add(buildRGraphQLObjectTypeField(componentUuid, classRTypeGraphQL, method, aGraphQLTypeMethod));
 				}
 
-				rGraphQLType = new RGraphQLTypeOutObject(name, classRTypeGraphQL.getName(), unionGraphQLTypeNames, fields);
+				GraphQLDescription aTypeGraphQLDescription = (GraphQLDescription) classRTypeGraphQL.getAnnotation(GraphQLDescription.class);
+				String description = (aTypeGraphQLDescription != null && !aTypeGraphQLDescription.value().isEmpty()) ? aTypeGraphQLDescription.value() : null;
+
+				rGraphQLType = new RGraphQLTypeOutObject(name, description, classRTypeGraphQL.getName(), unionGraphQLTypeNames, fields);
 			}
 
 			rTypeGraphQLItems.put(classRTypeGraphQL, rGraphQLType);
@@ -159,8 +170,10 @@ public class TypeGraphQLBuilder {
 				fields.add(buildRGraphQLObjectTypeField(componentUuid, classRTypeGraphQL, method, aGraphQLTypeMethod));
 			}
 
+			GraphQLDescription aGraphQLDescription = (GraphQLDescription) classRTypeGraphQL.getAnnotation(GraphQLDescription.class);
+			String description = (aGraphQLDescription != null && !aGraphQLDescription.value().isEmpty()) ? aGraphQLDescription.value() : null;
 
-			RGraphQLTypeOutObjectUnion rGraphQLType = new RGraphQLTypeOutObjectUnion(name, fields);
+			RGraphQLTypeOutObjectUnion rGraphQLType = new RGraphQLTypeOutObjectUnion(name, description, fields);
 			rTypeGraphQLItems.put(classRTypeGraphQL, rGraphQLType);
 		}
 
@@ -193,14 +206,17 @@ public class TypeGraphQLBuilder {
 				fields.add(new RGraphQLInputObjectTypeField(typeField, nameField, externalNameField, isNotNull));
 			}
 
-			RGraphQLTypeInObject rGraphQLType = new RGraphQLTypeInObject(name, fields);
+			GraphQLDescription aGraphQLDescription = (GraphQLDescription) classRTypeGraphQL.getAnnotation(GraphQLDescription.class);
+			String description = (aGraphQLDescription != null && !aGraphQLDescription.value().isEmpty()) ? aGraphQLDescription.value() : null;
+
+			RGraphQLTypeInObject rGraphQLType = new RGraphQLTypeInObject(name, description, fields);
 			rTypeGraphQLItems.put(classRTypeGraphQL, rGraphQLType);
 		}
 
 		return rTypeGraphQLItems;
 	}
 
-	private RGraphQLObjectTypeField buildRGraphQLObjectTypeField(String componentUuid, Class classRTypeGraphQL, Method method, GraphQLField aGraphQLTypeMethod) throws GraphQLExecutorException {
+	private RGraphQLObjectTypeField buildRGraphQLObjectTypeField(String componentUuid, Class classRTypeGraphQL, Method method, GraphQLField aGraphQLField) throws GraphQLExecutorException {
 		//Если родительский класс не реализовывает интерфейс RemoteObject, то все его поля могут быть только статическими
 		if (!RemoteObject.class.isAssignableFrom(method.getDeclaringClass())) {
 			if (!Modifier.isStatic(method.getModifiers())) throw new GraphQLExecutorException("Method " + method.getName() + " in class " + method.getDeclaringClass().getName() + " is not static");
@@ -239,7 +255,7 @@ public class TypeGraphQLBuilder {
 
 		String nameMethod = method.getName();
 
-		String externalNameMethod = aGraphQLTypeMethod.value();
+		String externalNameMethod = aGraphQLField.value();
 		if (externalNameMethod.trim().length() == 0) externalNameMethod = getExternalName(method);
 
 		List<RGraphQLObjectTypeMethodArgument> arguments = new ArrayList<>();
@@ -281,7 +297,12 @@ public class TypeGraphQLBuilder {
 			fieldConfiguration = fieldConfigurationBuilder.build(method);
 		}
 
-		return new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, isPrepereField, false, typeField, nameMethod, externalNameMethod, aGraphQLTypeMethod.deprecated(), arguments);
+		GraphQLDescription aGraphQLDescription = method.getAnnotation(GraphQLDescription.class);
+		String description = (aGraphQLDescription != null && !aGraphQLDescription.value().isEmpty()) ? aGraphQLDescription.value() : null;
+
+		String deprecated = (aGraphQLField.deprecated() != null && !aGraphQLField.deprecated().isEmpty()) ? aGraphQLField.deprecated() : null;
+
+		return new RGraphQLObjectTypeField(componentUuid, fieldConfiguration, isPrepereField, false, typeField, nameMethod, externalNameMethod, description, deprecated, arguments);
 	}
 
 	private String getGraphQLType(Type type) throws ClassNotFoundException {

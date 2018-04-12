@@ -2,14 +2,17 @@ package com.infomaximum.cluster.graphql.schema.build;
 
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class MergeGraphQLTypeOutObject extends MergeGraphQLType {
 
     private Map<String, RGraphQLObjectTypeField> fieldsByExternalName;
 
-    public MergeGraphQLTypeOutObject(String name) {
-        super(name);
+    public MergeGraphQLTypeOutObject(String name, String description) {
+        super(name, description);
         this.fieldsByExternalName = new HashMap<>();
     }
 
