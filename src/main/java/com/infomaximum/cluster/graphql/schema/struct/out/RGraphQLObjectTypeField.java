@@ -19,13 +19,14 @@ public class RGraphQLObjectTypeField {
     public final String externalName;
     public final List<RGraphQLObjectTypeMethodArgument> arguments;
     public final RemoteObject configuration;
+    public final String description;
     public final String deprecated;
 
-    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isPrepare, boolean isField, String type, String name, String externalName, String deprecated) {
-        this(componentUuid, configuration, isPrepare, isField, type, name, externalName, deprecated, null);
+    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isPrepare, boolean isField, String type, String name, String externalName, String description, String deprecated) {
+        this(componentUuid, configuration, isPrepare, isField, type, name, externalName, description, deprecated, null);
     }
 
-    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isPrepare, boolean isField, String type, String name, String externalName, String deprecated, List<RGraphQLObjectTypeMethodArgument> arguments) {
+    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isPrepare, boolean isField, String type, String name, String externalName, String description, String deprecated, List<RGraphQLObjectTypeMethodArgument> arguments) {
         this.componentUuid = componentUuid;
 
         this.isField = isField;
@@ -36,7 +37,8 @@ public class RGraphQLObjectTypeField {
         this.externalName = externalName;
         this.arguments = arguments;
         this.configuration = configuration;
-        this.deprecated = (deprecated==null || deprecated.isEmpty())?null:deprecated;
+        this.description = description;
+        this.deprecated = deprecated;
     }
 
     @Override

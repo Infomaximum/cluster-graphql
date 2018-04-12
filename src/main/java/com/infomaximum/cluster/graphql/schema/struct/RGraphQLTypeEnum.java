@@ -1,7 +1,5 @@
 package com.infomaximum.cluster.graphql.schema.struct;
 
-import com.infomaximum.cluster.struct.Component;
-
 import java.util.Collections;
 import java.util.Set;
 
@@ -12,22 +10,13 @@ public class RGraphQLTypeEnum extends RGraphQLType {
 
     private final Set<String> enumValues;
 
-    public RGraphQLTypeEnum(String name, Set<String> enumValues) {
-        super(name);
+    public RGraphQLTypeEnum(String name, String description, Set<String> enumValues) {
+        super(name, description);
         this.enumValues = Collections.unmodifiableSet(enumValues);;
     }
 
     public Set<String> getEnumValues() {
         return enumValues;
     }
-//
-//    @Override
-//    public void serializeNative(Component component, JSONObject out) {
-//        JSONArray outEnumValues =new JSONArray();
-//        for (String enumValue: enumValues) {
-//            outEnumValues.add(enumValue);
-//        }
-//        out.put("enum_values", outEnumValues);
-//    }
 
 }
