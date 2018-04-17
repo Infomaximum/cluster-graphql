@@ -11,6 +11,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -36,6 +37,7 @@ public abstract class BaseTest {
 
         GRequest<GRequestContext> gRequest = new GRequest<>(
                 frontendComponent.getKey(),
+                Instant.now(),
                 "127.0.0.1",
                 new GRequestContext(),
                 new HashMap<>(),

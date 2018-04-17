@@ -17,6 +17,7 @@ import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField
 import com.infomaximum.cluster.struct.Component;
 
 import java.lang.reflect.Constructor;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -88,7 +89,7 @@ public class GraphQLEngine {
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLLong);
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLBigDecimal);
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLFloat);
-            typeScalars.add(GraphQLScalarTypeCustom.GraphQLDate);
+            typeScalars.add(GraphQLScalarTypeCustom.GraphQLInstant);
         }
 
         public Builder withSDKPackage(Package sdkPackage) {
@@ -144,8 +145,8 @@ public class GraphQLEngine {
 
                     new GraphQLSchemaType(
                             typeScalars,
-                            prepareCustomFields,
-                            customArguments
+                            (prepareCustomFields == null) ? Collections.emptySet() : prepareCustomFields,
+                            (customArguments == null) ? Collections.emptySet() : customArguments
                     ),
 
                     customRemoteDataFetcher
