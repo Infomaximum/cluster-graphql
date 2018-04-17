@@ -16,7 +16,7 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
 
     private static final AtomicLong uuids = new AtomicLong();
 
-    public static class RemoteAddress {
+    public static class RemoteAddress implements RemoteObject {
 
         public final String rawRemoteAddress;
         public final String endRemoteAddress;
