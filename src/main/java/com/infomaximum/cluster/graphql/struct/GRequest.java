@@ -16,6 +16,22 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
 
     private static final AtomicLong uuids = new AtomicLong();
 
+    public static class RemoteAddress {
+
+        public final String rawRemoteAddress;
+        public final String endRemoteAddress;
+
+        public RemoteAddress(String remoteAddress) {
+            this.rawRemoteAddress = remoteAddress;
+            this.endRemoteAddress = remoteAddress;
+        }
+
+        public RemoteAddress(String rawRemoteAddress, String endRemoteAddress) {
+            this.rawRemoteAddress = rawRemoteAddress;
+            this.endRemoteAddress = endRemoteAddress;
+        }
+    }
+
     public static class UploadFile implements RemoteObject {
         public final String fieldname;
         public final String filename;
@@ -34,8 +50,7 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
 
     private final String frontendComponentKey;
 
-    private final String rawRemoteAddress;
-    private final String endRemoteAddress;
+    private final RemoteAddress remoteAddress;
 
     private final C requestContext;
 
@@ -45,8 +60,7 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
     public GRequest(
             String frontendComponentKey,
             Instant instant,
-            String rawRemoteAddress,
-            String endRemoteAddress,
+            RemoteAddress remoteAddress,
             C requestContext,
             HashMap<String, Serializable> externalVariables,
             ArrayList<UploadFile> uploadFiles
@@ -57,8 +71,7 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
 
         this.frontendComponentKey = frontendComponentKey;
 
-        this.rawRemoteAddress = rawRemoteAddress;
-        this.endRemoteAddress = endRemoteAddress;
+        this.remoteAddress = remoteAddress;
 
         this.requestContext = requestContext;
 
@@ -78,12 +91,8 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
         return frontendComponentKey;
     }
 
-    public String getRawRemoteAddress() {
-        return rawRemoteAddress;
-    }
-
-    public String getEndRemoteAddress() {
-        return endRemoteAddress;
+    public RemoteAddress getRemoteAddress() {
+        return remoteAddress;
     }
 
     public C getRequestContext() {

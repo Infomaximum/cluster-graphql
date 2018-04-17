@@ -38,8 +38,7 @@ public abstract class BaseTest {
         GRequest<GRequestContext> gRequest = new GRequest<>(
                 frontendComponent.getKey(),
                 Instant.now(),
-                "127.0.0.1",
-                "127.0.0.1",
+                new GRequest.RemoteAddress("127.0.0.1"),
                 new GRequestContext(),
                 new HashMap<>(),
                 null
