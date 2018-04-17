@@ -33,7 +33,10 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
     private final String uuid;
 
     private final String frontendComponentKey;
-    private final String remoteAddress;
+
+    private final String rawRemoteAddress;
+    private final String endRemoteAddress;
+
     private final C requestContext;
 
     private HashMap<String, Serializable> externalVariables;
@@ -42,7 +45,8 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
     public GRequest(
             String frontendComponentKey,
             Instant instant,
-            String remoteAddress,
+            String rawRemoteAddress,
+            String endRemoteAddress,
             C requestContext,
             HashMap<String, Serializable> externalVariables,
             ArrayList<UploadFile> uploadFiles
@@ -52,7 +56,10 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
         this.uuid = new StringBuilder().append(frontendComponentKey).append(':').append(uuids.incrementAndGet()).toString();
 
         this.frontendComponentKey = frontendComponentKey;
-        this.remoteAddress = remoteAddress;
+
+        this.rawRemoteAddress = rawRemoteAddress;
+        this.endRemoteAddress = endRemoteAddress;
+
         this.requestContext = requestContext;
 
         this.externalVariables = externalVariables;
@@ -71,8 +78,12 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
         return frontendComponentKey;
     }
 
-    public String getRemoteAddress() {
-        return remoteAddress;
+    public String getRawRemoteAddress() {
+        return rawRemoteAddress;
+    }
+
+    public String getEndRemoteAddress() {
+        return endRemoteAddress;
     }
 
     public C getRequestContext() {

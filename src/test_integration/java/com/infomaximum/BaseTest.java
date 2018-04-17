@@ -39,6 +39,7 @@ public abstract class BaseTest {
                 frontendComponent.getKey(),
                 Instant.now(),
                 "127.0.0.1",
+                "127.0.0.1",
                 new GRequestContext(),
                 new HashMap<>(),
                 null
