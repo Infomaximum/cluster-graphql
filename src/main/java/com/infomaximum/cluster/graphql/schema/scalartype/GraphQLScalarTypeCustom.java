@@ -8,7 +8,7 @@ import graphql.language.FloatValue;
 import graphql.language.IntValue;
 import graphql.schema.Coercing;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Created by kris on 19.01.17.
@@ -77,16 +77,16 @@ public class GraphQLScalarTypeCustom {
             }
     );
 
-    public static final GraphQLTypeScalar GraphQLDate = new GraphQLTypeScalar(
-            "Date", "Built-in Date",
-            Date.class,
+    public static final GraphQLTypeScalar GraphQLInstant = new GraphQLTypeScalar(
+            "Instant", "Built-in Instant",
+            Instant.class,
             new Coercing() {
 
                 @Override
                 public Object serialize(Object input) {
                     if (input == null) return null;
-                    if (input instanceof Date) {
-                        return ((Date) input).getTime();
+                    if (input instanceof Instant) {
+                        return ((Instant) input).toEpochMilli();
                     } else if (input instanceof Number) {
                         return ((Number) input).longValue();
                     } else {
@@ -97,7 +97,7 @@ public class GraphQLScalarTypeCustom {
                 @Override
                 public Object parseValue(Object input) {
                     if (isConvertToNumber(input)) {
-                        return new Date(toNumber(input).longValue());
+                        return Instant.ofEpochMilli(toNumber(input).longValue());
                     } else {
                         throw new RuntimeException("Not support type argument: " + input);
                     }
@@ -106,7 +106,7 @@ public class GraphQLScalarTypeCustom {
                 @Override
                 public Object parseLiteral(Object input) {
                     if (input instanceof IntValue) {
-                        return new Date(((IntValue) input).getValue().longValue());
+                        return Instant.ofEpochMilli(((IntValue) input).getValue().longValue());
                     } else {
                         throw new GraphQLExecutorInvalidSyntaxException("Not support type argument: " + input);
                     }

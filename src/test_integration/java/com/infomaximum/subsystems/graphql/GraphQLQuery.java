@@ -1,17 +1,24 @@
 package com.infomaximum.subsystems.graphql;
 
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
-import com.infomaximum.cluster.graphql.struct.GRequest;
-import com.infomaximum.cluster.struct.Component;
 import com.infomaximum.subsystems.exception.SubsystemException;
 import com.infomaximum.subsystems.querypool.QueryTransaction;
+import com.infomaximum.subsystems.querypool.ResourceProvider;
 
-public abstract class GraphQLQuery<C extends Component, S extends RemoteObject, T> {
+import java.io.Serializable;
+
+public abstract class GraphQLQuery<S extends RemoteObject, T extends Serializable> {
+
+    public abstract void prepare(ResourceProvider resources);
 
     public abstract T execute(
-            C component,
-            GRequest request,
             S source,
-            QueryTransaction transaction) throws SubsystemException;
+            QueryTransaction transaction
+    ) throws SubsystemException;
 
+    public void onTransactionCommitted() {
+    }
+
+    public void onTransactionRollbacks() {
+    }
 }
