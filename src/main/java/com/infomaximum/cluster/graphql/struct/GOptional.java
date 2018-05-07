@@ -5,6 +5,8 @@ package com.infomaximum.cluster.graphql.struct;
  */
 public final class GOptional<T> {
 
+    private static final GOptional NOT_PRESENT = new GOptional(null, false);
+
     private final T value;
     private final boolean isPresent;
 
@@ -19,5 +21,14 @@ public final class GOptional<T> {
 
     public boolean isPresent() {
         return isPresent;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static final <T> GOptional<T> notPresent() {
+        return (GOptional<T>) NOT_PRESENT;
+    }
+
+    public static final <T> GOptional<T> of(T value) {
+        return new GOptional(value, true);
     }
 }
