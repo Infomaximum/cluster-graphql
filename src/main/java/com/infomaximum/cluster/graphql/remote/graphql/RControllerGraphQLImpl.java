@@ -8,6 +8,7 @@ import com.infomaximum.cluster.graphql.executor.component.GraphQLComponentExecut
 import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
+import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
@@ -38,13 +39,13 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
     }
 
     @Override
-    public Serializable prepare(GRequest request, String keyFieldRequest, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
-        return graphQLItemExecutor.prepare(component, request, keyFieldRequest, graphQLTypeName, graphQLTypeFieldName, arguments);
+    public Serializable prepare(String keyFieldRequest, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments, ContextRequest context) throws GraphQLExecutorDataFetcherException {
+        return graphQLItemExecutor.prepare(component, keyFieldRequest, graphQLTypeName, graphQLTypeFieldName, arguments, context);
     }
 
     @Override
-    public Serializable executePrepare(GRequest request, String keyFieldRequest, RemoteObject source) throws GraphQLExecutorDataFetcherException {
-        return graphQLItemExecutor.executePrepare(request, keyFieldRequest, source);
+    public Serializable executePrepare(String keyFieldRequest, RemoteObject source, ContextRequest context) throws GraphQLExecutorDataFetcherException {
+        return graphQLItemExecutor.executePrepare(keyFieldRequest, source, context);
     }
 
     @Override

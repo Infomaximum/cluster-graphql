@@ -2,7 +2,7 @@ package com.infomaximum.cluster.graphql.preparecustomfield;
 
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
-import com.infomaximum.cluster.graphql.struct.GRequest;
+import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.struct.Component;
 
 import java.io.Serializable;
@@ -14,11 +14,11 @@ public interface PrepareCustomField<T> {
 
     Type getEndType(Type genericType);
 
-    Serializable prepare(Component component, GRequest request, String keyField, T value);
+    Serializable prepare(Component component, String keyField, T value, ContextRequest context);
 
-    void prepareException(GRequest request, Throwable throwable);
+    void prepareException(Throwable throwable, ContextRequest context);
 
-    Serializable execute(GRequest request, String keyField, RemoteObject source) throws GraphQLExecutorDataFetcherException;
+    Serializable execute(String keyField, RemoteObject source, ContextRequest context) throws GraphQLExecutorDataFetcherException;
 
-    void requestCompleted(GRequest request, Throwable throwable);
+    void requestCompleted(Throwable throwable, ContextRequest context);
 }

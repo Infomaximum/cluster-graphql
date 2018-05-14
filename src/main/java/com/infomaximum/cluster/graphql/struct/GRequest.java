@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Created by kris on 23.01.17.
  */
-public class GRequest<C extends RemoteObject> implements RemoteObject {
+public class GRequest implements RemoteObject {
 
     private static final AtomicLong uuids = new AtomicLong();
 
@@ -52,16 +52,13 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
 
     private final RemoteAddress remoteAddress;
 
-    private final C requestContext;
-
-    private HashMap<String, Serializable> externalVariables;
-    private ArrayList<UploadFile> uploadFiles;
+    private final HashMap<String, Serializable> externalVariables;
+    private final ArrayList<UploadFile> uploadFiles;
 
     public GRequest(
             String frontendComponentKey,
             Instant instant,
             RemoteAddress remoteAddress,
-            C requestContext,
             HashMap<String, Serializable> externalVariables,
             ArrayList<UploadFile> uploadFiles
     ) {
@@ -72,8 +69,6 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
         this.frontendComponentKey = frontendComponentKey;
 
         this.remoteAddress = remoteAddress;
-
-        this.requestContext = requestContext;
 
         this.externalVariables = externalVariables;
         this.uploadFiles = uploadFiles;
@@ -93,10 +88,6 @@ public class GRequest<C extends RemoteObject> implements RemoteObject {
 
     public RemoteAddress getRemoteAddress() {
         return remoteAddress;
-    }
-
-    public C getRequestContext() {
-        return requestContext;
     }
 
     public HashMap<String, Serializable> getExternalVariables() {

@@ -1,6 +1,6 @@
 package com.infomaximum.cluster.graphql.executor;
 
-import com.infomaximum.cluster.graphql.struct.GRequest;
+import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
@@ -26,6 +26,6 @@ public class GraphQLExecutorImpl implements GraphQLExecutor {
     }
 
     @Override
-    public void requestCompleted(GRequest request, Throwable ex) {
+    public void requestCompleted(Throwable ex, ContextRequest context) {
     }
 }
