@@ -15,6 +15,7 @@ import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLBuild
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.scalartype.GraphQLTypeScalar;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
+import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.struct.Component;
@@ -73,26 +74,26 @@ public class GraphQLComponentExecutor {
         return rTypeGraphQLs;
     }
 
-    public Serializable prepare(Component component, GRequest request, String keyField, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
-        Object prepareResultObject = executeGraphQLMethod(request, null, graphQLTypeName, graphQLTypeFieldName, arguments);
+    public Serializable prepare(Component component, String keyField, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments, ContextRequest context) throws GraphQLExecutorDataFetcherException {
+        Object prepareResultObject = executeGraphQLMethod(context.getRequest(), null, graphQLTypeName, graphQLTypeFieldName, arguments);
         if (prepareResultObject == null) {
             throw new GraphQLExecutorException("Class: " + classSchemas.get(graphQLTypeName) + ", method: " + graphQLTypeFieldName + " returning is null prepare object");
         }
 
         for (PrepareCustomField prepareCustomField : graphQLSchemaType.prepareCustomFields) {
             if (prepareCustomField.isSupport(prepareResultObject.getClass())) {
-                return prepareCustomField.prepare(component, request, keyField, prepareResultObject);
+                return prepareCustomField.prepare(component, keyField, prepareResultObject, context);
             }
         }
         throw new GraphQLExecutorException("Not found prepare handler for: " + prepareResultObject);
     }
 
-    public Serializable executePrepare(GRequest request, String keyField, RemoteObject source) {
+    public Serializable executePrepare(String keyField, RemoteObject source, ContextRequest context) {
         if (graphQLSchemaType.prepareCustomFields.size() != 1)
             throw new RuntimeException("Not implemented support many prepareCustomFields");
 
         PrepareCustomField prepareCustomField = graphQLSchemaType.prepareCustomFields.iterator().next();
-        return prepareCustomField.execute(request, keyField, source);
+        return prepareCustomField.execute(keyField, source, context);
     }
 
     public Serializable execute(GRequest request, RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {

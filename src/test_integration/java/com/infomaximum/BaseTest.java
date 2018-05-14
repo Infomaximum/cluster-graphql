@@ -1,10 +1,10 @@
 package com.infomaximum;
 
 import com.infomaximum.cluster.exception.ClusterException;
+import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.server.Server;
 import com.infomaximum.server.components.frontend.FrontendComponent;
-import com.infomaximum.server.sdk.GRequestContext;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import org.junit.AfterClass;
@@ -35,22 +35,24 @@ public abstract class BaseTest {
     public static ExecutionResult grapqhlExecutor(String query) {
         FrontendComponent frontendComponent = getServer().getCluster().getAnyComponent(FrontendComponent.class);
 
-        GRequest<GRequestContext> gRequest = new GRequest<>(
+        GRequest gRequest = new GRequest(
                 frontendComponent.getKey(),
                 Instant.now(),
                 new GRequest.RemoteAddress("127.0.0.1"),
-                new GRequestContext(),
                 new HashMap<>(),
                 null
         );
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
-                .context(gRequest)
-                .root(gRequest) // This we are doing do be backwards compatible
+                .context(new ContextRequest() {
+                    @Override
+                    public GRequest getRequest() {
+                        return gRequest;
+                    }
+                })
                 .variables(Collections.emptyMap())
                 .build();
-
 
         return frontendComponent.getGraphQLExecutor().execute(executionInput);
     }

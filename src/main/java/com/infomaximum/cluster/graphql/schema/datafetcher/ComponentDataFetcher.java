@@ -8,6 +8,7 @@ import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomFieldUtil
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.schema.datafetcher.utils.ExtResult;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
+import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import graphql.language.Argument;
 import graphql.language.Field;
@@ -59,7 +60,8 @@ public class ComponentDataFetcher implements DataFetcher {
     }
 
     protected Object execute(DataFetchingEnvironment environment) throws Throwable {
-        GRequest gRequest = environment.getContext();
+        ContextRequest context = environment.getContext();
+        GRequest gRequest = context.getRequest();
 
         try {
             if (rTypeGraphQLField.componentUuid == null) {
@@ -70,7 +72,7 @@ public class ComponentDataFetcher implements DataFetcher {
                 Object result = sdkGraphQLItemExecutor.execute(
                         gRequest,
                         environment.getSource(), graphQLTypeName, rTypeGraphQLField.name,
-                        getArguments(rTypeGraphQLField, environment, gRequest.getExternalVariables())
+                        getArguments(rTypeGraphQLField, environment, context.getRequest().getExternalVariables())
                 );
                 return ExtResult.get(result);
             } else {
@@ -85,15 +87,15 @@ public class ComponentDataFetcher implements DataFetcher {
                 Object result;
                 if (rTypeGraphQLField.isPrepare) {
                     result = rControllerGraphQL.executePrepare(
-                            gRequest,
                             PrepareCustomFieldUtils.getKeyField(environment),
-                            source
+                            source,
+                            context
                     );
                 } else {
                     result = rControllerGraphQL.execute(
                             gRequest,
                             source, graphQLTypeName, rTypeGraphQLField.name,
-                            getArguments(rTypeGraphQLField, environment, gRequest.getExternalVariables())
+                            getArguments(rTypeGraphQLField, environment, context.getRequest().getExternalVariables())
                     );
                 }
                 return ExtResult.get(result);

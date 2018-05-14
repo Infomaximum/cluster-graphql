@@ -9,7 +9,7 @@ import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
-import com.infomaximum.cluster.graphql.struct.GRequest;
+import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.struct.Component;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
@@ -165,22 +165,22 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                     }
 
                     prepareRequest(
-                            (GRequest) executionInput.getContext(),
                             parent,
                             node,
                             executionInput.getVariables(),
-                            fn
+                            fn,
+                            (ContextRequest) executionInput.getContext()
                     );
                 } else if (node instanceof FragmentDefinition) {
                     FragmentDefinition fragmentDefinition = (FragmentDefinition) node;
 
                     GraphQLObjectType parent = schema.getObjectType(fragmentDefinition.getTypeCondition().getName());
                     prepareRequest(
-                            (GRequest) executionInput.getContext(),
                             parent,
                             node,
                             executionInput.getVariables(),
-                            fn
+                            fn,
+                            (ContextRequest) executionInput.getContext()
                     );
                 }
             }
@@ -216,10 +216,10 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         }
     }
 
-    public void prepareException(GRequest request, Throwable throwable) {
+    public void prepareException(Throwable throwable, ContextRequest context) {
         //Ulitin V. В будущем необходимо решить вопрос с удаленым вызовым
         for (PrepareCustomField prepareCustomField : graphQLSchemaType.prepareCustomFields) {
-            prepareCustomField.prepareException(request, throwable);
+            prepareCustomField.prepareException(throwable, context);
         }
     }
 
@@ -229,10 +229,10 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
     }
 
     @Override
-    public void requestCompleted(GRequest request, Throwable ex) {
+    public void requestCompleted(Throwable ex, ContextRequest context) {
         //Ulitin V. В будущем необходимо решить вопрос с удаленым вызовым
         for (PrepareCustomField prepareCustomField : graphQLSchemaType.prepareCustomFields) {
-            prepareCustomField.requestCompleted(request, ex);
+            prepareCustomField.requestCompleted(ex, context);
         }
     }
 
@@ -242,7 +242,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
     private static String GRAPHQL_FIELD_SCHEME = "__schema";
     private static String GRAPHQL_FIELD_TYPENAME = "__typename";
 
-    private void prepareRequest(GRequest request, GraphQLType parent, Node node, Map<String, Object> variables, Function fn) throws GraphQLExecutorDataFetcherException {
+    private void prepareRequest(GraphQLType parent, Node node, Map<String, Object> variables, Function fn, ContextRequest context) throws GraphQLExecutorDataFetcherException {
         if (GRAPHQL_TYPE.equals(parent.getName())) return;
         if (GRAPHQL_INPUT_VALUE.equals(parent.getName())) return;
 
@@ -271,20 +271,20 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                 //Собираем какие ресурсы нам необходимы для лока
                 RControllerGraphQL rControllerGraphQL = component.getRemotes().getFromSSUuid(rGraphQLObjectTypeField.componentUuid, RControllerGraphQL.class);
                 Serializable prepareRequest = rControllerGraphQL.prepare(
-                        request,
                         PrepareCustomFieldUtils.getKeyField(field),
                         parent.getName(),
                         rGraphQLObjectTypeField.name,
-                        arguments
+                        arguments,
+                        context
                 );
                 fn.prepare(prepareRequest);
             }
 
             for (Node iNode: field.getChildren()) {
                 if (parent instanceof GraphQLObjectType) {
-                    prepareRequest(request, ((GraphQLObjectType) parent).getFieldDefinition(field.getName()).getType(), iNode, variables, fn);
+                    prepareRequest(((GraphQLObjectType) parent).getFieldDefinition(field.getName()).getType(), iNode, variables, fn, context);
                 } else if (parent instanceof GraphQLList) {
-                    prepareRequest(request, parent, iNode, variables, fn);
+                    prepareRequest(parent, iNode, variables, fn, context);
                 } else {
                     throw new RuntimeException("not support parent type: " + parent);
                 }
@@ -293,25 +293,25 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             SelectionSet selectionSetNode = (SelectionSet) node;
             for (Node iNode: selectionSetNode.getChildren()) {
                 if (parent instanceof GraphQLList) {
-                    prepareRequest(request, ((GraphQLList) parent).getWrappedType(), iNode, variables, fn);
+                    prepareRequest(((GraphQLList) parent).getWrappedType(), iNode, variables, fn, context);
                 } else {
-                    prepareRequest(request, parent, iNode, variables, fn);
+                    prepareRequest(parent, iNode, variables, fn, context);
                 }
             }
         } else if (node instanceof OperationDefinition) {
             OperationDefinition operationDefinitionNode = (OperationDefinition) node;
             for (Node iNode : operationDefinitionNode.getChildren()) {
-                prepareRequest(request, parent, iNode, variables, fn);
+                prepareRequest(parent, iNode, variables, fn, context);
             }
         } else if (node instanceof FragmentDefinition) {
             FragmentDefinition fragmentDefinition = (FragmentDefinition) node;
             for (Node iNode : fragmentDefinition.getChildren()) {
-                prepareRequest(request, parent, iNode, variables, fn);
+                prepareRequest(parent, iNode, variables, fn, context);
             }
         } else if (node instanceof InlineFragment) {
             InlineFragment inlineFragment = (InlineFragment) node;
             for (Node iNode : inlineFragment.getChildren()) {
-                prepareRequest(request, schema.getObjectType(inlineFragment.getTypeCondition().getName()), iNode, variables, fn);
+                prepareRequest(schema.getObjectType(inlineFragment.getTypeCondition().getName()), iNode, variables, fn, context);
             }
         }
     }
