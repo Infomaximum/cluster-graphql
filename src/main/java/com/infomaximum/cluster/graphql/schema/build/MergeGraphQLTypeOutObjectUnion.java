@@ -1,6 +1,6 @@
 package com.infomaximum.cluster.graphql.schema.build;
 
-import com.infomaximum.cluster.graphql.schema.struct.output.RGraphQLObjectTypeField;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 
 import java.util.*;
 
@@ -14,8 +14,8 @@ public class MergeGraphQLTypeOutObjectUnion extends MergeGraphQLType {
 
     private Set<RGraphQLObjectTypeField> fields;
 
-    public MergeGraphQLTypeOutObjectUnion(String name) {
-        super(name);
+    public MergeGraphQLTypeOutObjectUnion(String name, String description) {
+        super(name, description);
         this.possibleType = new HashMap<>();
         this.fields = new HashSet<>();
     }

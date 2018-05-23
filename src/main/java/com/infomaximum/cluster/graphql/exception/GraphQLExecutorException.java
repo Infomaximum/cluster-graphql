@@ -1,6 +1,10 @@
 package com.infomaximum.cluster.graphql.exception;
 
-public class GraphQLExecutorException extends Exception {
+public class GraphQLExecutorException extends RuntimeException {
+
+    public GraphQLExecutorException() {
+        super();
+    }
 
     public GraphQLExecutorException(String message) {
         super(message);
