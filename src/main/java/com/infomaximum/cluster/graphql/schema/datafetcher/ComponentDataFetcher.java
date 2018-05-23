@@ -61,7 +61,6 @@ public class ComponentDataFetcher implements DataFetcher {
 
     protected Object execute(DataFetchingEnvironment environment) throws Throwable {
         ContextRequest context = environment.getContext();
-        GRequest gRequest = context.getRequest();
 
         try {
             if (rTypeGraphQLField.componentUuid == null) {
@@ -70,9 +69,9 @@ public class ComponentDataFetcher implements DataFetcher {
                 if (rTypeGraphQLField.isPrepare) throw new RuntimeException("Not implemented");
 
                 Object result = sdkGraphQLItemExecutor.execute(
-                        gRequest,
                         environment.getSource(), graphQLTypeName, rTypeGraphQLField.name,
-                        getArguments(rTypeGraphQLField, environment, context.getRequest().getExternalVariables())
+                        getArguments(rTypeGraphQLField, environment, context.getRequest().getExternalVariables()),
+                        context
                 );
                 return ExtResult.get(result);
             } else {
@@ -93,9 +92,9 @@ public class ComponentDataFetcher implements DataFetcher {
                     );
                 } else {
                     result = rControllerGraphQL.execute(
-                            gRequest,
                             source, graphQLTypeName, rTypeGraphQLField.name,
-                            getArguments(rTypeGraphQLField, environment, context.getRequest().getExternalVariables())
+                            getArguments(rTypeGraphQLField, environment, context.getRequest().getExternalVariables()),
+                            context
                     );
                 }
                 return ExtResult.get(result);

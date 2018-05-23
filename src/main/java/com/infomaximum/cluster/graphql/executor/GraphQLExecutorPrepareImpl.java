@@ -216,23 +216,16 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         }
     }
 
-    public void prepareException(Throwable throwable, ContextRequest context) {
-        //Ulitin V. В будущем необходимо решить вопрос с удаленым вызовым
-        for (PrepareCustomField prepareCustomField : graphQLSchemaType.prepareCustomFields) {
-            prepareCustomField.prepareException(throwable, context);
-        }
-    }
-
     @Override
     public ExecutionResult execute(ExecutionInput executionInput) {
         return graphQL.execute(executionInput);
     }
 
     @Override
-    public void requestCompleted(Throwable ex, ContextRequest context) {
+    public void requestCompleted(ContextRequest context) {
         //Ulitin V. В будущем необходимо решить вопрос с удаленым вызовым
         for (PrepareCustomField prepareCustomField : graphQLSchemaType.prepareCustomFields) {
-            prepareCustomField.requestCompleted(ex, context);
+            prepareCustomField.requestCompleted(context);
         }
     }
 

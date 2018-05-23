@@ -26,6 +26,6 @@ public class GraphQLExecutorImpl implements GraphQLExecutor {
     }
 
     @Override
-    public void requestCompleted(Throwable ex, ContextRequest context) {
+    public void requestCompleted(ContextRequest context) {
     }
 }
