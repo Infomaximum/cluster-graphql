@@ -75,7 +75,7 @@ public class GraphQLComponentExecutor {
     }
 
     public Serializable prepare(Component component, String keyField, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments, ContextRequest context) throws GraphQLExecutorDataFetcherException {
-        Object prepareResultObject = executeGraphQLMethod(context.getRequest(), null, graphQLTypeName, graphQLTypeFieldName, arguments);
+        Object prepareResultObject = executeGraphQLMethod(null, graphQLTypeName, graphQLTypeFieldName, arguments, context);
         if (prepareResultObject == null) {
             throw new GraphQLExecutorException("Class: " + classSchemas.get(graphQLTypeName) + ", method: " + graphQLTypeFieldName + " returning is null prepare object");
         }
@@ -96,11 +96,11 @@ public class GraphQLComponentExecutor {
         return prepareCustomField.execute(keyField, source, context);
     }
 
-    public Serializable execute(GRequest request, RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
-        return (Serializable) executeGraphQLMethod(request, source, graphQLTypeName, graphQLTypeFieldName, arguments);
+    public Serializable execute(RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments, ContextRequest context) throws GraphQLExecutorDataFetcherException {
+        return (Serializable) executeGraphQLMethod(source, graphQLTypeName, graphQLTypeFieldName, arguments, context);
     }
 
-    private Object executeGraphQLMethod(GRequest request, Object source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
+    private Object executeGraphQLMethod(Object source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments, ContextRequest context) throws GraphQLExecutorDataFetcherException {
         try {
             Method method = getMethod(graphQLTypeName, graphQLTypeFieldName);
 
@@ -137,13 +137,13 @@ public class GraphQLComponentExecutor {
                     //возможно особый аргумент
                     Class classType = methodParameterTypes[index];
                     if (GRequest.class.isAssignableFrom(classType)) {
-                        argumentValue = request;
+                        argumentValue = context.getRequest();
                     } else {
                         boolean isSuccessFindEnvironment = false;
                         if (graphQLSchemaType != null) {
                             for (CustomFieldArgument customArgument : graphQLSchemaType.customArguments) {
                                 if (customArgument.isSupport(classType)) {
-                                    argumentValue = customArgument.getValue(request, classType);
+                                    argumentValue = customArgument.getValue(classType, context);
                                     isSuccessFindEnvironment = true;
                                 }
                             }

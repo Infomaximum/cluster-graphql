@@ -49,8 +49,8 @@ public class RControllerGraphQLImpl<T extends Component> extends AbstractRContro
     }
 
     @Override
-    public Serializable execute(GRequest request, RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments) throws GraphQLExecutorDataFetcherException {
-        return graphQLItemExecutor.execute(request, source, graphQLTypeName, graphQLTypeFieldName, arguments);
+    public Serializable execute(RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, HashMap<String, Serializable> arguments, ContextRequest context) throws GraphQLExecutorDataFetcherException {
+        return graphQLItemExecutor.execute(source, graphQLTypeName, graphQLTypeFieldName, arguments, context);
     }
 
 }
