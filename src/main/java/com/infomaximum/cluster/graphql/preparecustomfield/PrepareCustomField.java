@@ -14,11 +14,9 @@ public interface PrepareCustomField<T> {
 
     Type getEndType(Type genericType);
 
-    Serializable prepare(Component component, String keyField, T value, ContextRequest context);
-
-    void prepareException(Throwable throwable, ContextRequest context);
+    Serializable requestPrepare(Component component, String keyField, T value, ContextRequest context);
 
     Serializable execute(String keyField, RemoteObject source, ContextRequest context) throws GraphQLExecutorDataFetcherException;
 
-    void requestCompleted(Throwable throwable, ContextRequest context);
+    void requestCompleted(ContextRequest context);
 }

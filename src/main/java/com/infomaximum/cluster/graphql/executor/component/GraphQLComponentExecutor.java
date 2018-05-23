@@ -82,7 +82,7 @@ public class GraphQLComponentExecutor {
 
         for (PrepareCustomField prepareCustomField : graphQLSchemaType.prepareCustomFields) {
             if (prepareCustomField.isSupport(prepareResultObject.getClass())) {
-                return prepareCustomField.prepare(component, keyField, prepareResultObject, context);
+                return prepareCustomField.requestPrepare(component, keyField, prepareResultObject, context);
             }
         }
         throw new GraphQLExecutorException("Not found prepare handler for: " + prepareResultObject);
