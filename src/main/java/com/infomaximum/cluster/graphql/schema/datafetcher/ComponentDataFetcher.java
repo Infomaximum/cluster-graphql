@@ -9,7 +9,6 @@ import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.schema.datafetcher.utils.ExtResult;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.struct.ContextRequest;
-import com.infomaximum.cluster.graphql.struct.GRequest;
 import graphql.language.Argument;
 import graphql.language.Field;
 import graphql.language.VariableReference;
@@ -70,7 +69,7 @@ public class ComponentDataFetcher implements DataFetcher {
 
                 Object result = sdkGraphQLItemExecutor.execute(
                         environment.getSource(), graphQLTypeName, rTypeGraphQLField.name,
-                        getArguments(rTypeGraphQLField, environment, context.getRequest().getExternalVariables()),
+                        getArguments(rTypeGraphQLField, environment, context.getRequest().getQueryVariables()),
                         context
                 );
                 return ExtResult.get(result);
@@ -93,7 +92,7 @@ public class ComponentDataFetcher implements DataFetcher {
                 } else {
                     result = rControllerGraphQL.execute(
                             source, graphQLTypeName, rTypeGraphQLField.name,
-                            getArguments(rTypeGraphQLField, environment, context.getRequest().getExternalVariables()),
+                            getArguments(rTypeGraphQLField, environment, context.getRequest().getQueryVariables()),
                             context
                     );
                 }

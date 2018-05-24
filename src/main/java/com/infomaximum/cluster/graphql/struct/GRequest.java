@@ -2,6 +2,7 @@ package com.infomaximum.cluster.graphql.struct;
 
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 
+import javax.servlet.http.Cookie;
 import java.io.Serializable;
 import java.net.URI;
 import java.time.Instant;
@@ -52,14 +53,21 @@ public class GRequest implements RemoteObject {
 
     private final RemoteAddress remoteAddress;
 
-    private final HashMap<String, Serializable> externalVariables;
+    private final String query;
+    private final HashMap<String, Serializable> queryVariables;
+
+    private final HashMap<String, String[]> parameters;
+
+    private final Cookie[] cookies;
+
     private final ArrayList<UploadFile> uploadFiles;
 
     public GRequest(
             String frontendComponentKey,
             Instant instant,
             RemoteAddress remoteAddress,
-            HashMap<String, Serializable> externalVariables,
+            String query, HashMap<String, Serializable> queryVariables,
+            HashMap<String, String[]> parameters, Cookie[] cookies,
             ArrayList<UploadFile> uploadFiles
     ) {
         this.instant = instant;
@@ -70,7 +78,12 @@ public class GRequest implements RemoteObject {
 
         this.remoteAddress = remoteAddress;
 
-        this.externalVariables = externalVariables;
+        this.query = query;
+        this.queryVariables = queryVariables;
+
+        this.parameters = parameters;
+        this.cookies = cookies;
+
         this.uploadFiles = uploadFiles;
     }
 
@@ -90,8 +103,30 @@ public class GRequest implements RemoteObject {
         return remoteAddress;
     }
 
-    public HashMap<String, Serializable> getExternalVariables() {
-        return externalVariables;
+    public String getQuery() {
+        return query;
+    }
+
+    public HashMap<String, Serializable> getQueryVariables() {
+        return queryVariables;
+    }
+
+    public String getParameter(String name) {
+        String[] values = getParameters(name);
+        return (values == null) ? null : values[0];
+    }
+
+    public String[] getParameters(String name) {
+        return parameters.get(name);
+    }
+
+    public Cookie getCookie(String name) {
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (name.equals(cookie.getName())) return cookie;
+            }
+        }
+        return null;
     }
 
     public ArrayList<UploadFile> getUploadFiles() {

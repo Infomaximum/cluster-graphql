@@ -39,7 +39,8 @@ public abstract class BaseTest {
                 frontendComponent.getKey(),
                 Instant.now(),
                 new GRequest.RemoteAddress("127.0.0.1"),
-                new HashMap<>(),
+                "{}", new HashMap<>(),
+                new HashMap<>(), null,
                 null
         );
 
