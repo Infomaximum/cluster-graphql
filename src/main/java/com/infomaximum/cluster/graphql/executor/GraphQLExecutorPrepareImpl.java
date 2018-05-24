@@ -10,6 +10,7 @@ import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.struct.ContextRequest;
+import com.infomaximum.cluster.graphql.utils.ExceptionUtils;
 import com.infomaximum.cluster.struct.Component;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
@@ -32,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -131,8 +133,10 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         ExecutionInput finalExecutionInput = executionInput;
         PreparsedDocumentEntry preparsedDocumentEntry = preparsedDocumentProvider.get(executionInput.getQuery(), query -> {
             try {
-                return (PreparsedDocumentEntry)methodParseAndValidate.invoke(graphQL, finalExecutionInput, schema, instrumentationState);
-            } catch (ReflectiveOperationException e) {
+                return (PreparsedDocumentEntry) methodParseAndValidate.invoke(graphQL, finalExecutionInput, schema, instrumentationState);
+            } catch (InvocationTargetException ite) {
+                throw ExceptionUtils.coercionRuntimeException(ite.getTargetException());
+            } catch (Throwable e) {
                 throw new RuntimeException("Изменилась реализация библиотеки GraphQL", e);
             }
         });
