@@ -61,11 +61,12 @@ public class GraphQLComponentExecutor {
         rTypeGraphQLs = new ArrayList<>(typeGraphQLBuilder.build().values());
 
         classSchemas = new HashMap<String, Class>();
-        for (Map.Entry<Class, RGraphQLType> entryTypeGraphQL: rTypeGraphQLItems.entrySet()) {
+        for (Map.Entry<Class, RGraphQLType> entryTypeGraphQL : rTypeGraphQLItems.entrySet()) {
             Class classRTypeGraphQL = entryTypeGraphQL.getKey();
             RGraphQLType rGraphQLType = entryTypeGraphQL.getValue();
 
-            if (classSchemas.containsKey(rGraphQLType.getName())) throw new RuntimeException("not unique query schema: " + rGraphQLType.getName());
+            if (classSchemas.containsKey(rGraphQLType.getName()))
+                throw new RuntimeException("not unique query schema: " + rGraphQLType.getName());
             classSchemas.put(rGraphQLType.getName(), classRTypeGraphQL);
         }
     }
@@ -132,7 +133,7 @@ public class GraphQLComponentExecutor {
                 } else if (graphQLAnnotation != null) {
                     String argumentName = graphQLAnnotation.value();
                     boolean isPresent = arguments.containsKey(argumentName);
-                    argumentValue = getValue(method.getGenericParameterTypes()[index], arguments.get(argumentName), isPresent);
+                    argumentValue = getInputValue(method.getGenericParameterTypes()[index], arguments.get(argumentName), isPresent);
                 } else {
                     //возможно особый аргумент
                     Class classType = methodParameterTypes[index];
@@ -168,7 +169,7 @@ public class GraphQLComponentExecutor {
         }
     }
 
-    private Object getValue(Type type, Object inputValue, boolean isPresent) throws ReflectiveOperationException {
+    private Object getInputValue(Type type, Object inputValue, boolean isPresent) throws ReflectiveOperationException {
         Class clazz;
         if (type instanceof ParameterizedType) {
             clazz = (Class) ((ParameterizedType) type).getRawType();
@@ -176,7 +177,7 @@ public class GraphQLComponentExecutor {
             clazz = (Class) type;
         }
 
-        if (inputValue==null) {
+        if (inputValue == null) {
             if (clazz.isPrimitive()) return Defaults.defaultValue(clazz);
             if (clazz == GOptional.class) return new GOptional(null, isPresent);
             return null;
@@ -195,24 +196,30 @@ public class GraphQLComponentExecutor {
                 throw new GraphQLExecutorInvalidSyntaxException(e);
             }
         } else if (clazz == GOptional.class) {
-            return new GOptional(getValue(((ParameterizedType) type).getActualTypeArguments()[0], inputValue, true), isPresent);
+            return new GOptional(getInputValue(((ParameterizedType) type).getActualTypeArguments()[0], inputValue, true), isPresent);
         } else if (Collection.class.isAssignableFrom(clazz)) {
             if (!Collection.class.isAssignableFrom(inputValue.getClass())) {
                 throw new GraphQLExecutorInvalidSyntaxException();
             }
 
-            Collection collection;
             if (clazz.isAssignableFrom(ArrayList.class)) {
-                collection = new ArrayList();
+                List list = new ArrayList();
+                for (Object iObject : (Collection) inputValue) {
+                    Object element = getInputValue(((ParameterizedType) type).getActualTypeArguments()[0], iObject, true);
+                    list.add(element);
+                }
+                return list;
             } else if (clazz.isAssignableFrom(HashSet.class)) {
-                collection = new HashSet();
+                Set set = new HashSet();
+                for (Object iObject : (Collection) inputValue) {
+                    Object element = getInputValue(((ParameterizedType) type).getActualTypeArguments()[0], iObject, true);
+                    if (element == null) continue;
+                    set.add(element);
+                }
+                return set;
             } else {
                 throw new RuntimeException("Not support type collection: " + clazz);
             }
-            for (Object iObject : (Collection) inputValue) {
-                collection.add(getValue(((ParameterizedType) type).getActualTypeArguments()[0], iObject, true));
-            }
-            return collection;
         } else if (clazz.getAnnotation(GraphQLTypeInput.class) != null) {
             if (!Map.class.isAssignableFrom(inputValue.getClass())) {
                 throw new GraphQLExecutorInvalidSyntaxException();
@@ -232,7 +239,7 @@ public class GraphQLComponentExecutor {
                 String externalName = aGraphQLTypeInput.value();
                 if (externalName == null || externalName.isEmpty()) externalName = field.getName();
 
-                field.set(value, getValue(field.getGenericType(), fieldValues.get(externalName), fieldValues.containsKey(externalName)));
+                field.set(value, getInputValue(field.getGenericType(), fieldValues.get(externalName), fieldValues.containsKey(externalName)));
             }
 
             return value;
@@ -246,12 +253,12 @@ public class GraphQLComponentExecutor {
         Class classSchema = classSchemas.get(graphQLTypeName);
         if (classSchema == null) throw new RuntimeException("not support scheme: " + classSchema);
 
-        Method findMethod=null;
-        for (Method method: classSchema.getMethods()) {
+        Method findMethod = null;
+        for (Method method : classSchema.getMethods()) {
             if (method.isSynthetic()) continue; //Игнорируем генерируемые методы
             if (method.getName().equals(graphQLTypeFieldName)) {
-                if (findMethod==null) {
-                    findMethod=method;
+                if (findMethod == null) {
+                    findMethod = method;
                 } else {
                     throw new RuntimeException("not support overload method: " + graphQLTypeFieldName + " in class: " + classSchema);
                 }
