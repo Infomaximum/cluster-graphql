@@ -7,7 +7,7 @@ import java.lang.reflect.Method;
 
 public interface TypeGraphQLFieldConfigurationBuilder<T extends RemoteObject> {
 
-    T build(Method method);
+    T build(Class source, Method method);
 
-    T build(Field field);
+    T build(Class source, Field field);
 }

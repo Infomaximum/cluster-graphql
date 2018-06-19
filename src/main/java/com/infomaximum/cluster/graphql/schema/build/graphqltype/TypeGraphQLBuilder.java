@@ -119,7 +119,7 @@ public class TypeGraphQLBuilder {
 
 					RemoteObject fieldConfiguration = null;
 					if (fieldConfigurationBuilder!=null) {
-						fieldConfiguration = fieldConfigurationBuilder.build(field);
+						fieldConfiguration = fieldConfigurationBuilder.build(classRTypeGraphQL, field);
 					}
 
 					GraphQLDescription aGraphQLDescription = field.getAnnotation(GraphQLDescription.class);
@@ -294,7 +294,7 @@ public class TypeGraphQLBuilder {
 
 		RemoteObject fieldConfiguration = null;
 		if (fieldConfigurationBuilder!=null) {
-			fieldConfiguration = fieldConfigurationBuilder.build(method);
+			fieldConfiguration = fieldConfigurationBuilder.build(classRTypeGraphQL, method);
 		}
 
 		GraphQLDescription aGraphQLDescription = method.getAnnotation(GraphQLDescription.class);
