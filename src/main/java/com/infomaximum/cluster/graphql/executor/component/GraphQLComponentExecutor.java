@@ -144,7 +144,7 @@ public class GraphQLComponentExecutor {
                         if (graphQLSchemaType != null) {
                             for (CustomFieldArgument customArgument : graphQLSchemaType.customArguments) {
                                 if (customArgument.isSupport(classType)) {
-                                    argumentValue = customArgument.getValue(classType, context);
+                                    argumentValue = customArgument.getValue(classType, method, context);
                                     isSuccessFindEnvironment = true;
                                 }
                             }
