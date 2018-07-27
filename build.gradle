@@ -1,5 +1,5 @@
 group 'com.infomaximum'
-version '0.0.23RC56'
+version '0.0.23RC57'
 
 repositories {
     mavenCentral()
@@ -16,7 +16,7 @@ if (file('publish.gradle').exists()) {
 sourceCompatibility = 1.8
 compileJava.options.encoding = 'UTF-8'
 
-sourceSets {
+sourceSets  {
     main {
         java.srcDir 'src/main/java'
         resources {

@@ -40,39 +40,60 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Основная идея это разрезать метод parseValidateAndExecute на 2 части и черех грязные хаки вызвать их отдельно
+ * Основная идея это разрезать метод parseValidateAndExecute на 2 части и через грязные хаки вызвать их отдельно
  *
- private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
- PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput, graphQLSchema, instrumentationState));
-
- if (preparsedDoc.hasErrors()) {
- return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
- }
-
- return execute(executionInput, preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
- }
+ * private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+ *      PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput, graphQLSchema, instrumentationState));
  *
+ *      if (preparsedDoc.hasErrors()) {
+ *          return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
+ *      }
  *
+ *      return execute(executionInput, preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
+ * }
  */
 public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
 
     private final static Logger log = LoggerFactory.getLogger(GraphQLExecutorPrepareImpl.class);
+
+    private final static String GRAPHQL_TYPE = "__Type";
+    private final static String GRAPHQL_INPUT_VALUE = "__InputValue";
+    private final static String GRAPHQL_FIELD_SCHEME = "__schema";
+    private final static String GRAPHQL_FIELD_TYPENAME = "__typename";
 
     @FunctionalInterface
     public interface Function<T extends Serializable> {
         void prepare(T t);
     }
 
-    public static class PrepareDocumentRequest {
+    private class PrepareFunction<T extends Serializable> {
+
+        private final Function<T> function;
+        private boolean isPrepareUsed;
+
+        public PrepareFunction(Function<T> function) {
+            this.function = function;
+            this.isPrepareUsed = false;
+        }
+
+        private void prepare(T t) {
+            function.prepare(t);
+            isPrepareUsed = true;
+        }
+    }
+
+    public class PrepareDocumentRequest {
 
         public final ExecutionInput executionInput;
         public final PreparsedDocumentEntry preparsedDocumentEntry;
         public final InstrumentationState instrumentationState;
+        public final boolean isPrepareUsed;
 
-        public PrepareDocumentRequest(ExecutionInput executionInput, PreparsedDocumentEntry preparsedDocumentEntry, InstrumentationState instrumentationState) {
+        public PrepareDocumentRequest(ExecutionInput executionInput, PreparsedDocumentEntry preparsedDocumentEntry, InstrumentationState instrumentationState, boolean isPrepareUsed) {
             this.executionInput = executionInput;
             this.preparsedDocumentEntry = preparsedDocumentEntry;
             this.instrumentationState = instrumentationState;
+            this.isPrepareUsed = isPrepareUsed;
         }
     }
 
@@ -80,12 +101,10 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
     private final GraphQLSchema schema;
     private final GraphQL graphQL;
     private final GraphQLSchemaType graphQLSchemaType;
-
     private final Instrumentation instrumentation;
     private final PreparsedDocumentProvider preparsedDocumentProvider;
     private final Method methodParseAndValidate;
     private final Method methodExecute;
-
     private final Map<String, MergeGraphQLTypeOutObject> remoteGraphQLTypeOutObjects;
 
     public GraphQLExecutorPrepareImpl(Component component, GraphQLSchema schema, GraphQL graphQL, Map<String, MergeGraphQLTypeOutObject> remoteGraphQLTypeOutObjects, GraphQLSchemaType graphQLSchemaType) {
@@ -146,12 +165,14 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             return new PrepareDocumentRequest(
                     executionInput,
                     preparsedDocumentEntry,
-                    instrumentationState
+                    instrumentationState,
+                    false
             );
         }
 
         //Документ распарсен - вызываем prepare
         try {
+            PrepareFunction prepareFunction = new PrepareFunction(fn);
             Document document = preparsedDocumentEntry.getDocument();
             for (Node node : document.getChildren()) {
                 if (node instanceof OperationDefinition) {
@@ -172,7 +193,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                             parent,
                             node,
                             executionInput.getVariables(),
-                            fn,
+                            prepareFunction,
                             (ContextRequest) executionInput.getContext()
                     );
                 } else if (node instanceof FragmentDefinition) {
@@ -183,7 +204,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                             parent,
                             node,
                             executionInput.getVariables(),
-                            fn,
+                            prepareFunction,
                             (ContextRequest) executionInput.getContext()
                     );
                 }
@@ -192,7 +213,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             return new PrepareDocumentRequest(
                     executionInput,
                     preparsedDocumentEntry,
-                    instrumentationState
+                    instrumentationState,
+                    prepareFunction.isPrepareUsed
             );
         } catch (GraphQLExecutorInvalidSyntaxException e) {
             //Произошла ошибка парсинга
@@ -201,7 +223,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                     new PreparsedDocumentEntry(new InvalidSyntaxError(
                             new SourceLocation(0, 0),
                             e.getMessage())),
-                    instrumentationState
+                    instrumentationState,
+                    false
             );
         }
     }
@@ -233,23 +256,17 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         }
     }
 
-    private static String GRAPHQL_TYPE = "__Type";
-    private static String GRAPHQL_INPUT_VALUE = "__InputValue";
-
-    private static String GRAPHQL_FIELD_SCHEME = "__schema";
-    private static String GRAPHQL_FIELD_TYPENAME = "__typename";
-
-    private void prepareRequest(GraphQLType parent, Node node, Map<String, Object> variables, Function fn, ContextRequest context) throws GraphQLExecutorDataFetcherException {
+    private void prepareRequest(GraphQLType parent, Node node, Map<String, Object> variables, PrepareFunction prepareFunction, ContextRequest context) throws GraphQLExecutorDataFetcherException {
         if (GRAPHQL_TYPE.equals(parent.getName())) return;
         if (GRAPHQL_INPUT_VALUE.equals(parent.getName())) return;
 
         if (node instanceof graphql.language.Field) {
-            graphql.language.Field field = (graphql.language.Field)node;
+            graphql.language.Field field = (graphql.language.Field) node;
             if (GRAPHQL_FIELD_SCHEME.equals(field.getName())) return;
             if (GRAPHQL_FIELD_TYPENAME.equals(field.getName())) return;
 
             MergeGraphQLTypeOutObject mergeGraphQLTypeOutObject = remoteGraphQLTypeOutObjects.get(parent.getName());
-            if (mergeGraphQLTypeOutObject==null) return;
+            if (mergeGraphQLTypeOutObject == null) return;
 
             RGraphQLObjectTypeField rGraphQLObjectTypeField = mergeGraphQLTypeOutObject.getFieldByExternalName(field.getName());
 
@@ -258,7 +275,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                         field,
                         new ValuesResolver().getArgumentValues(
                                 schema.getFieldVisibility(),
-                                Introspection.getFieldDef(schema, (GraphQLObjectType)parent, field.getName()).getArguments(),
+                                Introspection.getFieldDef(schema, (GraphQLObjectType) parent, field.getName()).getArguments(),
                                 field.getArguments(),
                                 variables
                         ),
@@ -274,41 +291,41 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                         arguments,
                         context
                 );
-                fn.prepare(prepareRequest);
+                prepareFunction.prepare(prepareRequest);
             }
 
-            for (Node iNode: field.getChildren()) {
+            for (Node iNode : field.getChildren()) {
                 if (parent instanceof GraphQLObjectType) {
-                    prepareRequest(((GraphQLObjectType) parent).getFieldDefinition(field.getName()).getType(), iNode, variables, fn, context);
+                    prepareRequest(((GraphQLObjectType) parent).getFieldDefinition(field.getName()).getType(), iNode, variables, prepareFunction, context);
                 } else if (parent instanceof GraphQLList) {
-                    prepareRequest(parent, iNode, variables, fn, context);
+                    prepareRequest(parent, iNode, variables, prepareFunction, context);
                 } else {
                     throw new RuntimeException("not support parent type: " + parent);
                 }
             }
         } else if (node instanceof SelectionSet) {
             SelectionSet selectionSetNode = (SelectionSet) node;
-            for (Node iNode: selectionSetNode.getChildren()) {
+            for (Node iNode : selectionSetNode.getChildren()) {
                 if (parent instanceof GraphQLList) {
-                    prepareRequest(((GraphQLList) parent).getWrappedType(), iNode, variables, fn, context);
+                    prepareRequest(((GraphQLList) parent).getWrappedType(), iNode, variables, prepareFunction, context);
                 } else {
-                    prepareRequest(parent, iNode, variables, fn, context);
+                    prepareRequest(parent, iNode, variables, prepareFunction, context);
                 }
             }
         } else if (node instanceof OperationDefinition) {
             OperationDefinition operationDefinitionNode = (OperationDefinition) node;
             for (Node iNode : operationDefinitionNode.getChildren()) {
-                prepareRequest(parent, iNode, variables, fn, context);
+                prepareRequest(parent, iNode, variables, prepareFunction, context);
             }
         } else if (node instanceof FragmentDefinition) {
             FragmentDefinition fragmentDefinition = (FragmentDefinition) node;
             for (Node iNode : fragmentDefinition.getChildren()) {
-                prepareRequest(parent, iNode, variables, fn, context);
+                prepareRequest(parent, iNode, variables, prepareFunction, context);
             }
         } else if (node instanceof InlineFragment) {
             InlineFragment inlineFragment = (InlineFragment) node;
             for (Node iNode : inlineFragment.getChildren()) {
-                prepareRequest(schema.getObjectType(inlineFragment.getTypeCondition().getName()), iNode, variables, fn, context);
+                prepareRequest(schema.getObjectType(inlineFragment.getTypeCondition().getName()), iNode, variables, prepareFunction, context);
             }
         }
     }
