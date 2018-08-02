@@ -62,24 +62,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
     private final static String GRAPHQL_FIELD_TYPENAME = "__typename";
 
     @FunctionalInterface
-    public interface Function<T extends Serializable> {
-        void prepare(T t);
-    }
-
-    private class PrepareFunction<T extends Serializable> {
-
-        private final Function<T> function;
-        private boolean isPrepareUsed;
-
-        public PrepareFunction(Function<T> function) {
-            this.function = function;
-            this.isPrepareUsed = false;
-        }
-
-        private void prepare(T t) {
-            function.prepare(t);
-            isPrepareUsed = true;
-        }
+    public interface PrepareFunction<T extends Serializable> {
+        void prepare(RGraphQLObjectTypeField rGraphQLObjectTypeField, T t);
     }
 
     public class PrepareDocumentRequest {
@@ -87,13 +71,11 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         public final ExecutionInput executionInput;
         public final PreparsedDocumentEntry preparsedDocumentEntry;
         public final InstrumentationState instrumentationState;
-        public final boolean isPrepareUsed;
 
-        public PrepareDocumentRequest(ExecutionInput executionInput, PreparsedDocumentEntry preparsedDocumentEntry, InstrumentationState instrumentationState, boolean isPrepareUsed) {
+        public PrepareDocumentRequest(ExecutionInput executionInput, PreparsedDocumentEntry preparsedDocumentEntry, InstrumentationState instrumentationState) {
             this.executionInput = executionInput;
             this.preparsedDocumentEntry = preparsedDocumentEntry;
             this.instrumentationState = instrumentationState;
-            this.isPrepareUsed = isPrepareUsed;
         }
     }
 
@@ -138,7 +120,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         return schema;
     }
 
-    public PrepareDocumentRequest prepare(ExecutionInput executionInput, Function fn) throws GraphQLExecutorDataFetcherException {
+    public PrepareDocumentRequest prepare(ExecutionInput executionInput, PrepareFunction prepareFunction) throws GraphQLExecutorDataFetcherException {
         InstrumentationState instrumentationState = instrumentation.createState();
 
         InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInput, schema, instrumentationState);
@@ -165,14 +147,12 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             return new PrepareDocumentRequest(
                     executionInput,
                     preparsedDocumentEntry,
-                    instrumentationState,
-                    false
+                    instrumentationState
             );
         }
 
         //Документ распарсен - вызываем prepare
         try {
-            PrepareFunction prepareFunction = new PrepareFunction(fn);
             Document document = preparsedDocumentEntry.getDocument();
             for (Node node : document.getChildren()) {
                 if (node instanceof OperationDefinition) {
@@ -213,8 +193,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             return new PrepareDocumentRequest(
                     executionInput,
                     preparsedDocumentEntry,
-                    instrumentationState,
-                    prepareFunction.isPrepareUsed
+                    instrumentationState
             );
         } catch (GraphQLExecutorInvalidSyntaxException e) {
             //Произошла ошибка парсинга
@@ -223,8 +202,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                     new PreparsedDocumentEntry(new InvalidSyntaxError(
                             new SourceLocation(0, 0),
                             e.getMessage())),
-                    instrumentationState,
-                    false
+                    instrumentationState
             );
         }
     }
@@ -291,7 +269,9 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                         arguments,
                         context
                 );
-                prepareFunction.prepare(prepareRequest);
+                prepareFunction.prepare(rGraphQLObjectTypeField, prepareRequest);
+            } else {
+                prepareFunction.prepare(rGraphQLObjectTypeField, null);
             }
 
             for (Node iNode : field.getChildren()) {
