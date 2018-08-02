@@ -1,5 +1,5 @@
 group 'com.infomaximum'
-version '0.0.23RC57'
+version '0.0.23RC58'
 
 repositories {
     mavenCentral()
@@ -45,7 +45,7 @@ dependencies {
 
     compile 'javax.servlet:javax.servlet-api:3.1.0'
 
-    compile 'com.graphql-java:graphql-java:7.0'
+    compile 'com.graphql-java:graphql-java:9.2'
     compile 'javax.validation:validation-api:1.1.0.Final'
 
     compile 'org.slf4j:slf4j-api:1.7.21'

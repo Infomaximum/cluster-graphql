@@ -38,10 +38,8 @@ public class GraphQLExecutorBuilder {
     private final Constructor customRemoteDataFetcher;
 
     private final TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
-
-    private GraphQLComponentExecutor sdkGraphQLItemExecutor;
-
     private final GraphQLSchemaType graphQLSchemaType;
+    private GraphQLComponentExecutor sdkGraphQLItemExecutor;
 
     public GraphQLExecutorBuilder(
             Component component,
@@ -68,7 +66,7 @@ public class GraphQLExecutorBuilder {
             Map<String, Set<RGraphQLInputObjectTypeField>> buildGraphQLTypeInObjects = new HashMap<String, Set<RGraphQLInputObjectTypeField>>();
 
             //Собираем встроенные
-            if (sdkPackagePath!=null) {
+            if (sdkPackagePath != null) {
                 sdkGraphQLItemExecutor = new GraphQLComponentExecutor(
                         sdkPackagePath, fieldConfigurationBuilder, graphQLSchemaType
                 );
@@ -108,12 +106,12 @@ public class GraphQLExecutorBuilder {
             }
 
             //Добавляем все enum
-            for (RGraphQLTypeEnum rGraphQLEnumType: buildGraphQLTypeEnums) {
+            for (RGraphQLTypeEnum rGraphQLEnumType : buildGraphQLTypeEnums) {
                 buildGraphQLTypeEnum(graphQLTypes, rGraphQLEnumType);
             }
 
             //Разбираемся с зависимостями input объектами
-            for (Map.Entry<String, Set<RGraphQLInputObjectTypeField>> entry: buildGraphQLTypeInObjects.entrySet()) {
+            for (Map.Entry<String, Set<RGraphQLInputObjectTypeField>> entry : buildGraphQLTypeInObjects.entrySet()) {
                 String graphQLTypeName = entry.getKey();
                 Set<RGraphQLInputObjectTypeField> graphQLTypeFields = entry.getValue();
 
