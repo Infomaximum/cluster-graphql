@@ -1,7 +1,6 @@
-package com.infomaximum.cluster.graphql.schema.struct.out.union;
+package com.infomaximum.cluster.graphql.schema.struct.out;
 
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
-import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 
 import java.util.Collections;
 import java.util.Set;
@@ -9,11 +8,11 @@ import java.util.Set;
 /**
  * Created by kris on 29.12.16.
  */
-public class RGraphQLTypeOutObjectUnion extends RGraphQLType {
+public class RGraphQLTypeOutObjectInterface extends RGraphQLType {
 
     private final Set<RGraphQLObjectTypeField> fields;
 
-    public RGraphQLTypeOutObjectUnion(String name, String description, Set<RGraphQLObjectTypeField> fields) {
+    public RGraphQLTypeOutObjectInterface(String name, String description, Set<RGraphQLObjectTypeField> fields) {
         super(name, description);
         this.fields = Collections.unmodifiableSet(fields);
     }

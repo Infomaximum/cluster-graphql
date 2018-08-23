@@ -7,6 +7,7 @@ import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomFieldUtil
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
+import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObjectInterface;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.struct.ContextRequest;
@@ -24,10 +25,7 @@ import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 import graphql.introspection.Introspection;
 import graphql.language.*;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
+import graphql.schema.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,12 +86,14 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
     private final Method methodParseAndValidate;
     private final Method methodExecute;
     private final Map<String, MergeGraphQLTypeOutObject> remoteGraphQLTypeOutObjects;
+    private final Map<String, MergeGraphQLTypeOutObjectInterface> remoteGraphQLTypeOutObjectInterfaces;
 
-    public GraphQLExecutorPrepareImpl(Component component, GraphQLSchema schema, GraphQL graphQL, Map<String, MergeGraphQLTypeOutObject> remoteGraphQLTypeOutObjects, GraphQLSchemaType graphQLSchemaType) {
+    public GraphQLExecutorPrepareImpl(Component component, GraphQLSchema schema, GraphQL graphQL, Map<String, MergeGraphQLTypeOutObject> remoteGraphQLTypeOutObjects, Map<String, MergeGraphQLTypeOutObjectInterface> remoteGraphQLTypeOutObjectInterfaces, GraphQLSchemaType graphQLSchemaType) {
         this.component = component;
         this.schema = schema;
         this.graphQL = graphQL;
         this.remoteGraphQLTypeOutObjects = remoteGraphQLTypeOutObjects;
+        this.remoteGraphQLTypeOutObjectInterfaces = remoteGraphQLTypeOutObjectInterfaces;
         this.graphQLSchemaType = graphQLSchemaType;
 
         try {
@@ -243,17 +243,24 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             if (GRAPHQL_FIELD_SCHEME.equals(field.getName())) return;
             if (GRAPHQL_FIELD_TYPENAME.equals(field.getName())) return;
 
+            RGraphQLObjectTypeField rGraphQLObjectTypeField = null;
             MergeGraphQLTypeOutObject mergeGraphQLTypeOutObject = remoteGraphQLTypeOutObjects.get(parent.getName());
-            if (mergeGraphQLTypeOutObject == null) return;
-
-            RGraphQLObjectTypeField rGraphQLObjectTypeField = mergeGraphQLTypeOutObject.getFieldByExternalName(field.getName());
+            MergeGraphQLTypeOutObjectInterface mergeGraphQLTypeOutObjectInterface = remoteGraphQLTypeOutObjectInterfaces.get(parent.getName());
+            if (mergeGraphQLTypeOutObject != null) {
+                rGraphQLObjectTypeField = mergeGraphQLTypeOutObject.getFieldByExternalName(field.getName());
+            } else if (mergeGraphQLTypeOutObjectInterface != null) {
+                rGraphQLObjectTypeField = mergeGraphQLTypeOutObjectInterface.getFieldByExternalName(field.getName());
+            }
+            if (rGraphQLObjectTypeField == null) {
+                return;
+            }
 
             if (rGraphQLObjectTypeField.isPrepare) {
                 HashMap<String, Serializable> arguments = ComponentDataFetcher.filterArguments(
                         field,
                         new ValuesResolver().getArgumentValues(
                                 schema.getFieldVisibility(),
-                                Introspection.getFieldDef(schema, (GraphQLObjectType) parent, field.getName()).getArguments(),
+                                Introspection.getFieldDef(schema, (GraphQLCompositeType) parent, field.getName()).getArguments(),
                                 field.getArguments(),
                                 variables
                         ),
@@ -275,8 +282,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             }
 
             for (Node iNode : field.getChildren()) {
-                if (parent instanceof GraphQLObjectType) {
-                    prepareRequest(((GraphQLObjectType) parent).getFieldDefinition(field.getName()).getType(), iNode, variables, prepareFunction, context);
+                if (parent instanceof GraphQLFieldsContainer) {
+                    prepareRequest(((GraphQLFieldsContainer) parent).getFieldDefinition(field.getName()).getType(), iNode, variables, prepareFunction, context);
                 } else if (parent instanceof GraphQLList) {
                     prepareRequest(parent, iNode, variables, prepareFunction, context);
                 } else {

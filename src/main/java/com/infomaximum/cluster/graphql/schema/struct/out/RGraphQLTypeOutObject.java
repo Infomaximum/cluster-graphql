@@ -12,13 +12,13 @@ public class RGraphQLTypeOutObject extends RGraphQLType {
 
     private final String className;
 
-    private final Set<String> unionGraphQLTypeNames;
+    private final Set<String> interfaceGraphQLTypeNames;
     private final Set<RGraphQLObjectTypeField> fields;
 
-    public RGraphQLTypeOutObject(String name, String description, String className, Set<String> unionGraphQLTypeNames, Set<RGraphQLObjectTypeField> fields) {
+    public RGraphQLTypeOutObject(String name, String description, String className, Set<String> interfaceGraphQLTypeNames, Set<RGraphQLObjectTypeField> fields) {
         super(name, description);
         this.className = className;
-        this.unionGraphQLTypeNames = Collections.unmodifiableSet(unionGraphQLTypeNames);
+        this.interfaceGraphQLTypeNames = Collections.unmodifiableSet(interfaceGraphQLTypeNames);
         this.fields = Collections.unmodifiableSet(fields);
     }
 
@@ -26,8 +26,8 @@ public class RGraphQLTypeOutObject extends RGraphQLType {
         return className;
     }
 
-    public Set<String> getUnionGraphQLTypeNames() {
-        return unionGraphQLTypeNames;
+    public Set<String> getInterfaceGraphQLTypeNames() {
+        return interfaceGraphQLTypeNames;
     }
 
     public Set<RGraphQLObjectTypeField> getFields() {
