@@ -15,7 +15,7 @@ import com.infomaximum.cluster.graphql.schema.struct.in.RGraphQLTypeInObject;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeMethodArgument;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObject;
-import com.infomaximum.cluster.graphql.schema.struct.out.union.RGraphQLTypeOutObjectUnion;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObjectInterface;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.struct.Component;
 import com.infomaximum.cluster.utils.ReflectionUtils;
@@ -149,12 +149,8 @@ public class TypeGraphQLBuilder {
 			rTypeGraphQLItems.put(classRTypeGraphQL, rGraphQLType);
 		}
 
-		for (Class classRTypeGraphQL : reflections.getTypesAnnotatedWith(GraphQLTypeOutObjectUnion.class, true)) {
-			GraphQLTypeOutObjectUnion aGraphQLTypeOutObjectUnion = (GraphQLTypeOutObjectUnion) classRTypeGraphQL.getAnnotation(GraphQLTypeOutObjectUnion.class);
-
-			if (!(classRTypeGraphQL.isInterface() || Modifier.isAbstract(classRTypeGraphQL.getModifiers()))) {
-				throw new RuntimeException("Class " + classRTypeGraphQL + " is not interface | abstract class");
-			}
+		for (Class classRTypeGraphQL : reflections.getTypesAnnotatedWith(GraphQLTypeOutObjectInterface.class, true)) {
+			GraphQLTypeOutObjectInterface aGraphQLTypeOutObjectUnion = (GraphQLTypeOutObjectInterface) classRTypeGraphQL.getAnnotation(GraphQLTypeOutObjectInterface.class);
 
 			String name = aGraphQLTypeOutObjectUnion.value();
 
@@ -173,7 +169,7 @@ public class TypeGraphQLBuilder {
 			GraphQLDescription aGraphQLDescription = (GraphQLDescription) classRTypeGraphQL.getAnnotation(GraphQLDescription.class);
 			String description = (aGraphQLDescription != null && !aGraphQLDescription.value().isEmpty()) ? aGraphQLDescription.value() : null;
 
-			RGraphQLTypeOutObjectUnion rGraphQLType = new RGraphQLTypeOutObjectUnion(name, description, fields);
+			RGraphQLTypeOutObjectInterface rGraphQLType = new RGraphQLTypeOutObjectInterface(name, description, fields);
 			rTypeGraphQLItems.put(classRTypeGraphQL, rGraphQLType);
 		}
 
@@ -347,7 +343,7 @@ public class TypeGraphQLBuilder {
 		if (aGraphQLType != null) return aGraphQLType.value();
 
 		//Проверяем на union объект
-		GraphQLTypeOutObjectUnion aGraphQLTypeOutUnion = (GraphQLTypeOutObjectUnion) rawType.getAnnotation(GraphQLTypeOutObjectUnion.class);
+		GraphQLTypeOutObjectInterface aGraphQLTypeOutUnion = (GraphQLTypeOutObjectInterface) rawType.getAnnotation(GraphQLTypeOutObjectInterface.class);
 		if (aGraphQLTypeOutUnion != null) return aGraphQLTypeOutUnion.value();
 
 		//Проверяем принадлежность к кастомным полям
@@ -387,13 +383,13 @@ public class TypeGraphQLBuilder {
 	 * @param unionGraphQLTypeNames
 	 */
 	private static void findUnionGraphQLTypeNames(Class classRTypeGraphQL, Set<String> unionGraphQLTypeNames) {
-		GraphQLTypeOutObjectUnion aGraphQLTypeOutObjectUnion = (GraphQLTypeOutObjectUnion) classRTypeGraphQL.getAnnotation(GraphQLTypeOutObjectUnion.class);
+		GraphQLTypeOutObjectInterface aGraphQLTypeOutObjectUnion = (GraphQLTypeOutObjectInterface) classRTypeGraphQL.getAnnotation(GraphQLTypeOutObjectInterface.class);
 		if (aGraphQLTypeOutObjectUnion != null) {
 			unionGraphQLTypeNames.add(aGraphQLTypeOutObjectUnion.value());
 		}
 
 		for (Class iClass : classRTypeGraphQL.getInterfaces()) {
-			GraphQLTypeOutObjectUnion iAGraphQLTypeOutObjectUnion = (GraphQLTypeOutObjectUnion) iClass.getAnnotation(GraphQLTypeOutObjectUnion.class);
+			GraphQLTypeOutObjectInterface iAGraphQLTypeOutObjectUnion = (GraphQLTypeOutObjectInterface) iClass.getAnnotation(GraphQLTypeOutObjectInterface.class);
 			if (iAGraphQLTypeOutObjectUnion == null) continue;
 			unionGraphQLTypeNames.add(iAGraphQLTypeOutObjectUnion.value());
 		}

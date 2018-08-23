@@ -8,7 +8,7 @@ import com.infomaximum.cluster.graphql.executor.component.GraphQLComponentExecut
 import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
 import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
-import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObjectUnion;
+import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObjectInterface;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ExtPropertyDataFetcher;
@@ -20,7 +20,7 @@ import com.infomaximum.cluster.graphql.schema.struct.in.RGraphQLTypeInObject;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeMethodArgument;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObject;
-import com.infomaximum.cluster.graphql.schema.struct.out.union.RGraphQLTypeOutObjectUnion;
+import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObjectInterface;
 import com.infomaximum.cluster.struct.Component;
 import graphql.GraphQL;
 import graphql.TypeResolutionEnvironment;
@@ -62,7 +62,7 @@ public class GraphQLExecutorBuilder {
             //Собираем какие типы у нас вообще есть
             List<RGraphQLTypeEnum> buildGraphQLTypeEnums = new ArrayList<RGraphQLTypeEnum>();
             Map<String, MergeGraphQLTypeOutObject> buildGraphQLTypeOutObjects = new HashMap<String, MergeGraphQLTypeOutObject>();
-            Map<String, MergeGraphQLTypeOutObjectUnion> buildGraphQLTypeOutObjectUnions = new HashMap<String, MergeGraphQLTypeOutObjectUnion>();
+            Map<String, MergeGraphQLTypeOutObjectInterface> buildGraphQLTypeOutObjectUnions = new HashMap<String, MergeGraphQLTypeOutObjectInterface>();
             Map<String, Set<RGraphQLInputObjectTypeField>> buildGraphQLTypeInObjects = new HashMap<String, Set<RGraphQLInputObjectTypeField>>();
 
             //Собираем встроенные
@@ -138,7 +138,7 @@ public class GraphQLExecutorBuilder {
 
                     if (isLoadedDependenciesType) {
                         //Все зависимости-поля есть, можно загружать
-                        buildGraphQLTypeOutObject(graphQLTypes, graphQLTypeOutObject);
+                        buildGraphQLTypeOutObject(graphQLTypes, graphQLTypeOutObject, buildGraphQLTypeOutObjectUnions);
 
                         //Загрузка прошла успешно
                         waitBuildGraphQLTypeOutObjects.remove(graphQLTypeOutObject.name);
@@ -152,7 +152,7 @@ public class GraphQLExecutorBuilder {
                     String graphQLTypeName = waitBuildGraphQLTypeOutObjects.keySet().iterator().next();
                     MergeGraphQLTypeOutObject graphQLTypeOutObject = waitBuildGraphQLTypeOutObjects.get(graphQLTypeName);
 
-                    buildGraphQLTypeOutObject(graphQLTypes, graphQLTypeOutObject);
+                    buildGraphQLTypeOutObject(graphQLTypes, graphQLTypeOutObject, buildGraphQLTypeOutObjectUnions);
 
                     //Загрузка прошла успешно
                     waitBuildGraphQLTypeOutObjects.remove(graphQLTypeName);
@@ -160,7 +160,7 @@ public class GraphQLExecutorBuilder {
             }
 
             //Разбираемся с зависимостями output union объектов
-            for (MergeGraphQLTypeOutObjectUnion mergeGraphQLTypeOutObjectUnion : buildGraphQLTypeOutObjectUnions.values()) {
+            for (MergeGraphQLTypeOutObjectInterface mergeGraphQLTypeOutObjectUnion : buildGraphQLTypeOutObjectUnions.values()) {
                 buildGraphQLTypeOutObjectUnion(graphQLTypes, mergeGraphQLTypeOutObjectUnion);
             }
 
@@ -175,7 +175,7 @@ public class GraphQLExecutorBuilder {
             if (graphQLSchemaType.prepareCustomFields == null || graphQLSchemaType.prepareCustomFields.isEmpty()) {
                 return new GraphQLExecutorImpl(schema, graphQL);
             } else {
-                return new GraphQLExecutorPrepareImpl(component, schema, graphQL, buildGraphQLTypeOutObjects, graphQLSchemaType);
+                return new GraphQLExecutorPrepareImpl(component, schema, graphQL, buildGraphQLTypeOutObjects, buildGraphQLTypeOutObjectUnions, graphQLSchemaType);
             }
         } catch (Throwable throwable) {
             throw new GraphQLExecutorException(throwable);
@@ -185,7 +185,7 @@ public class GraphQLExecutorBuilder {
     private void mergeGraphQLType(
             List<RGraphQLTypeEnum> buildGraphQLTypeEnums,
             Map<String, MergeGraphQLTypeOutObject> buildGraphQLTypeOutObjects,
-            Map<String, MergeGraphQLTypeOutObjectUnion> buildGraphQLTypeOutObjectUnions,
+            Map<String, MergeGraphQLTypeOutObjectInterface> buildGraphQLTypeOutObjectUnions,
             Map<String, Set<RGraphQLInputObjectTypeField>> buildGraphQLTypeInObjects,
 
             RGraphQLType rGraphQLType) throws GraphQLExecutorException {
@@ -204,26 +204,27 @@ public class GraphQLExecutorBuilder {
             }
 
             //Мержим union типы
-            for (String graphQLTypeUnionName : rGraphQLObjectType.getUnionGraphQLTypeNames()) {
-                MergeGraphQLTypeOutObjectUnion mergeGraphQLTypeOutObjectUnion = buildGraphQLTypeOutObjectUnions.get(graphQLTypeUnionName);
+            for (String graphQLTypeUnionName : rGraphQLObjectType.getInterfaceGraphQLTypeNames()) {
+                MergeGraphQLTypeOutObjectInterface mergeGraphQLTypeOutObjectUnion = buildGraphQLTypeOutObjectUnions.get(graphQLTypeUnionName);
                 if (mergeGraphQLTypeOutObjectUnion == null) {
-                    mergeGraphQLTypeOutObjectUnion = new MergeGraphQLTypeOutObjectUnion(graphQLTypeUnionName, rGraphQLType.getDescription());
+                    mergeGraphQLTypeOutObjectUnion = new MergeGraphQLTypeOutObjectInterface(graphQLTypeUnionName, rGraphQLType.getDescription());
                     buildGraphQLTypeOutObjectUnions.put(graphQLTypeUnionName, mergeGraphQLTypeOutObjectUnion);
                 }
                 mergeGraphQLTypeOutObjectUnion.mergePossible(rGraphQLObjectType.getClassName(), rTypeGraphQLName);
             }
 
-            //Мержим поля
+            //Мержим
             mergeGraphQLTypeOutObject.mergeFields(rTypeGraphQLFields);
+            mergeGraphQLTypeOutObject.mergeInterfaces(rGraphQLObjectType.getInterfaceGraphQLTypeNames());
 
-        } else if (rGraphQLType instanceof RGraphQLTypeOutObjectUnion) {
-            RGraphQLTypeOutObjectUnion rGraphQLTypeOutObjectUnion = (RGraphQLTypeOutObjectUnion) rGraphQLType;
+        } else if (rGraphQLType instanceof RGraphQLTypeOutObjectInterface) {
+            RGraphQLTypeOutObjectInterface rGraphQLTypeOutObjectUnion = (RGraphQLTypeOutObjectInterface) rGraphQLType;
 
             String rTypeGraphQLName = rGraphQLTypeOutObjectUnion.getName();
 
-            MergeGraphQLTypeOutObjectUnion mergeGraphQLTypeOutObjectUnion = buildGraphQLTypeOutObjectUnions.get(rTypeGraphQLName);
+            MergeGraphQLTypeOutObjectInterface mergeGraphQLTypeOutObjectUnion = buildGraphQLTypeOutObjectUnions.get(rTypeGraphQLName);
             if (mergeGraphQLTypeOutObjectUnion == null) {
-                mergeGraphQLTypeOutObjectUnion = new MergeGraphQLTypeOutObjectUnion(rTypeGraphQLName, rGraphQLType.getDescription());
+                mergeGraphQLTypeOutObjectUnion = new MergeGraphQLTypeOutObjectInterface(rTypeGraphQLName, rGraphQLType.getDescription());
                 buildGraphQLTypeOutObjectUnions.put(rTypeGraphQLName, mergeGraphQLTypeOutObjectUnion);
             }
 
@@ -246,7 +247,7 @@ public class GraphQLExecutorBuilder {
         }
     }
 
-    private GraphQLObjectType buildGraphQLTypeOutObject(Map<String, GraphQLType> graphQLTypes, MergeGraphQLTypeOutObject graphQLTypeOutObject) throws GraphQLExecutorException {
+    private GraphQLObjectType buildGraphQLTypeOutObject(Map<String, GraphQLType> graphQLTypes, MergeGraphQLTypeOutObject graphQLTypeOutObject, Map<String, MergeGraphQLTypeOutObjectInterface> buildGraphQLTypeOutObjectUnions) throws GraphQLExecutorException {
         GraphQLObjectType.Builder graphQLObjectTypeBuilder = GraphQLObjectType.newObject();
         graphQLObjectTypeBuilder.name(graphQLTypeOutObject.name);
 
@@ -255,57 +256,21 @@ public class GraphQLExecutorBuilder {
         }
 
         for (RGraphQLObjectTypeField typeGraphQLField : graphQLTypeOutObject.getFields()) {
-            GraphQLFieldDefinition.Builder graphQLFieldDefinitionBuilder = GraphQLFieldDefinition.newFieldDefinition();
-
-            graphQLFieldDefinitionBuilder.type(getGraphQLOutputType(graphQLTypes, typeGraphQLField.type))
-                    .name(typeGraphQLField.externalName);
-
-            if (typeGraphQLField.description != null) {
-                graphQLFieldDefinitionBuilder.description(typeGraphQLField.description);
-            }
-
-            if (typeGraphQLField.deprecated != null) {
-                graphQLFieldDefinitionBuilder.deprecate(typeGraphQLField.deprecated);
-            }
-
-            if (typeGraphQLField.isField) {
-                //Это обычное поле
-                graphQLFieldDefinitionBuilder.dataFetcher(new ExtPropertyDataFetcher(typeGraphQLField.name));
-            } else {
-                //Это у нас метод
-                if (typeGraphQLField.arguments != null) {
-                    for (RGraphQLObjectTypeMethodArgument argument : typeGraphQLField.arguments) {
-                        GraphQLArgument.Builder argumentBuilder = GraphQLArgument.newArgument();
-                        argumentBuilder.name(argument.name);
-
-                        if (argument.isNotNull) {
-                            argumentBuilder.type(new GraphQLNonNull(getGraphQLInputType(graphQLTypes, argument.type)));
-                        } else {
-                            argumentBuilder.type(getGraphQLInputType(graphQLTypes, argument.type));
-                        }
-
-                        graphQLFieldDefinitionBuilder.argument(argumentBuilder.build());
-                    }
-                }
-
-                ComponentDataFetcher componentDataFetcher;
-                if (customRemoteDataFetcher != null) {
-                    try {
-                        componentDataFetcher = (ComponentDataFetcher) customRemoteDataFetcher.newInstance(component.getRemotes(), sdkGraphQLItemExecutor, graphQLTypeOutObject.name, typeGraphQLField);
-                    } catch (ReflectiveOperationException e) {
-                        throw new GraphQLExecutorException("Exception build ComponentDataFetcher", e);
-                    }
-                } else {
-                    componentDataFetcher = new ComponentDataFetcher(component.getRemotes(), sdkGraphQLItemExecutor, graphQLTypeOutObject.name, typeGraphQLField);
-                }
-                graphQLFieldDefinitionBuilder.dataFetcher(componentDataFetcher);
-            }
-
-
-            GraphQLFieldDefinition graphQLFieldDefinition = graphQLFieldDefinitionBuilder.build();
-
+            GraphQLFieldDefinition graphQLFieldDefinition = buildGraphQLFieldDefinition(graphQLTypes, graphQLTypeOutObject.name, typeGraphQLField);
             graphQLObjectTypeBuilder.field(graphQLFieldDefinition);
         }
+
+        for (String interfaceGraphQLTypeName : graphQLTypeOutObject.getInterfaceGraphQLTypeNames()) {
+            graphQLObjectTypeBuilder.withInterface(new GraphQLTypeReference(interfaceGraphQLTypeName));
+
+            //Добавляем поля от этого интерфейса
+            MergeGraphQLTypeOutObjectInterface mergeGraphQLTypeOutObjectInterface = buildGraphQLTypeOutObjectUnions.get(interfaceGraphQLTypeName);
+            for (RGraphQLObjectTypeField typeGraphQLField : mergeGraphQLTypeOutObjectInterface.getFields()) {
+                GraphQLFieldDefinition graphQLFieldDefinition = buildGraphQLFieldDefinition(graphQLTypes, graphQLTypeOutObject.name, typeGraphQLField);
+                graphQLObjectTypeBuilder.field(graphQLFieldDefinition);
+            }
+        }
+
         GraphQLObjectType graphQLObjectType = graphQLObjectTypeBuilder.build();
 
         //Регистрируем этот тип
@@ -314,17 +279,17 @@ public class GraphQLExecutorBuilder {
         return graphQLObjectType;
     }
 
-    private GraphQLUnionType buildGraphQLTypeOutObjectUnion(Map<String, GraphQLType> graphQLTypes, MergeGraphQLTypeOutObjectUnion mergeGraphQLTypeOutObjectUnion) {
+    private GraphQLInterfaceType buildGraphQLTypeOutObjectUnion(Map<String, GraphQLType> graphQLTypes, MergeGraphQLTypeOutObjectInterface mergeGraphQLTypeOutObjectUnion) {
 
-        GraphQLUnionType.Builder builder = GraphQLUnionType.newUnionType().name(mergeGraphQLTypeOutObjectUnion.name);
+        GraphQLInterfaceType.Builder builder = GraphQLInterfaceType.newInterface().name(mergeGraphQLTypeOutObjectUnion.name);
 
         if (mergeGraphQLTypeOutObjectUnion.description != null) {
             builder.description(mergeGraphQLTypeOutObjectUnion.description);
         }
 
-        for (String possibleTypeName : mergeGraphQLTypeOutObjectUnion.getPossibleTypeNames()) {
-            GraphQLObjectType possibleObject = (GraphQLObjectType) graphQLTypes.get(possibleTypeName);
-            builder.possibleType(possibleObject);
+        for (RGraphQLObjectTypeField typeGraphQLField : mergeGraphQLTypeOutObjectUnion.getFields()) {
+            GraphQLFieldDefinition graphQLFieldDefinition = buildGraphQLFieldDefinition(graphQLTypes, mergeGraphQLTypeOutObjectUnion.name, typeGraphQLField);
+            builder.field(graphQLFieldDefinition);
         }
 
         builder.typeResolver(new TypeResolver() {
@@ -339,15 +304,62 @@ public class GraphQLExecutorBuilder {
             }
         });
 
-        //Возможно когда-нибудь появится чтото общее между union и интерфейс
-
-
-        GraphQLUnionType graphQLUnionType = builder.build();
+        GraphQLInterfaceType graphQLInterfaceType = builder.build();
 
         //Регистрируем этот тип
-        graphQLTypes.put(mergeGraphQLTypeOutObjectUnion.name, graphQLUnionType);
+        graphQLTypes.put(mergeGraphQLTypeOutObjectUnion.name, graphQLInterfaceType);
 
-        return graphQLUnionType;
+        return graphQLInterfaceType;
+    }
+
+    private GraphQLFieldDefinition buildGraphQLFieldDefinition(Map<String, GraphQLType> graphQLTypes, String graphQLTypeName, RGraphQLObjectTypeField typeGraphQLField) {
+        GraphQLFieldDefinition.Builder graphQLFieldDefinitionBuilder = GraphQLFieldDefinition.newFieldDefinition();
+
+        graphQLFieldDefinitionBuilder.type(getGraphQLOutputType(graphQLTypes, typeGraphQLField.type))
+                .name(typeGraphQLField.externalName);
+
+        if (typeGraphQLField.description != null) {
+            graphQLFieldDefinitionBuilder.description(typeGraphQLField.description);
+        }
+
+        if (typeGraphQLField.deprecated != null) {
+            graphQLFieldDefinitionBuilder.deprecate(typeGraphQLField.deprecated);
+        }
+
+        if (typeGraphQLField.isField) {
+            //Это обычное поле
+            graphQLFieldDefinitionBuilder.dataFetcher(new ExtPropertyDataFetcher(typeGraphQLField.name));
+        } else {
+            //Это у нас метод
+            if (typeGraphQLField.arguments != null) {
+                for (RGraphQLObjectTypeMethodArgument argument : typeGraphQLField.arguments) {
+                    GraphQLArgument.Builder argumentBuilder = GraphQLArgument.newArgument();
+                    argumentBuilder.name(argument.name);
+
+                    if (argument.isNotNull) {
+                        argumentBuilder.type(new GraphQLNonNull(getGraphQLInputType(graphQLTypes, argument.type)));
+                    } else {
+                        argumentBuilder.type(getGraphQLInputType(graphQLTypes, argument.type));
+                    }
+
+                    graphQLFieldDefinitionBuilder.argument(argumentBuilder.build());
+                }
+            }
+
+            ComponentDataFetcher componentDataFetcher;
+            if (customRemoteDataFetcher != null) {
+                try {
+                    componentDataFetcher = (ComponentDataFetcher) customRemoteDataFetcher.newInstance(component.getRemotes(), sdkGraphQLItemExecutor, graphQLTypeName, typeGraphQLField);
+                } catch (ReflectiveOperationException e) {
+                    throw new GraphQLExecutorException("Exception build ComponentDataFetcher", e);
+                }
+            } else {
+                componentDataFetcher = new ComponentDataFetcher(component.getRemotes(), sdkGraphQLItemExecutor, graphQLTypeName, typeGraphQLField);
+            }
+            graphQLFieldDefinitionBuilder.dataFetcher(componentDataFetcher);
+        }
+
+        return graphQLFieldDefinitionBuilder.build();
     }
 
     private GraphQLEnumType buildGraphQLTypeEnum(Map<String, GraphQLType> graphQLTypes, RGraphQLTypeEnum rGraphQLEnumType) {

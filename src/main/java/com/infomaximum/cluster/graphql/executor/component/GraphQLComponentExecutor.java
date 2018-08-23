@@ -31,15 +31,12 @@ public class GraphQLComponentExecutor {
 
     private final static Logger log = LoggerFactory.getLogger(GraphQLComponentExecutor.class);
 
-    private final Component component;
-
     private final GraphQLSchemaType graphQLSchemaType;
 
     private ArrayList<RGraphQLType> rTypeGraphQLs;
     private Map<String, Class> classSchemas;
 
     public GraphQLComponentExecutor(Component component, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType graphQLSchemaType) throws GraphQLExecutorException {
-        this.component = component;
         this.graphQLSchemaType = graphQLSchemaType;
 
         TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(component, graphQLSchemaType)
@@ -48,7 +45,6 @@ public class GraphQLComponentExecutor {
     }
 
     public GraphQLComponentExecutor(String packageName, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType graphQLSchemaType) throws GraphQLExecutorException {
-        this.component = null;
         this.graphQLSchemaType = graphQLSchemaType;
 
         TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName, graphQLSchemaType)
