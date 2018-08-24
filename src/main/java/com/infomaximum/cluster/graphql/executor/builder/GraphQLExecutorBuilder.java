@@ -263,11 +263,16 @@ public class GraphQLExecutorBuilder {
         for (String interfaceGraphQLTypeName : graphQLTypeOutObject.getInterfaceGraphQLTypeNames()) {
             graphQLObjectTypeBuilder.withInterface(new GraphQLTypeReference(interfaceGraphQLTypeName));
 
-            //Добавляем поля от этого интерфейса
+            //TODO необходимо отрефакторить - добавляем расширяющие полю от интерфейса
+            //Необходимо добавлять только новые поля иначе перезаписывается новым полем с другим компонентом
+            //в итоге выполнение уйдет не в ту подсистему
             MergeGraphQLTypeOutObjectInterface mergeGraphQLTypeOutObjectInterface = buildGraphQLTypeOutObjectUnions.get(interfaceGraphQLTypeName);
             for (RGraphQLObjectTypeField typeGraphQLField : mergeGraphQLTypeOutObjectInterface.getFields()) {
-                GraphQLFieldDefinition graphQLFieldDefinition = buildGraphQLFieldDefinition(graphQLTypes, graphQLTypeOutObject.name, typeGraphQLField);
-                graphQLObjectTypeBuilder.field(graphQLFieldDefinition);
+                //TODO необходимо отрефакторить! Логика совершено не очевидна
+                if (!graphQLObjectTypeBuilder.hasField(typeGraphQLField.externalName)) {
+                    GraphQLFieldDefinition graphQLFieldDefinition = buildGraphQLFieldDefinition(graphQLTypes, graphQLTypeOutObject.name, typeGraphQLField);
+                    graphQLObjectTypeBuilder.field(graphQLFieldDefinition);
+                }
             }
         }
 
