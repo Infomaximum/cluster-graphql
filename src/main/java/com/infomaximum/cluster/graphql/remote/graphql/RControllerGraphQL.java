@@ -5,7 +5,6 @@ import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.ContextRequest;
-import com.infomaximum.cluster.graphql.struct.GRequest;
 
 import java.io.Serializable;
 import java.util.ArrayList;

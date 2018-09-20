@@ -36,12 +36,9 @@ public abstract class BaseTest {
         FrontendComponent frontendComponent = getServer().getCluster().getAnyComponent(FrontendComponent.class);
 
         GRequest gRequest = new GRequest(
-                frontendComponent.getKey(),
                 Instant.now(),
                 new GRequest.RemoteAddress("127.0.0.1"),
-                "{}", new HashMap<>(),
-                new HashMap<>(), null,
-                null
+                "{}", new HashMap<>()
         );
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
