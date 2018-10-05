@@ -1,5 +1,5 @@
 group 'com.infomaximum'
-version '0.0.23RC62'
+version '0.0.23RC63'
 
 repositories {
     mavenCentral()
@@ -16,7 +16,7 @@ if (file('publish.gradle').exists()) {
 sourceCompatibility = 1.8
 compileJava.options.encoding = 'UTF-8'
 
-sourceSets  {
+sourceSets {
     main {
         java.srcDir 'src/main/java'
         resources {
@@ -40,18 +40,22 @@ configurations {
 }
 
 dependencies {
-    compile 'com.infomaximum:cluster:0.0.59'
+
 //    compile project(':cluster')
 
-    compile 'javax.servlet:javax.servlet-api:3.1.0'
+    compile 'com.infomaximum:cluster:0.0.64'
 
-    compile 'com.graphql-java:graphql-java:9.2'
-    compile 'javax.validation:validation-api:1.1.0.Final'
+    compile "io.reactivex.rxjava2:rxjava:2.2.2"
 
-    compile 'org.slf4j:slf4j-api:1.7.21'
+    compile 'javax.servlet:javax.servlet-api:4.0.1'
+
+    compile 'com.graphql-java:graphql-java:9.4'
+    compile 'javax.validation:validation-api:2.0.1.Final'
+
+    compile 'org.slf4j:slf4j-api:1.7.25'
 
     testCompile 'junit:junit:4.12'
 
-    testCompile 'ch.qos.logback:logback-core:1.2.2'
-    testCompile 'ch.qos.logback:logback-classic:1.2.2'
+    testCompile 'ch.qos.logback:logback-core:1.2.3'
+    testCompile 'ch.qos.logback:logback-classic:1.2.3'
 }
