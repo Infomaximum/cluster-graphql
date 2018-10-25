@@ -4,14 +4,15 @@ import com.infomaximum.cluster.Cluster;
 import com.infomaximum.cluster.core.service.transport.executor.ExecutorTransport;
 import com.infomaximum.cluster.core.service.transport.executor.ExecutorTransportImpl;
 import com.infomaximum.cluster.exception.ClusterException;
-import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
+import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
+import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngine;
 import com.infomaximum.cluster.struct.Component;
 import com.infomaximum.cluster.struct.Info;
 import com.infomaximum.server.Server;
 
 /**
- * Created by v.bukharkin on 19.05.2017.
+ * Created by kris.
  */
 public class FrontendComponent extends Component {
 
@@ -19,16 +20,18 @@ public class FrontendComponent extends Component {
             .withComponentClass(FrontendComponent.class)
             .build();
 
+    private final GraphQLSubscribeEngine graphQLSubscribeEngine;
     private GraphQLExecutor graphQLExecutor;
 
     public FrontendComponent(Cluster cluster) {
         super(cluster);
+        this.graphQLSubscribeEngine = Server.INSTANCE.getGraphQLEngine().buildSubscribeEngine();
     }
 
     @Override
     public void load() throws ClusterException {
         try {
-            graphQLExecutor = Server.INSTANCE.getGraphQLEngine().buildExecutor(this);
+            graphQLExecutor = Server.INSTANCE.getGraphQLEngine().buildExecutor(this, graphQLSubscribeEngine);
         } catch (GraphQLExecutorException e) {
             throw new RuntimeException(e);
         }
@@ -39,7 +42,10 @@ public class FrontendComponent extends Component {
         try {
             return new ExecutorTransportImpl.Builder(this)
                     .withRemoteController(
-                            Server.INSTANCE.getGraphQLEngine().buildRemoteControllerGraphQL(this)//Обработчик GraphQL запросов
+                            Server.INSTANCE.getGraphQLEngine().buildRemoteControllerGraphQLSubscribe(this, graphQLSubscribeEngine)//Обработчик GraphQL опопвещений подписчиков
+                    )
+                    .withRemoteController(
+                            Server.INSTANCE.getGraphQLEngine().buildRemoteControllerGraphQLExecutor(this)//Обработчик GraphQL запросов
                     )
                     .build();
         } catch (GraphQLExecutorException e) {
