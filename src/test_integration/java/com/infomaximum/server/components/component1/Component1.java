@@ -5,7 +5,6 @@ import com.infomaximum.cluster.core.service.transport.executor.ExecutorTransport
 import com.infomaximum.cluster.core.service.transport.executor.ExecutorTransportImpl;
 import com.infomaximum.cluster.exception.ClusterException;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
-import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQLImpl;
 import com.infomaximum.cluster.struct.Component;
 import com.infomaximum.cluster.struct.Info;
 import com.infomaximum.server.Server;
@@ -33,7 +32,7 @@ public class Component1 extends Component {
         try {
             return new ExecutorTransportImpl.Builder(this)
                     .withRemoteController(
-                            Server.INSTANCE.getGraphQLEngine().buildRemoteControllerGraphQL(this)//Обработчик GraphQL запросов
+                            Server.INSTANCE.getGraphQLEngine().buildRemoteControllerGraphQLExecutor(this)//Обработчик GraphQL запросов
                     )
                     .build();
         } catch (GraphQLExecutorException e) {

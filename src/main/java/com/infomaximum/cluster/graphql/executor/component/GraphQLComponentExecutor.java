@@ -18,6 +18,7 @@ import com.infomaximum.cluster.graphql.schema.struct.RGraphQLType;
 import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GRequest;
+import com.infomaximum.cluster.graphql.struct.GSubscribeEvent;
 import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,7 +95,12 @@ public class GraphQLComponentExecutor {
     }
 
     public Serializable execute(RemoteObject source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments, ContextRequest context) throws GraphQLExecutorDataFetcherException {
-        return (Serializable) executeGraphQLMethod(source, graphQLTypeName, graphQLTypeFieldName, arguments, context);
+        Object result = executeGraphQLMethod(source, graphQLTypeName, graphQLTypeFieldName, arguments, context);
+        if (result instanceof GSubscribeEvent) {
+            return ((GSubscribeEvent) result).getSubscribeValue();
+        } else {
+            return (Serializable) result;
+        }
     }
 
     private Object executeGraphQLMethod(Object source, String graphQLTypeName, String graphQLTypeFieldName, Map<String, Serializable> arguments, ContextRequest context) throws GraphQLExecutorDataFetcherException {

@@ -22,11 +22,11 @@ public class RGraphQLObjectTypeField {
     public final String description;
     public final String deprecated;
 
-    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isPrepare, boolean isField, String type, String name, String externalName, String description, String deprecated) {
-        this(componentUuid, configuration, isPrepare, isField, type, name, externalName, description, deprecated, null);
+    public RGraphQLObjectTypeField(String componentUuid, boolean isField, boolean isPrepare, String type, String name, String externalName, RemoteObject configuration, String description, String deprecated) {
+        this(componentUuid, isField, isPrepare, type, name, externalName, null, configuration, description, deprecated);
     }
 
-    public RGraphQLObjectTypeField(String componentUuid, RemoteObject configuration, boolean isPrepare, boolean isField, String type, String name, String externalName, String description, String deprecated, List<RGraphQLObjectTypeMethodArgument> arguments) {
+    public RGraphQLObjectTypeField(String componentUuid, boolean isField, boolean isPrepare, String type, String name, String externalName, List<RGraphQLObjectTypeMethodArgument> arguments, RemoteObject configuration, String description, String deprecated) {
         this.componentUuid = componentUuid;
 
         this.isField = isField;

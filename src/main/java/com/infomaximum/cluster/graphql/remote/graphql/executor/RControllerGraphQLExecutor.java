@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.graphql.remote.graphql;
+package com.infomaximum.cluster.graphql.remote.graphql.executor;
 
 import com.infomaximum.cluster.core.remote.struct.RController;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
@@ -13,7 +13,7 @@ import java.util.HashMap;
 /**
  * Created by kris on 02.11.16.
  */
-public interface RControllerGraphQL extends RController {
+public interface RControllerGraphQLExecutor extends RController {
 
 	public ArrayList<RGraphQLType> getGraphQLTypes();
 

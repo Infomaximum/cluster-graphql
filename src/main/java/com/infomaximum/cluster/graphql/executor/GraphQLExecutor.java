@@ -9,4 +9,5 @@ public interface GraphQLExecutor {
     ExecutionResult execute(ExecutionInput executionInput);
 
     void requestCompleted(ContextRequest context);
+
 }

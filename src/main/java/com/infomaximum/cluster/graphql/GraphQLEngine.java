@@ -5,9 +5,13 @@ import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.builder.GraphQLExecutorBuilder;
 import com.infomaximum.cluster.graphql.executor.component.GraphQLComponentExecutor;
+import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngine;
+import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngineImpl;
+import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEvent;
 import com.infomaximum.cluster.graphql.fieldargument.custom.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
-import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQLImpl;
+import com.infomaximum.cluster.graphql.remote.graphql.executor.RControllerGraphQLExecutorImpl;
+import com.infomaximum.cluster.graphql.remote.graphql.subscribe.RControllerGraphQLSubscribeImpl;
 import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import com.infomaximum.cluster.graphql.schema.build.graphqltype.TypeGraphQLFieldConfigurationBuilder;
 import com.infomaximum.cluster.graphql.schema.datafetcher.ComponentDataFetcher;
@@ -54,18 +58,31 @@ public class GraphQLEngine {
         return graphQLSchemaType;
     }
 
-    public GraphQLExecutor buildExecutor(Component component) throws GraphQLExecutorException {
+    public GraphQLSubscribeEngine buildSubscribeEngine() {
+        return new GraphQLSubscribeEngineImpl();
+    }
+
+    public GraphQLExecutor buildExecutor(Component component, GraphQLSubscribeEngine graphQLSubscribeEngine) throws GraphQLExecutorException {
         return new GraphQLExecutorBuilder(
                 component,
                 sdkPackagePath,
                 customRemoteDataFetcher,
                 fieldConfigurationBuilder,
-                graphQLSchemaType
+                graphQLSchemaType,
+                (GraphQLSubscribeEngineImpl) graphQLSubscribeEngine
         ).build();
     }
 
-    public RControllerGraphQLImpl buildRemoteControllerGraphQL(Component component) throws GraphQLExecutorException {
-        return new RControllerGraphQLImpl(component, fieldConfigurationBuilder, graphQLSchemaType);
+    public RControllerGraphQLSubscribeImpl buildRemoteControllerGraphQLSubscribe(Component component, GraphQLSubscribeEngine graphQLSubscribeEngine) throws GraphQLExecutorException {
+        return new RControllerGraphQLSubscribeImpl(component, (GraphQLSubscribeEngineImpl) graphQLSubscribeEngine);
+    }
+
+    public RControllerGraphQLExecutorImpl buildRemoteControllerGraphQLExecutor(Component component) throws GraphQLExecutorException {
+        return new RControllerGraphQLExecutorImpl(component, fieldConfigurationBuilder, graphQLSchemaType);
+    }
+
+    public GraphQLSubscribeEvent buildSubscribeEvent(Component component) {
+        return new GraphQLSubscribeEvent(component);
     }
 
     public static class Builder {
@@ -122,7 +139,7 @@ public class GraphQLEngine {
         public Builder withDataFetcher(Class<? extends ComponentDataFetcher> clazzComponentDataFetcher) throws GraphQLExecutorException {
             Constructor constructor;
             try {
-                constructor = clazzComponentDataFetcher.getConstructor(Remotes.class, GraphQLComponentExecutor.class, String.class, RGraphQLObjectTypeField.class);
+                constructor = clazzComponentDataFetcher.getConstructor(Remotes.class, GraphQLComponentExecutor.class, GraphQLSubscribeEngineImpl.class, String.class, RGraphQLObjectTypeField.class);
             } catch (NoSuchMethodException e) {
                 throw new GraphQLExecutorException("Not found constructor from ComponentDataFetcher", e);
             }

@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.graphql.remote.graphql;
+package com.infomaximum.cluster.graphql.remote.graphql.executor;
 
 import com.infomaximum.cluster.core.remote.AbstractRController;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
@@ -21,13 +21,13 @@ import java.util.HashMap;
 /**
  * Created by kris on 19.11.16.
  */
-public class RControllerGraphQLImpl<T extends Component> extends AbstractRController<T> implements RControllerGraphQL {
+public class RControllerGraphQLExecutorImpl<T extends Component> extends AbstractRController<T> implements RControllerGraphQLExecutor {
 
-    private final static Logger log = LoggerFactory.getLogger(RControllerGraphQLImpl.class);
+    private final static Logger log = LoggerFactory.getLogger(RControllerGraphQLExecutorImpl.class);
 
     private final GraphQLComponentExecutor graphQLItemExecutor;
 
-    public RControllerGraphQLImpl(T component, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType fieldArgumentConverter) throws GraphQLExecutorException {
+    public RControllerGraphQLExecutorImpl(T component, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType fieldArgumentConverter) throws GraphQLExecutorException {
         super(component);
         graphQLItemExecutor = new GraphQLComponentExecutor(component, fieldConfigurationBuilder, fieldArgumentConverter);
     }

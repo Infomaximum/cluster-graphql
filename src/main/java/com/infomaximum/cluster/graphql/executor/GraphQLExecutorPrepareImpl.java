@@ -4,7 +4,7 @@ import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherExcep
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorInvalidSyntaxException;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomFieldUtils;
-import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
+import com.infomaximum.cluster.graphql.remote.graphql.executor.RControllerGraphQLExecutor;
 import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.build.MergeGraphQLTypeOutObjectInterface;
@@ -268,8 +268,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                 );
 
                 //Собираем какие ресурсы нам необходимы для лока
-                RControllerGraphQL rControllerGraphQL = component.getRemotes().getFromSSUuid(rGraphQLObjectTypeField.componentUuid, RControllerGraphQL.class);
-                Serializable prepareRequest = rControllerGraphQL.prepare(
+                RControllerGraphQLExecutor rControllerGraphQLExecutor = component.getRemotes().getFromSSUuid(rGraphQLObjectTypeField.componentUuid, RControllerGraphQLExecutor.class);
+                Serializable prepareRequest = rControllerGraphQLExecutor.prepare(
                         PrepareCustomFieldUtils.getKeyField(field),
                         parent.getName(),
                         rGraphQLObjectTypeField.name,

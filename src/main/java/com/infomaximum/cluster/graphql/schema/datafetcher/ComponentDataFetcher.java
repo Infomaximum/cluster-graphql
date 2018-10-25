@@ -4,16 +4,22 @@ import com.infomaximum.cluster.core.remote.Remotes;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.executor.component.GraphQLComponentExecutor;
+import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngineImpl;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomFieldUtils;
-import com.infomaximum.cluster.graphql.remote.graphql.RControllerGraphQL;
+import com.infomaximum.cluster.graphql.remote.graphql.executor.RControllerGraphQLExecutor;
 import com.infomaximum.cluster.graphql.schema.datafetcher.utils.ExtResult;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.graphql.struct.ContextRequest;
+import com.infomaximum.cluster.graphql.struct.GSubscribeEvent;
 import graphql.language.Argument;
 import graphql.language.Field;
 import graphql.language.VariableReference;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,13 +39,15 @@ public class ComponentDataFetcher implements DataFetcher {
 
     protected final Remotes remotes;
     protected final GraphQLComponentExecutor sdkGraphQLItemExecutor;
+    protected final GraphQLSubscribeEngineImpl subscribeEngine;
 
     protected final String graphQLTypeName;
     protected final RGraphQLObjectTypeField rTypeGraphQLField;
 
-    public ComponentDataFetcher(Remotes remotes, GraphQLComponentExecutor sdkGraphQLItemExecutor, String graphQLTypeName, RGraphQLObjectTypeField rTypeGraphQLField) {
+    public ComponentDataFetcher(Remotes remotes, GraphQLComponentExecutor sdkGraphQLItemExecutor, GraphQLSubscribeEngineImpl subscribeEngine, String graphQLTypeName, RGraphQLObjectTypeField rTypeGraphQLField) {
         this.remotes = remotes;
         this.sdkGraphQLItemExecutor = sdkGraphQLItemExecutor;
+        this.subscribeEngine = subscribeEngine;
 
         this.graphQLTypeName = graphQLTypeName;
         this.rTypeGraphQLField = rTypeGraphQLField;
@@ -60,43 +68,56 @@ public class ComponentDataFetcher implements DataFetcher {
 
     protected Object execute(DataFetchingEnvironment environment) throws Throwable {
         ContextRequest context = environment.getContext();
-
         try {
+            Object result;
             if (rTypeGraphQLField.componentUuid == null) {
                 //У этого объекта нет родительской подсистемы - вызываем прямо тут
 
                 if (rTypeGraphQLField.isPrepare) throw new RuntimeException("Not implemented");
 
-                Object result = sdkGraphQLItemExecutor.execute(
+                result = sdkGraphQLItemExecutor.execute(
                         environment.getSource(), graphQLTypeName, rTypeGraphQLField.name,
                         getArguments(rTypeGraphQLField, environment, context.getRequest().getQueryVariables()),
                         context
                 );
-                return ExtResult.get(result);
             } else {
                 //Этот объект принадлежит определенной подсистеме - необходимо вызывать метод удаленно именно не родительской подсистеме
-                RControllerGraphQL rControllerGraphQL = remotes.getFromSSUuid(rTypeGraphQLField.componentUuid, RControllerGraphQL.class);
+                RControllerGraphQLExecutor rControllerGraphQLExecutor = remotes.getFromSSUuid(rTypeGraphQLField.componentUuid, RControllerGraphQLExecutor.class);
 
                 RemoteObject source = null;
                 if (environment.getSource() instanceof RemoteObject) {
                     source = environment.getSource();
                 }
 
-                Object result;
                 if (rTypeGraphQLField.isPrepare) {
-                    result = rControllerGraphQL.executePrepare(
+                    result = rControllerGraphQLExecutor.executePrepare(
                             PrepareCustomFieldUtils.getKeyField(environment),
                             source,
                             context
                     );
                 } else {
-                    result = rControllerGraphQL.execute(
+                    result = rControllerGraphQLExecutor.execute(
                             source, graphQLTypeName, rTypeGraphQLField.name,
                             getArguments(rTypeGraphQLField, environment, context.getRequest().getQueryVariables()),
                             context
                     );
                 }
-                return ExtResult.get(result);
+            }
+
+            result = ExtResult.get(result);
+
+            if (result instanceof GSubscribeEvent.SubscribeValue) {//Подписка
+                GSubscribeEvent.SubscribeValue resultSubscribeValue = (GSubscribeEvent.SubscribeValue) result;
+                ObservableOnSubscribe observableOnSubscribe = new ObservableOnSubscribe() {
+                    @Override
+                    public void subscribe(ObservableEmitter emitter) {
+                        emitter.onNext(resultSubscribeValue.value);
+                        subscribeEngine.addListener(rTypeGraphQLField.componentUuid, resultSubscribeValue.subscribeKey, emitter);
+                    }
+                };
+                return Observable.create(observableOnSubscribe).toFlowable(BackpressureStrategy.LATEST);
+            } else {
+                return result;
             }
         } catch (Throwable t) {
             Throwable e;
@@ -114,24 +135,28 @@ public class ComponentDataFetcher implements DataFetcher {
     }
 
 
-    /** Вытаскиваем из запроса пришедшие аргументы */
+    /**
+     * Вытаскиваем из запроса пришедшие аргументы
+     */
     protected static HashMap<String, Serializable> getArguments(RGraphQLObjectTypeField rTypeGraphQLField, DataFetchingEnvironment environment, HashMap<String, Serializable> externalVariables) {
-        Field field=null;
-        for (Field iField: environment.getFields()) {
+        Field field = null;
+        for (Field iField : environment.getFields()) {
             if (iField.getName().equals(rTypeGraphQLField.externalName)) {
-                field=iField;
+                field = iField;
                 break;
             }
         }
-        if (field==null || field.getArguments().isEmpty()) return new HashMap<>();
+        if (field == null || field.getArguments().isEmpty()) return new HashMap<>();
 
         return filterArguments(field, environment.getArguments(), externalVariables.keySet());
     }
 
-    /** Фильтруем из запроса пришедшие аргументы */
+    /**
+     * Фильтруем из запроса пришедшие аргументы
+     */
     public static HashMap<String, Serializable> filterArguments(Field field, Map<String, Object> arguments, Set<String> externalNameVariables) {
         HashMap<String, Serializable> result = new HashMap<String, Serializable>();
-        for (Map.Entry<String, Object> entry: arguments.entrySet()) {
+        for (Map.Entry<String, Object> entry : arguments.entrySet()) {
             Argument argument = getArgument(field, entry.getKey());
             if (argument.getValue() instanceof VariableReference) {
                 //Проверим хитрую ситуацию, если аргумент в методе был зарезервирован под переменную из variables
@@ -145,7 +170,7 @@ public class ComponentDataFetcher implements DataFetcher {
     }
 
     private static Argument getArgument(Field field, String name) {
-        for (Argument argument: field.getArguments()) {
+        for (Argument argument : field.getArguments()) {
             if (argument.getName().equals(name)) return argument;
         }
         throw new RuntimeException();//Такого быть не должно в принципе
