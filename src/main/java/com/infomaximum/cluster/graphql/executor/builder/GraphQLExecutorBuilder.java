@@ -1,5 +1,6 @@
 package com.infomaximum.cluster.graphql.executor.builder;
 
+import com.google.common.base.Strings;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutorImpl;
@@ -172,7 +173,8 @@ public class GraphQLExecutorBuilder {
                     .query((GraphQLObjectType) graphQLTypes.get("query"))
                     .mutation((GraphQLObjectType) graphQLTypes.get("mutation"))
                     .subscription((GraphQLObjectType) graphQLTypes.get("subscription"))
-                    .build(new HashSet<GraphQLType>(graphQLTypes.values()));
+                    .additionalTypes(new HashSet<GraphQLType>(graphQLTypes.values()))
+                    .build();
 
             GraphQL graphQL = GraphQL.newGraphQL(schema).build();
 
@@ -349,6 +351,10 @@ public class GraphQLExecutorBuilder {
                         argumentBuilder.type(new GraphQLNonNull(getGraphQLInputType(graphQLTypes, argument.type)));
                     } else {
                         argumentBuilder.type(getGraphQLInputType(graphQLTypes, argument.type));
+                    }
+
+                    if (!Strings.isNullOrEmpty(argument.description)) {
+                        argumentBuilder.description(argument.description);
                     }
 
                     graphQLFieldDefinitionBuilder.argument(argumentBuilder.build());

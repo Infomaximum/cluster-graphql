@@ -18,7 +18,7 @@ public class GQuery {
     }
 
     @GraphQLField
-    public Class<GQueryLevel2> getLevel2() {
+    public static Class<GQueryLevel2> getLevel2() {
         return GQueryLevel2.class;
     }
 

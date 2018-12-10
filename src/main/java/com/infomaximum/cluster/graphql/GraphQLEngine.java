@@ -7,7 +7,6 @@ import com.infomaximum.cluster.graphql.executor.builder.GraphQLExecutorBuilder;
 import com.infomaximum.cluster.graphql.executor.component.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngine;
 import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngineImpl;
-import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEvent;
 import com.infomaximum.cluster.graphql.fieldargument.custom.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.remote.graphql.executor.RControllerGraphQLExecutorImpl;
@@ -79,10 +78,6 @@ public class GraphQLEngine {
 
     public RControllerGraphQLExecutorImpl buildRemoteControllerGraphQLExecutor(Component component) throws GraphQLExecutorException {
         return new RControllerGraphQLExecutorImpl(component, fieldConfigurationBuilder, graphQLSchemaType);
-    }
-
-    public GraphQLSubscribeEvent buildSubscribeEvent(Component component) {
-        return new GraphQLSubscribeEvent(component);
     }
 
     public static class Builder {

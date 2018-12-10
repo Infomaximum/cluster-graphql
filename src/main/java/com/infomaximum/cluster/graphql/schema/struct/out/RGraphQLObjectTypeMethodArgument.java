@@ -9,11 +9,13 @@ public class RGraphQLObjectTypeMethodArgument {
     public final String name;
     public final String externalName;
     public final boolean isNotNull;
+    public final String description;
 
-    public RGraphQLObjectTypeMethodArgument(String type, String name, String externalName, boolean isNotNull) {
+    public RGraphQLObjectTypeMethodArgument(String type, String name, String externalName, boolean isNotNull, String description) {
         this.type = type;
         this.name = name;
         this.externalName = externalName;
-        this.isNotNull=isNotNull;
+        this.isNotNull = isNotNull;
+        this.description = description;
     }
 }
