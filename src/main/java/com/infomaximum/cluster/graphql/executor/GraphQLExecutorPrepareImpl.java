@@ -20,6 +20,7 @@ import graphql.InvalidSyntaxError;
 import graphql.execution.ValuesResolver;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
@@ -121,15 +122,14 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
     }
 
     public PrepareDocumentRequest prepare(ExecutionInput executionInput, PrepareFunction prepareFunction) throws GraphQLExecutorDataFetcherException {
-        InstrumentationState instrumentationState = instrumentation.createState();
+        //Код вырезан из: GraphQL.executeAsync(ExecutionInput executionInput)
+        InstrumentationState instrumentationState = instrumentation.createState(new InstrumentationCreateStateParameters(schema, executionInput));
 
         InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInput, schema, instrumentationState);
         executionInput = instrumentation.instrumentExecutionInput(executionInput, inputInstrumentationParameters);
 
         InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, schema, instrumentationState);
         instrumentation.beginExecution(instrumentationParameters);
-        instrumentation.instrumentSchema(schema, instrumentationParameters);
-
 
         ExecutionInput finalExecutionInput = executionInput;
         PreparsedDocumentEntry preparsedDocumentEntry = preparsedDocumentProvider.get(executionInput.getQuery(), query -> {
