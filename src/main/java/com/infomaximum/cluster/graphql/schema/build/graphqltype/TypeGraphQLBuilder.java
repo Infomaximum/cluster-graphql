@@ -268,6 +268,7 @@ public class TypeGraphQLBuilder {
             //Собираем аннотации
             GraphQLSource aGraphQLTarget = null;
             GraphQLName aGraphQLName = null;
+            GraphQLDescription aGraphQLDescription = null;
             boolean isNotNull = false;
             for (Annotation annotation : parametersAnnotations[index]) {
                 if (annotation.annotationType() == GraphQLSource.class) {
@@ -279,6 +280,8 @@ public class TypeGraphQLBuilder {
                     aGraphQLName = (GraphQLName) annotation;
                 } else if (annotation.annotationType() == NotNull.class) {
                     isNotNull = true;
+                } else if (annotation.annotationType() == GraphQLDescription.class) {
+                    aGraphQLDescription = (GraphQLDescription) annotation;
                 }
             }
             if (aGraphQLTarget != null) continue;//В эту переменную будет передаваться объект для которого вызывается
@@ -292,7 +295,9 @@ public class TypeGraphQLBuilder {
             }
             String nameArgument = aGraphQLName.value();
 
-            arguments.add(new RGraphQLObjectTypeMethodArgument(typeArgument, nameArgument, nameArgument, isNotNull));
+            String descriptionArgument = (aGraphQLDescription != null && !aGraphQLDescription.value().isEmpty()) ? aGraphQLDescription.value() : null;
+
+            arguments.add(new RGraphQLObjectTypeMethodArgument(typeArgument, nameArgument, nameArgument, isNotNull, descriptionArgument));
         }
 
         RemoteObject fieldConfiguration = null;
