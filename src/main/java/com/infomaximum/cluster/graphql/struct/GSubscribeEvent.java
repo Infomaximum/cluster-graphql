@@ -19,13 +19,11 @@ public abstract class GSubscribeEvent<T extends Serializable> {
 
     private final SubscribeValue<T> value;
 
-    public GSubscribeEvent(T value) {
-        this.value = new SubscribeValue(getSubscribeKey(), value);
+    public GSubscribeEvent(String subscribeKey, T value) {
+        this.value = new SubscribeValue(subscribeKey, value);
     }
 
     public SubscribeValue<T> getSubscribeValue() {
         return value;
     }
-
-    protected abstract String getSubscribeKey();
 }
