@@ -26,15 +26,8 @@ public class FrontendComponent extends Component {
     public FrontendComponent(Cluster cluster) {
         super(cluster);
         this.graphQLSubscribeEngine = Server.INSTANCE.getGraphQLEngine().buildSubscribeEngine();
-    }
 
-    @Override
-    public void load() throws ClusterException {
-        try {
-            graphQLExecutor = Server.INSTANCE.getGraphQLEngine().buildExecutor(this, graphQLSubscribeEngine);
-        } catch (GraphQLExecutorException e) {
-            throw new RuntimeException(e);
-        }
+        this.graphQLExecutor = Server.INSTANCE.getGraphQLEngine().buildExecutor(this, graphQLSubscribeEngine);
     }
 
     @Override

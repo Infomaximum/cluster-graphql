@@ -23,11 +23,6 @@ public class Component1 extends Component {
     }
 
     @Override
-    public void load() throws ClusterException {
-
-    }
-
-    @Override
     public ExecutorTransport initExecutorTransport() throws ClusterException {
         try {
             return new ExecutorTransportImpl.Builder(this)
