@@ -3,17 +3,18 @@ package com.infomaximum.cluster.graphql.struct;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 public abstract class GSubscribeEvent<T extends Serializable> {
 
-    public class SubscribeValue<T> implements RemoteObject {
+    public class SubscribeValue<T extends Serializable> implements RemoteObject {
 
         public final String subscribeKey;
-        public final T value;
+        public final Optional<T> value;
 
         public SubscribeValue(String subscribeKey, T value) {
             this.subscribeKey = subscribeKey;
-            this.value = value;
+            this.value = Optional.ofNullable(value);
         }
     }
 

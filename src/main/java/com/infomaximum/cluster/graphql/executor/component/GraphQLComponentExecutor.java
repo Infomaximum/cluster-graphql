@@ -112,6 +112,9 @@ public class GraphQLComponentExecutor {
             Object object = null;
             if (source == null || classSchema.isAssignableFrom(source.getClass())) {
                 object = source;
+            } else if (source instanceof Optional) {
+                //Подписки возврощаются в обертках, т.к. null плохо работает с подписками
+                object = ((Optional) source).get();
             }
 
             Class[] methodParameterTypes = method.getParameterTypes();
