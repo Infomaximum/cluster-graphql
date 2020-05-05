@@ -1,5 +1,5 @@
 group 'com.infomaximum'
-version '0.0.25'
+version '0.0.26'
 
 repositories {
     mavenCentral()
@@ -41,7 +41,7 @@ configurations {
 
 dependencies {
 
-    compile 'com.infomaximum:cluster:0.0.70'
+    compile 'com.infomaximum:cluster:0.0.71'
     //compile project(':cluster')
 
     compile "io.reactivex.rxjava2:rxjava:2.2.2"
