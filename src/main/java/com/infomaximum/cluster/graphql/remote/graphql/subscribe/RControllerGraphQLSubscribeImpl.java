@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 
 /**
@@ -25,7 +26,7 @@ public class RControllerGraphQLSubscribeImpl<T extends Component> extends Abstra
     }
 
     @Override
-    public void pushEvent(String subscribeKey, Serializable value) {
+    public void pushEvent(String subscribeKey, Optional<? extends Serializable> value) {
         subscribeEngine.pushEvent(subscribeKey, value);
     }
 }

@@ -4,6 +4,7 @@ import com.infomaximum.cluster.graphql.utils.SubscribeKeyUtils;
 import io.reactivex.ObservableEmitter;
 
 import java.io.Serializable;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -16,7 +17,7 @@ public class GraphQLSubscribeEngineImpl implements GraphQLSubscribeEngine {
         this.subscriber = new ConcurrentHashMap<>();
     }
 
-    public void pushEvent(String subscribeKey, Serializable value) {
+    public void pushEvent(String subscribeKey, Optional<? extends Serializable> value) {
         CopyOnWriteArraySet<ObservableEmitter> observables = subscriber.get(subscribeKey);
         if (observables == null || observables.isEmpty()) return;
         for (ObservableEmitter emitter : observables) {
