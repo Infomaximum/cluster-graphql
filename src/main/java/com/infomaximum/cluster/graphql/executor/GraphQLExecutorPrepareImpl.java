@@ -37,6 +37,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Основная идея это разрезать метод parseValidateAndExecute на 2 части и через грязные хаки вызвать их отдельно
@@ -106,7 +107,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             fieldPreparsedDocumentProvider.setAccessible(true);
             preparsedDocumentProvider = (PreparsedDocumentProvider) fieldPreparsedDocumentProvider.get(graphQL);
 
-            methodParseAndValidate = graphQL.getClass().getDeclaredMethod("parseAndValidate", ExecutionInput.class, GraphQLSchema.class, InstrumentationState.class);
+            methodParseAndValidate = graphQL.getClass().getDeclaredMethod("parseAndValidate", AtomicReference.class, GraphQLSchema.class, InstrumentationState.class);
             methodParseAndValidate.setAccessible(true);
 
             methodExecute = graphQL.getClass().getDeclaredMethod("execute", ExecutionInput.class, Document.class, GraphQLSchema.class, InstrumentationState.class);
@@ -131,27 +132,16 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, schema, instrumentationState);
         instrumentation.beginExecution(instrumentationParameters);
 
-        ExecutionInput finalExecutionInput = executionInput;
+        AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
         PreparsedDocumentEntry preparsedDocumentEntry = preparsedDocumentProvider.get(executionInput.getQuery(), query -> {
             try {
-                return (PreparsedDocumentEntry) methodParseAndValidate.invoke(graphQL, finalExecutionInput, schema, instrumentationState);
+                return (PreparsedDocumentEntry) methodParseAndValidate.invoke(graphQL, executionInputRef, schema, instrumentationState);
             } catch (InvocationTargetException ite) {
                 throw ExceptionUtils.coercionRuntimeException(ite.getTargetException());
             } catch (Throwable e) {
                 throw new RuntimeException("Изменилась реализация библиотеки GraphQL", e);
             }
         });
-
-//        AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
-//        PreparsedDocumentEntry preparsedDocumentEntry = preparsedDocumentProvider.getDocument(executionInput, query -> {
-//            try {
-//                return (PreparsedDocumentEntry) methodParseAndValidate.invoke(graphQL, executionInputRef, schema, instrumentationState);
-//            } catch (InvocationTargetException ite) {
-//                throw ExceptionUtils.coercionRuntimeException(ite.getTargetException());
-//            } catch (Throwable e) {
-//                throw new RuntimeException("Изменилась реализация библиотеки GraphQL", e);
-//            }
-//        });
 
         if (preparsedDocumentEntry.hasErrors()) {
             //Произошла ошибка парсинга
