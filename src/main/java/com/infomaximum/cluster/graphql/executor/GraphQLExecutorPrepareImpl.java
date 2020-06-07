@@ -240,17 +240,28 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
     }
 
     private void prepareRequest(GraphQLType parent, Node node, Map<String, Object> variables, PrepareFunction prepareFunction, ContextRequest context) throws GraphQLExecutorDataFetcherException {
-        if (GRAPHQL_TYPE.equals(parent.getName())) return;
-        if (GRAPHQL_INPUT_VALUE.equals(parent.getName())) return;
+//        String parentName1;
+//        if (parent instanceof GraphQLObjectType) {
+//            GraphQLObjectType parentGraphQLObjectType = (GraphQLObjectType) parent;
+//            parentName1 = parentGraphQLObjectType.getName();
+//        } else {
+//            parentName1 = "";
+//        }
+//
+//        if (GRAPHQL_TYPE.equals(parentName1)) return;
+//        if (GRAPHQL_INPUT_VALUE.equals(parentName1)) return;
 
         if (node instanceof graphql.language.Field) {
             graphql.language.Field field = (graphql.language.Field) node;
             if (GRAPHQL_FIELD_SCHEME.equals(field.getName())) return;
             if (GRAPHQL_FIELD_TYPENAME.equals(field.getName())) return;
 
+            GraphQLObjectType parentGraphQLObjectType = (GraphQLObjectType) parent;
+            String parentName = parentGraphQLObjectType.getName();
+
             RGraphQLObjectTypeField rGraphQLObjectTypeField = null;
-            MergeGraphQLTypeOutObject mergeGraphQLTypeOutObject = remoteGraphQLTypeOutObjects.get(parent.getName());
-            MergeGraphQLTypeOutObjectInterface mergeGraphQLTypeOutObjectInterface = remoteGraphQLTypeOutObjectInterfaces.get(parent.getName());
+            MergeGraphQLTypeOutObject mergeGraphQLTypeOutObject = remoteGraphQLTypeOutObjects.get(parentName);
+            MergeGraphQLTypeOutObjectInterface mergeGraphQLTypeOutObjectInterface = remoteGraphQLTypeOutObjectInterfaces.get(parentName);
             if (mergeGraphQLTypeOutObject != null) {
                 rGraphQLObjectTypeField = mergeGraphQLTypeOutObject.getFieldByExternalName(field.getName());
             } else if (mergeGraphQLTypeOutObjectInterface != null) {
@@ -276,7 +287,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                 RControllerGraphQLExecutor rControllerGraphQLExecutor = component.getRemotes().getFromSSUuid(rGraphQLObjectTypeField.componentUuid, RControllerGraphQLExecutor.class);
                 Serializable prepareRequest = rControllerGraphQLExecutor.prepare(
                         PrepareCustomFieldUtils.getKeyField(field),
-                        parent.getName(),
+                        parentName,
                         rGraphQLObjectTypeField.name,
                         arguments,
                         context

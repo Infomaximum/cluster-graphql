@@ -49,11 +49,11 @@ public class GraphQLTypeScalar {
     public GraphQLTypeScalar(String name, String description, Set<Class> associationClasses, Coercing coercing) {
         this.name = GraphQLSchemaType.convertToGraphQLName(name);
 
-        this.graphQLScalarType = new GraphQLScalarType(
-                name,
-                description,
-                coercing
-        );
+        this.graphQLScalarType = GraphQLScalarType.newScalar()
+                .name(name)
+                .description(description)
+                .coercing(coercing)
+                .build();
 
         this.associationClasses = ImmutableSet.copyOf(associationClasses);
     }
