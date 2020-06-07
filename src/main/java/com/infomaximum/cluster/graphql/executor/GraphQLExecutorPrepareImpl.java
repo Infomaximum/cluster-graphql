@@ -142,6 +142,17 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             }
         });
 
+//        AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
+//        PreparsedDocumentEntry preparsedDocumentEntry = preparsedDocumentProvider.getDocument(executionInput, query -> {
+//            try {
+//                return (PreparsedDocumentEntry) methodParseAndValidate.invoke(graphQL, executionInputRef, schema, instrumentationState);
+//            } catch (InvocationTargetException ite) {
+//                throw ExceptionUtils.coercionRuntimeException(ite.getTargetException());
+//            } catch (Throwable e) {
+//                throw new RuntimeException("Изменилась реализация библиотеки GraphQL", e);
+//            }
+//        });
+
         if (preparsedDocumentEntry.hasErrors()) {
             //Произошла ошибка парсинга
             return new PrepareDocumentRequest(
@@ -259,7 +270,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                 HashMap<String, Serializable> arguments = ComponentDataFetcher.filterArguments(
                         field,
                         new ValuesResolver().getArgumentValues(
-                                schema.getFieldVisibility(),
+                                schema.getCodeRegistry(),
                                 Introspection.getFieldDef(schema, (GraphQLCompositeType) parent, field.getName()).getArguments(),
                                 field.getArguments(),
                                 variables
