@@ -7,10 +7,10 @@ import graphql.schema.DataFetchingEnvironment;
 public class PrepareCustomFieldUtils {
 
     public static String getKeyField(DataFetchingEnvironment dataFetchingEnvironment) {
-        if (dataFetchingEnvironment.getFields().size() < 1) {
+        if (dataFetchingEnvironment.getMergedField().getFields().size() < 1) {
             throw new RuntimeException("Not support zero field");
         }
-        Field field = dataFetchingEnvironment.getFields().get(0);
+        Field field = dataFetchingEnvironment.getMergedField().getFields().get(0);
 
         return getKeyField(field);
     }

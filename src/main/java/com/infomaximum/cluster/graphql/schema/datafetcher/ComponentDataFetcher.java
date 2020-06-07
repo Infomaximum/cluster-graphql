@@ -140,7 +140,7 @@ public class ComponentDataFetcher implements DataFetcher {
      */
     protected static HashMap<String, Serializable> getArguments(RGraphQLObjectTypeField rTypeGraphQLField, DataFetchingEnvironment environment, HashMap<String, Serializable> externalVariables) {
         Field field = null;
-        for (Field iField : environment.getFields()) {
+        for (Field iField : environment.getMergedField().getFields()) {
             if (iField.getName().equals(rTypeGraphQLField.externalName)) {
                 field = iField;
                 break;
