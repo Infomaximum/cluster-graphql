@@ -41,15 +41,15 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Основная идея это разрезать метод parseValidateAndExecute на 2 части и через грязные хаки вызвать их отдельно
- *
+ * <p>
  * private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
- *      PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput, graphQLSchema, instrumentationState));
- *
- *      if (preparsedDoc.hasErrors()) {
- *          return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
- *      }
- *
- *      return execute(executionInput, preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
+ * PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput, graphQLSchema, instrumentationState));
+ * <p>
+ * if (preparsedDoc.hasErrors()) {
+ * return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
+ * }
+ * <p>
+ * return execute(executionInput, preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
  * }
  */
 public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
@@ -123,6 +123,10 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
     }
 
     public PrepareDocumentRequest prepare(ExecutionInput executionInput, PrepareFunction prepareFunction) throws GraphQLExecutorDataFetcherException {
+        if (executionInput.getExecutionId() == null) {
+            throw new RuntimeException("You must provide a query identifier");
+        }
+
         //Код вырезан из: GraphQL.executeAsync(ExecutionInput executionInput)
         InstrumentationState instrumentationState = instrumentation.createState(new InstrumentationCreateStateParameters(schema, executionInput));
 
@@ -133,7 +137,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         instrumentation.beginExecution(instrumentationParameters);
 
         AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
-        PreparsedDocumentEntry preparsedDocumentEntry = preparsedDocumentProvider.get(executionInput.getQuery(), query -> {
+        PreparsedDocumentEntry preparsedDocumentEntry = preparsedDocumentProvider.getDocument(executionInput, function -> {
             try {
                 return (PreparsedDocumentEntry) methodParseAndValidate.invoke(graphQL, executionInputRef, schema, instrumentationState);
             } catch (InvocationTargetException ite) {
