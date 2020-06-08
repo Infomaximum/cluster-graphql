@@ -256,8 +256,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             if (GRAPHQL_FIELD_SCHEME.equals(field.getName())) return;
             if (GRAPHQL_FIELD_TYPENAME.equals(field.getName())) return;
 
-            GraphQLObjectType parentGraphQLObjectType = (GraphQLObjectType) parent;
-            String parentName = parentGraphQLObjectType.getName();
+            GraphQLNamedSchemaElement parentGraphQLNamedSchemaElement = (GraphQLNamedSchemaElement) parent;
+            String parentName = parentGraphQLNamedSchemaElement.getName();
 
             RGraphQLObjectTypeField rGraphQLObjectTypeField = null;
             MergeGraphQLTypeOutObject mergeGraphQLTypeOutObject = remoteGraphQLTypeOutObjects.get(parentName);
