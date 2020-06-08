@@ -6,10 +6,10 @@ package com.infomaximum.cluster.graphql.schema.datafetcher.utils;
 public class ExtResult {
 
     public static Object get(Object result) {
-        if (result==null) {
+        if (result == null) {
             return null;
         } else if (result.getClass().isEnum()) {
-            return ((Enum)result).name();
+            return ((Enum) result).name();
         } else {
             return result;
         }
