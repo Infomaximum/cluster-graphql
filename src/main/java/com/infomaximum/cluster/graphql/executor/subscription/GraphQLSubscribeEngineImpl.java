@@ -25,7 +25,7 @@ public class GraphQLSubscribeEngineImpl implements GraphQLSubscribeEngine {
         }
     }
 
-    public void addListener(String componentUuid, String subscribeKey, ObservableEmitter observable) {
+    public void addListener(String componentUuid, byte[] subscribeKey, ObservableEmitter observable) {
         String fullSubscribeKey = SubscribeKeyUtils.getFullSubscribeKey(componentUuid, subscribeKey);
         CopyOnWriteArraySet<ObservableEmitter> observables = subscriber.computeIfAbsent(fullSubscribeKey, s -> new CopyOnWriteArraySet<ObservableEmitter>());
         observables.add(observable);
