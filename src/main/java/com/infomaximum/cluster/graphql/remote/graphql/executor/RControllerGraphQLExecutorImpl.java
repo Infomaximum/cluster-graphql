@@ -25,10 +25,21 @@ public class RControllerGraphQLExecutorImpl<T extends Component> extends Abstrac
 
     private final static Logger log = LoggerFactory.getLogger(RControllerGraphQLExecutorImpl.class);
 
-    private final GraphQLComponentExecutor graphQLItemExecutor;
+    private final TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
+    private final GraphQLSchemaType fieldArgumentConverter;
+
+    private GraphQLComponentExecutor graphQLItemExecutor;
 
     public RControllerGraphQLExecutorImpl(T component, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType fieldArgumentConverter) throws GraphQLExecutorException {
         super(component);
+        this.fieldConfigurationBuilder = fieldConfigurationBuilder;
+        this.fieldArgumentConverter = fieldArgumentConverter;
+    }
+
+    public void init() {
+        if (graphQLItemExecutor != null) {
+            throw new IllegalStateException();
+        }
         graphQLItemExecutor = new GraphQLComponentExecutor(component, fieldConfigurationBuilder, fieldArgumentConverter);
     }
 
