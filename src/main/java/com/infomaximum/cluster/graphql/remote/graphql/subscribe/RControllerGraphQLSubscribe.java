@@ -1,6 +1,7 @@
 package com.infomaximum.cluster.graphql.remote.graphql.subscribe;
 
 import com.infomaximum.cluster.core.remote.struct.RController;
+import com.infomaximum.cluster.graphql.struct.subscribe.SubscribeKey;
 
 import java.io.Serializable;
 import java.util.Optional;
@@ -10,6 +11,6 @@ import java.util.Optional;
  */
 public interface RControllerGraphQLSubscribe extends RController {
 
-    void pushEvent(String subscribeKey, Optional<? extends Serializable> value);
+    void pushEvent(SubscribeKey subscribeKey, Optional<? extends Serializable> value);
 
 }

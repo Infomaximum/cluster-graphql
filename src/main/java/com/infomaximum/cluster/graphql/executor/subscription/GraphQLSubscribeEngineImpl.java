@@ -1,6 +1,6 @@
 package com.infomaximum.cluster.graphql.executor.subscription;
 
-import com.infomaximum.cluster.graphql.utils.SubscribeKeyUtils;
+import com.infomaximum.cluster.graphql.struct.subscribe.SubscribeKey;
 import io.reactivex.ObservableEmitter;
 
 import java.io.Serializable;
@@ -11,13 +11,13 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 public class GraphQLSubscribeEngineImpl implements GraphQLSubscribeEngine {
 
-    private final ConcurrentMap<String, CopyOnWriteArraySet<ObservableEmitter>> subscriber;
+    private final ConcurrentMap<SubscribeKey, CopyOnWriteArraySet<ObservableEmitter>> subscriber;
 
     public GraphQLSubscribeEngineImpl() {
         this.subscriber = new ConcurrentHashMap<>();
     }
 
-    public void pushEvent(String subscribeKey, Optional<? extends Serializable> value) {
+    public void pushEvent(SubscribeKey subscribeKey, Optional<? extends Serializable> value) {
         CopyOnWriteArraySet<ObservableEmitter> observables = subscriber.get(subscribeKey);
         if (observables == null || observables.isEmpty()) return;
         for (ObservableEmitter emitter : observables) {
@@ -25,9 +25,9 @@ public class GraphQLSubscribeEngineImpl implements GraphQLSubscribeEngine {
         }
     }
 
-    public void addListener(String componentUuid, byte[] subscribeKey, ObservableEmitter observable) {
-        String fullSubscribeKey = SubscribeKeyUtils.getFullSubscribeKey(componentUuid, subscribeKey);
-        CopyOnWriteArraySet<ObservableEmitter> observables = subscriber.computeIfAbsent(fullSubscribeKey, s -> new CopyOnWriteArraySet<ObservableEmitter>());
+    public void addListener(int componentUniqueId, byte[] bSubscribeKey, ObservableEmitter observable) {
+        SubscribeKey subscribeKey = new SubscribeKey(componentUniqueId, bSubscribeKey);
+        CopyOnWriteArraySet<ObservableEmitter> observables = subscriber.computeIfAbsent(subscribeKey, s -> new CopyOnWriteArraySet<ObservableEmitter>());
         observables.add(observable);
 
         observable.setCancellable(() -> {

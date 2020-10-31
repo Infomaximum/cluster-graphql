@@ -2,7 +2,7 @@ package com.infomaximum.cluster.graphql.executor.subscription;
 
 import com.infomaximum.cluster.graphql.remote.graphql.subscribe.RControllerGraphQLSubscribe;
 import com.infomaximum.cluster.graphql.struct.GSubscribeEvent;
-import com.infomaximum.cluster.graphql.utils.SubscribeKeyUtils;
+import com.infomaximum.cluster.graphql.struct.subscribe.SubscribeKey;
 import com.infomaximum.cluster.struct.Component;
 
 public class GraphQLSubscribeEvent {
@@ -15,9 +15,9 @@ public class GraphQLSubscribeEvent {
 
     public void pushEvent(GSubscribeEvent subscribeEvent) {
         GSubscribeEvent.SubscribeValue subscribeValue = subscribeEvent.getSubscribeValue();
-        String fullSubscribeKey = SubscribeKeyUtils.getFullSubscribeKey(component.getInfo().getUuid(), subscribeValue.subscribeKey);
+        SubscribeKey subscribeKey = new SubscribeKey(component, subscribeValue.subscribeKey);
         for (RControllerGraphQLSubscribe controller : component.getRemotes().getControllers(RControllerGraphQLSubscribe.class)) {
-            controller.pushEvent(fullSubscribeKey, subscribeValue.value);
+            controller.pushEvent(subscribeKey, subscribeValue.value);
         }
     }
 }
