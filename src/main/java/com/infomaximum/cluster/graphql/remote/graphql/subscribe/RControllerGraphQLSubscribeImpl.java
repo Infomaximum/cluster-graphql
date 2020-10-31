@@ -3,6 +3,7 @@ package com.infomaximum.cluster.graphql.remote.graphql.subscribe;
 import com.infomaximum.cluster.core.remote.AbstractRController;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngineImpl;
+import com.infomaximum.cluster.graphql.struct.subscribe.SubscribeKey;
 import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,7 @@ public class RControllerGraphQLSubscribeImpl<T extends Component> extends Abstra
     }
 
     @Override
-    public void pushEvent(String subscribeKey, Optional<? extends Serializable> value) {
+    public void pushEvent(SubscribeKey subscribeKey, Optional<? extends Serializable> value) {
         subscribeEngine.pushEvent(subscribeKey, value);
     }
 }

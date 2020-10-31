@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class RGraphQLObjectTypeField {
 
-    public final String componentUuid;
+    public final Integer componentUniqueId;
 
     public final boolean isField;
     public final boolean isPrepare;
@@ -22,12 +22,12 @@ public class RGraphQLObjectTypeField {
     public final String description;
     public final String deprecated;
 
-    public RGraphQLObjectTypeField(String componentUuid, boolean isField, boolean isPrepare, String type, String name, String externalName, RemoteObject configuration, String description, String deprecated) {
-        this(componentUuid, isField, isPrepare, type, name, externalName, null, configuration, description, deprecated);
+    public RGraphQLObjectTypeField(Integer componentUniqueId, boolean isField, boolean isPrepare, String type, String name, String externalName, RemoteObject configuration, String description, String deprecated) {
+        this(componentUniqueId, isField, isPrepare, type, name, externalName, null, configuration, description, deprecated);
     }
 
-    public RGraphQLObjectTypeField(String componentUuid, boolean isField, boolean isPrepare, String type, String name, String externalName, List<RGraphQLObjectTypeMethodArgument> arguments, RemoteObject configuration, String description, String deprecated) {
-        this.componentUuid = componentUuid;
+    public RGraphQLObjectTypeField(Integer componentUniqueId, boolean isField, boolean isPrepare, String type, String name, String externalName, List<RGraphQLObjectTypeMethodArgument> arguments, RemoteObject configuration, String description, String deprecated) {
+        this.componentUniqueId = componentUniqueId;
 
         this.isField = isField;
         this.isPrepare = isPrepare;
