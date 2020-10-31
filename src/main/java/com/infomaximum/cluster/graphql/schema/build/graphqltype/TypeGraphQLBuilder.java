@@ -210,7 +210,7 @@ public class TypeGraphQLBuilder {
         return rTypeGraphQLItems;
     }
 
-    private RGraphQLObjectTypeField buildRGraphQLObjectTypeField(int componentUniqueId, Class classRTypeGraphQL, Method method, GraphQLField aGraphQLField) throws GraphQLExecutorException {
+    private RGraphQLObjectTypeField buildRGraphQLObjectTypeField(Integer componentUniqueId, Class classRTypeGraphQL, Method method, GraphQLField aGraphQLField) throws GraphQLExecutorException {
         //Если родительский класс не реализовывает интерфейс RemoteObject, то все его поля могут быть только статическими
         if (!RemoteObject.class.isAssignableFrom(method.getDeclaringClass())) {
             if (!Modifier.isStatic(method.getModifiers()))
