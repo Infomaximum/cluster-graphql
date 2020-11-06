@@ -1,10 +1,7 @@
 package com.infomaximum.server.components.frontend;
 
 import com.infomaximum.cluster.Cluster;
-import com.infomaximum.cluster.core.service.transport.executor.ExecutorTransport;
 import com.infomaximum.cluster.core.service.transport.executor.ExecutorTransportImpl;
-import com.infomaximum.cluster.exception.ClusterException;
-import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngine;
 import com.infomaximum.cluster.struct.Component;
@@ -31,19 +28,14 @@ public class FrontendComponent extends Component {
     }
 
     @Override
-    public ExecutorTransport initExecutorTransport() throws ClusterException {
-        try {
-            return new ExecutorTransportImpl.Builder(this)
-                    .withRemoteController(
-                            Server.INSTANCE.getGraphQLEngine().buildRemoteControllerGraphQLSubscribe(this, graphQLSubscribeEngine)//Обработчик GraphQL опопвещений подписчиков
-                    )
-                    .withRemoteController(
-                            Server.INSTANCE.getGraphQLEngine().buildRemoteControllerGraphQLExecutor(this)//Обработчик GraphQL запросов
-                    )
-                    .build();
-        } catch (GraphQLExecutorException e) {
-            throw new ClusterException(e);
-        }
+    protected ExecutorTransportImpl.Builder getExecutorTransportBuilder() {
+        return super.getExecutorTransportBuilder()
+                .withRemoteController(
+                        Server.INSTANCE.getGraphQLEngine().buildRemoteControllerGraphQLSubscribe(this, graphQLSubscribeEngine)//Обработчик GraphQL опопвещений подписчиков
+                )
+                .withRemoteController(
+                        Server.INSTANCE.getGraphQLEngine().buildRemoteControllerGraphQLExecutor(this)//Обработчик GraphQL запросов
+                );
     }
 
     @Override
@@ -53,10 +45,5 @@ public class FrontendComponent extends Component {
 
     public GraphQLExecutor getGraphQLExecutor() {
         return graphQLExecutor;
-    }
-
-    @Override
-    public void destroying() throws ClusterException {
-        // do nothing
     }
 }

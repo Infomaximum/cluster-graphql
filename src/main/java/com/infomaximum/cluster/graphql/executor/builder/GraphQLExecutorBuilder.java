@@ -26,6 +26,10 @@ import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObjectIn
 import com.infomaximum.cluster.struct.Component;
 import graphql.GraphQL;
 import graphql.TypeResolutionEnvironment;
+import graphql.execution.AsyncExecutionStrategy;
+import graphql.execution.AsyncSerialExecutionStrategy;
+import graphql.execution.DataFetcherExceptionHandler;
+import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.schema.*;
 
 import java.lang.reflect.Constructor;
@@ -42,6 +46,8 @@ public class GraphQLExecutorBuilder {
     private final TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
     private final GraphQLSchemaType graphQLSchemaType;
     private final GraphQLSubscribeEngineImpl subscribeEngine;
+    private final DataFetcherExceptionHandler dataFetcherExceptionHandler;
+
     private GraphQLComponentExecutor sdkGraphQLItemExecutor;
 
     public GraphQLExecutorBuilder(
@@ -50,7 +56,8 @@ public class GraphQLExecutorBuilder {
             Constructor customRemoteDataFetcher,
             TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
             GraphQLSchemaType graphQLSchemaType,
-            GraphQLSubscribeEngineImpl subscribeEngine
+            GraphQLSubscribeEngineImpl subscribeEngine,
+            DataFetcherExceptionHandler dataFetcherExceptionHandler
     ) {
         this.component = component;
         this.sdkPackagePath = sdkPackagePath;
@@ -58,6 +65,7 @@ public class GraphQLExecutorBuilder {
         this.fieldConfigurationBuilder = fieldConfigurationBuilder;
         this.graphQLSchemaType = graphQLSchemaType;
         this.subscribeEngine = subscribeEngine;
+        this.dataFetcherExceptionHandler = dataFetcherExceptionHandler;
     }
 
     public GraphQLExecutor build() throws GraphQLExecutorException {
@@ -177,7 +185,11 @@ public class GraphQLExecutorBuilder {
                     .codeRegistry(codeRegistryBuilder.build())
                     .build();
 
-            GraphQL graphQL = GraphQL.newGraphQL(schema).build();
+            GraphQL graphQL = GraphQL.newGraphQL(schema)
+                    .queryExecutionStrategy(new AsyncExecutionStrategy(dataFetcherExceptionHandler))
+                    .mutationExecutionStrategy(new AsyncSerialExecutionStrategy(dataFetcherExceptionHandler))
+                    .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy(dataFetcherExceptionHandler))
+                    .build();
 
             if (graphQLSchemaType.prepareCustomFields == null || graphQLSchemaType.prepareCustomFields.isEmpty()) {
                 return new GraphQLExecutorImpl(schema, graphQL);

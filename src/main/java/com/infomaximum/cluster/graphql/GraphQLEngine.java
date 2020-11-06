@@ -18,6 +18,8 @@ import com.infomaximum.cluster.graphql.schema.scalartype.GraphQLScalarTypeCustom
 import com.infomaximum.cluster.graphql.schema.scalartype.GraphQLTypeScalar;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 import com.infomaximum.cluster.struct.Component;
+import graphql.execution.DataFetcherExceptionHandler;
+import graphql.execution.SimpleDataFetcherExceptionHandler;
 
 import java.lang.reflect.Constructor;
 import java.util.Collections;
@@ -33,6 +35,7 @@ public class GraphQLEngine {
     private final GraphQLSchemaType graphQLSchemaType;
 
     private final Constructor customRemoteDataFetcher;
+    private final DataFetcherExceptionHandler dataFetcherExceptionHandler;
 
     private GraphQLEngine(
             String sdkPackagePath,
@@ -41,8 +44,9 @@ public class GraphQLEngine {
 
             GraphQLSchemaType graphQLSchemaType,
 
-            Constructor customRemoteDataFetcher
-            ){
+            Constructor customRemoteDataFetcher,
+            DataFetcherExceptionHandler dataFetcherExceptionHandler
+    ) {
 
         this.sdkPackagePath = sdkPackagePath;
 
@@ -51,6 +55,7 @@ public class GraphQLEngine {
         this.graphQLSchemaType = graphQLSchemaType;
 
         this.customRemoteDataFetcher = customRemoteDataFetcher;
+        this.dataFetcherExceptionHandler = dataFetcherExceptionHandler;
     }
 
     public GraphQLSchemaType getGraphQLSchemaType() {
@@ -68,7 +73,8 @@ public class GraphQLEngine {
                 customRemoteDataFetcher,
                 fieldConfigurationBuilder,
                 graphQLSchemaType,
-                (GraphQLSubscribeEngineImpl) graphQLSubscribeEngine
+                (GraphQLSubscribeEngineImpl) graphQLSubscribeEngine,
+                dataFetcherExceptionHandler
         ).build();
     }
 
@@ -90,6 +96,7 @@ public class GraphQLEngine {
         private Set<CustomFieldArgument> customArguments;
 
         private Constructor customRemoteDataFetcher;
+        private DataFetcherExceptionHandler dataFetcherExceptionHandler;
 
         private Set<GraphQLTypeScalar> typeScalars;
 
@@ -102,6 +109,8 @@ public class GraphQLEngine {
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLBigDecimal);
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLFloat);
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLInstant);
+
+            dataFetcherExceptionHandler = new SimpleDataFetcherExceptionHandler();
         }
 
         public Builder withSDKPackage(Package sdkPackage) {
@@ -115,18 +124,18 @@ public class GraphQLEngine {
         }
 
         public Builder withPrepareCustomField(PrepareCustomField prepareCustomField) {
-            if (prepareCustomFields ==null) prepareCustomFields = new HashSet<>();
+            if (prepareCustomFields == null) prepareCustomFields = new HashSet<>();
             prepareCustomFields.add(prepareCustomField);
             return this;
         }
 
-        public Builder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder){
+        public Builder withFieldConfigurationBuilder(TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder) {
             this.fieldConfigurationBuilder = fieldConfigurationBuilder;
             return this;
         }
 
         public Builder withCustomArgument(CustomFieldArgument customArgument) {
-            if (customArguments==null) customArguments = new HashSet<>();
+            if (customArguments == null) customArguments = new HashSet<>();
             customArguments.add(customArgument);
             return this;
         }
@@ -141,6 +150,11 @@ public class GraphQLEngine {
             constructor.setAccessible(true);
 
             customRemoteDataFetcher = constructor;
+            return this;
+        }
+
+        public Builder withDataFetcherExceptionHandler(DataFetcherExceptionHandler dataFetcherExceptionHandler) {
+            this.dataFetcherExceptionHandler = dataFetcherExceptionHandler;
             return this;
         }
 
@@ -161,7 +175,8 @@ public class GraphQLEngine {
                             (customArguments == null) ? Collections.emptySet() : customArguments
                     ),
 
-                    customRemoteDataFetcher
+                    customRemoteDataFetcher,
+                    dataFetcherExceptionHandler
             );
         }
     }
