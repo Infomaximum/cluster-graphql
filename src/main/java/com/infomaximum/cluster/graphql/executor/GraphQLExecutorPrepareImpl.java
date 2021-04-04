@@ -39,19 +39,19 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Основная идея это разрезать метод parseValidateAndExecute на 2 части и через грязные хаки вызвать их отдельно
- * <p>
- * private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
- * PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput, graphQLSchema, instrumentationState));
- * <p>
- * if (preparsedDoc.hasErrors()) {
- * return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
- * }
- * <p>
- * return execute(executionInput, preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
- * }
- */
+
+// Основная идея это разрезать метод parseValidateAndExecute на 2 части и через грязные хаки вызвать их отдельно
+
+// private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+// PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput, graphQLSchema, instrumentationState));
+
+// if (preparsedDoc.hasErrors()) {
+// return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
+// }
+
+// return execute(executionInput, preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
+// }
+
 public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
 
     private final static Logger log = LoggerFactory.getLogger(GraphQLExecutorPrepareImpl.class);
