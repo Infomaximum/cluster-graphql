@@ -1,16 +1,7 @@
 /.gradle/
 /build/
-/.idea/libraries/
-/.idea/artifacts/
-/.idea/modules/
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/compiler.xml
-/.idea/.name
-/.idea/cssdialects.xml
+/.idea/
 /out/
-/bin/
-/jre/
 
 # ---> Java
 *.class
@@ -26,5 +17,3 @@
 hs_err_pid*
 
 publish.gradle
-
-/logs/
