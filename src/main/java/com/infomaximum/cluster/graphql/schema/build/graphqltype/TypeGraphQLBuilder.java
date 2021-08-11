@@ -23,7 +23,6 @@ import com.infomaximum.cluster.utils.ReflectionUtils;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
@@ -313,8 +312,8 @@ public class TypeGraphQLBuilder {
 
     private String getGraphQLType(Type type) throws ClassNotFoundException {
         Class rawType;
-        if (type instanceof ParameterizedTypeImpl) {
-            rawType = ((ParameterizedTypeImpl) type).getRawType();
+        if (type instanceof ParameterizedType) {
+            rawType = (Class) ((ParameterizedType) type).getRawType();
         } else if (type instanceof Class) {
             rawType = (Class) type;
         } else {
