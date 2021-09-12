@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Created by kris on 29.12.16.
  */
-public class RGraphQLObjectTypeField {
+public class RGraphQLObjectTypeField implements RemoteObject {
 
     public final Integer componentUniqueId;
 
