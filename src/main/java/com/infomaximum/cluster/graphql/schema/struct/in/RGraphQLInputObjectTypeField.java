@@ -1,9 +1,11 @@
 package com.infomaximum.cluster.graphql.schema.struct.in;
 
+import com.infomaximum.cluster.core.remote.struct.RemoteObject;
+
 /**
  * Created by kris on 20.07.17.
  */
-public class RGraphQLInputObjectTypeField {
+public class RGraphQLInputObjectTypeField implements RemoteObject {
 
     public final String type;
 
