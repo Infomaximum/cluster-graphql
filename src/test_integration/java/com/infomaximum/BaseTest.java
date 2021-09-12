@@ -33,7 +33,7 @@ public abstract class BaseTest {
     }
 
     public static ExecutionResult grapqhlExecutor(String query) {
-        FrontendComponent frontendComponent = getServer().getCluster().getAnyComponent(FrontendComponent.class);
+        FrontendComponent frontendComponent = getServer().getCluster().getAnyLocalComponent(FrontendComponent.class);
 
         GRequest gRequest = new GRequest(
                 Instant.now(),
