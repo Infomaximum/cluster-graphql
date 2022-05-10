@@ -3,13 +3,7 @@ task sourceJar(type: Jar) {
     archiveClassifier = "sources"
 }
 
-//javadoc {
-//    source = sourceSets.main.java.srcDirs
-//    classpath = configurations.compileClasspath
-//}
-
 task packageJavadoc(type: Jar) {
-//    from javadoc
     from sourceSets.main.java.srcDirs
     archiveClassifier = 'javadoc'
 }
