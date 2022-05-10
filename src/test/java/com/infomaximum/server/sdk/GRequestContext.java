@@ -1,7 +1,6 @@
 package com.infomaximum.server.sdk;
 
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
-import com.infomaximum.cluster.struct.Component;
 
 public class GRequestContext implements RemoteObject {
 
