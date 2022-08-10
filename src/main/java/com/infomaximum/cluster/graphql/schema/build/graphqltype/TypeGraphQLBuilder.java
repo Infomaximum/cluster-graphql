@@ -21,6 +21,7 @@ import com.infomaximum.cluster.graphql.struct.GSubscribeEvent;
 import com.infomaximum.cluster.struct.Component;
 import com.infomaximum.cluster.utils.ReflectionUtils;
 import org.reflections.Reflections;
+import org.reflections.scanners.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +65,7 @@ public class TypeGraphQLBuilder {
     }
 
     public Map<Class, RGraphQLType> build() throws GraphQLExecutorException {
-        Reflections reflections = new Reflections(packageName);
+        Reflections reflections = new Reflections(packageName, new Scanner[0]);
 
         Map<Class, RGraphQLType> rTypeGraphQLItems = new HashMap<Class, RGraphQLType>();
         for (Class classRTypeGraphQL : reflections.getTypesAnnotatedWith(GraphQLTypeOutObject.class, true)) {
