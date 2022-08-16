@@ -1,6 +1,7 @@
 package com.infomaximum.server.components.frontend;
 
 import com.infomaximum.cluster.Cluster;
+import com.infomaximum.cluster.core.service.transport.TransportManager;
 import com.infomaximum.cluster.core.service.transport.executor.ExecutorTransportImpl;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngine;
@@ -24,7 +25,6 @@ public class FrontendComponent extends Component {
         super(cluster);
         this.graphQLSubscribeEngine = Server.INSTANCE.getGraphQLEngine().buildSubscribeEngine();
 
-        this.graphQLExecutor = Server.INSTANCE.getGraphQLEngine().buildExecutor(this, graphQLSubscribeEngine);
     }
 
     @Override
@@ -41,6 +41,13 @@ public class FrontendComponent extends Component {
     @Override
     public Info getInfo() {
         return INFO;
+    }
+
+    @Override
+    public void init(TransportManager transportManager) {
+        super.init(transportManager);
+
+        this.graphQLExecutor = Server.INSTANCE.getGraphQLEngine().buildExecutor(this, graphQLSubscribeEngine);
     }
 
     public GraphQLExecutor getGraphQLExecutor() {

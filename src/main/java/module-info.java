@@ -4,7 +4,6 @@ module com.infomaximum.cluster.graphql {
     requires java.validation;
     requires org.slf4j;
     requires io.reactivex.rxjava2;
-    requires org.reactivestreams;
     requires com.graphqljava.graphqljava;
     requires com.google.guava.guava;
     requires org.reflections.reflections;
