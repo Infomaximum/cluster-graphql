@@ -20,12 +20,12 @@ import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GSubscribeEvent;
 import com.infomaximum.cluster.struct.Component;
 import com.infomaximum.cluster.utils.ReflectionUtils;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
@@ -195,7 +195,7 @@ public class TypeGraphQLBuilder {
                     graphQLFieldName = GraphQLSchemaType.convertToGraphQLName(nameField);
                 }
 
-                boolean isNotNull = (field.getAnnotation(NotNull.class) != null);
+                boolean isNotNull = (field.getAnnotation(NonNull.class) != null);
 
                 fields.add(new RGraphQLInputObjectTypeField(typeField, nameField, graphQLFieldName, isNotNull));
             }
@@ -278,7 +278,7 @@ public class TypeGraphQLBuilder {
                     aGraphQLTarget = (GraphQLSource) annotation;
                 } else if (annotation.annotationType() == GraphQLName.class) {
                     aGraphQLName = (GraphQLName) annotation;
-                } else if (annotation.annotationType() == NotNull.class) {
+                } else if (annotation.annotationType() == NonNull.class) {
                     isNotNull = true;
                 } else if (annotation.annotationType() == GraphQLDescription.class) {
                     aGraphQLDescription = (GraphQLDescription) annotation;

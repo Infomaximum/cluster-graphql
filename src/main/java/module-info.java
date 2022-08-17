@@ -1,12 +1,11 @@
 module com.infomaximum.cluster.graphql {
-
     requires com.infomaximum.cluster;
-    requires java.validation;
     requires org.slf4j;
     requires io.reactivex.rxjava2;
     requires com.graphqljava.graphqljava;
     requires com.google.guava.guava;
     requires org.reflections.reflections;
+    requires org.checkerframework.checker.qual;
 
     exports com.infomaximum.cluster.graphql.remote.graphql.executor;
     exports com.infomaximum.cluster.graphql.struct;
@@ -24,5 +23,4 @@ module com.infomaximum.cluster.graphql {
     exports com.infomaximum.cluster.graphql.preparecustomfield;
     exports com.infomaximum.cluster.graphql.anotation;
     exports com.infomaximum.cluster.graphql.fieldargument.custom;
-
 }
