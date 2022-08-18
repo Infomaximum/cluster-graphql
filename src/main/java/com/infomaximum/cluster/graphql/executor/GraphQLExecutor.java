@@ -1,12 +1,12 @@
 package com.infomaximum.cluster.graphql.executor;
 
+import com.infomaximum.cluster.graphql.executor.struct.GExecutionResult;
 import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import graphql.ExecutionInput;
-import graphql.ExecutionResult;
 
 public interface GraphQLExecutor {
 
-    ExecutionResult execute(ExecutionInput executionInput);
+    GExecutionResult execute(ExecutionInput executionInput);
 
     void requestCompleted(ContextRequest context);
 

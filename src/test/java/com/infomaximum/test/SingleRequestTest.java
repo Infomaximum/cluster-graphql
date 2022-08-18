@@ -1,7 +1,7 @@
 package com.infomaximum.test;
 
 import com.infomaximum.BaseTest;
-import graphql.ExecutionResult;
+import com.infomaximum.cluster.graphql.executor.struct.GExecutionResult;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,7 +13,7 @@ public class SingleRequestTest extends BaseTest {
     public void test() throws Exception {
         Assert.assertTrue(true);
 
-        ExecutionResult executionResult = grapqhlExecutor("{value}");
+        GExecutionResult executionResult = grapqhlExecutor("{value}");
         Assert.assertTrue(executionResult.getErrors().isEmpty());
 
         Assert.assertEquals(0, ((Map)executionResult.getData()).get("value"));

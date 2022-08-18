@@ -1,12 +1,12 @@
 package com.infomaximum;
 
 import com.infomaximum.cluster.exception.ClusterException;
+import com.infomaximum.cluster.graphql.executor.struct.GExecutionResult;
 import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.server.Server;
 import com.infomaximum.server.components.frontend.FrontendComponent;
 import graphql.ExecutionInput;
-import graphql.ExecutionResult;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -32,7 +32,7 @@ public abstract class BaseTest {
         return server;
     }
 
-    public static ExecutionResult grapqhlExecutor(String query) {
+    public static GExecutionResult grapqhlExecutor(String query) {
         FrontendComponent frontendComponent = getServer().getCluster().getAnyLocalComponent(FrontendComponent.class);
 
         GRequest gRequest = new GRequest(

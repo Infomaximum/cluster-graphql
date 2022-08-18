@@ -2,6 +2,7 @@ package com.infomaximum.cluster.graphql.executor;
 
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorInvalidSyntaxException;
+import com.infomaximum.cluster.graphql.executor.struct.GExecutionResult;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomFieldUtils;
 import com.infomaximum.cluster.graphql.remote.graphql.executor.RControllerGraphQLExecutor;
@@ -31,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -212,7 +212,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         }
     }
 
-    public ExecutionResult execute(PrepareDocumentRequest prepareDocumentRequest) {
+    public GExecutionResult execute(PrepareDocumentRequest prepareDocumentRequest) {
         try {
             CompletableFuture<ExecutionResult> completableFuture = (CompletableFuture<ExecutionResult>) methodExecute.invoke(graphQL,
                     prepareDocumentRequest.executionInput,
@@ -220,15 +220,15 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                     schema,
                     prepareDocumentRequest.instrumentationState);
 
-            return completableFuture.join();
+            return new GExecutionResult(completableFuture.join());
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Изменилась реализация библиотеки GraphQL", e);
         }
     }
 
     @Override
-    public ExecutionResult execute(ExecutionInput executionInput) {
-        return graphQL.execute(executionInput);
+    public GExecutionResult execute(ExecutionInput executionInput) {
+        return new GExecutionResult(graphQL.execute(executionInput));
     }
 
     @Override

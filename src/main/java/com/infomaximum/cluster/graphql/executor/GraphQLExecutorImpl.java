@@ -1,8 +1,8 @@
 package com.infomaximum.cluster.graphql.executor;
 
+import com.infomaximum.cluster.graphql.executor.struct.GExecutionResult;
 import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import graphql.ExecutionInput;
-import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.schema.GraphQLSchema;
 
@@ -21,8 +21,8 @@ public class GraphQLExecutorImpl implements GraphQLExecutor {
     }
 
     @Override
-    public ExecutionResult execute(ExecutionInput executionInput) {
-        return graphQL.execute(executionInput);
+    public GExecutionResult execute(ExecutionInput executionInput) {
+        return new GExecutionResult(graphQL.execute(executionInput));
     }
 
     @Override
