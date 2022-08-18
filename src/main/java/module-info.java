@@ -6,6 +6,7 @@ module com.infomaximum.cluster.graphql {
     requires com.google.guava.guava;
     requires org.reflections.reflections;
     requires org.checkerframework.checker.qual;
+    requires org.reactivestreams.reactivestreams;
 
     exports com.infomaximum.cluster.graphql.struct;
     exports com.infomaximum.cluster.graphql.executor.subscription;
