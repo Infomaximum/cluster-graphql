@@ -7,7 +7,6 @@ module com.infomaximum.cluster.graphql {
     requires org.reflections.reflections;
     requires org.checkerframework.checker.qual;
 
-    exports com.infomaximum.cluster.graphql.remote.graphql.executor;
     exports com.infomaximum.cluster.graphql.struct;
     exports com.infomaximum.cluster.graphql.executor.subscription;
     exports com.infomaximum.cluster.graphql.subscription;
@@ -23,4 +22,7 @@ module com.infomaximum.cluster.graphql {
     exports com.infomaximum.cluster.graphql.preparecustomfield;
     exports com.infomaximum.cluster.graphql.anotation;
     exports com.infomaximum.cluster.graphql.fieldargument.custom;
+
+    exports com.infomaximum.cluster.graphql.remote.graphql.executor to com.infomaximum.cluster, com.infomaximum.platform;
+    exports com.infomaximum.cluster.graphql.remote.graphql.subscribe to com.infomaximum.cluster;
 }

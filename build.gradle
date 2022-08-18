@@ -5,13 +5,13 @@ plugins {
     id("de.jjohannes.extra-java-module-info") version "0.15"
     id "org.checkerframework" version "0.6.15" //https://github.com/kelloggm/checkerframework-gradle-plugin
 }
-apply from: 'https://raw.githubusercontent.com/Infomaximum/platform-java-module-info/0.0.2/com.infomaximum.platform-java-module-info.gradle'
+apply from: 'https://raw.githubusercontent.com/Infomaximum/platform-java-module-info/0.0.3/com.infomaximum.platform-java-module-info.gradle'
 if (project.hasProperty('ossrhUsername')) {
     apply from: 'publish.gradle'
 }
 
 group 'com.infomaximum'
-version '1.1.1f2'
+version '1.1.1f3'
 
 ext.moduleName = 'com.infomaximum.cluster.graphql'
 
@@ -72,12 +72,10 @@ dependencies {
     }
     implementation 'org.reactivestreams:reactive-streams:1.0.4'
 
-//    implementation 'javax.validation:validation-api:2.0.1.Final'
-
     implementation 'org.slf4j:slf4j-api:1.7.30'
 
     testImplementation 'junit:junit:4.13.2'
 
-    testImplementation 'ch.qos.logback:logback-core:1.2.3'
-    testImplementation 'ch.qos.logback:logback-classic:1.2.3'
+    testImplementation 'ch.qos.logback:logback-core:1.1.9'
+    testImplementation 'ch.qos.logback:logback-classic:1.1.9'
 }
