@@ -1,23 +1,23 @@
 package com.infomaximum.cluster.graphql.subscription;
 
+import com.infomaximum.cluster.graphql.executor.struct.GExecutionResult;
 import graphql.ExecutionResult;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 
-public class SingleSubscriber implements Subscriber {
+public class SingleSubscriber implements Flow.Subscriber {
 
-    private final CompletableFuture<ExecutionResult> completableFuture;
+    private final CompletableFuture<GExecutionResult> completableFuture;
 
-    private Subscription subscription;
+    private Flow.Subscription subscription;
 
     public SingleSubscriber() {
-        this.completableFuture = new CompletableFuture<ExecutionResult>();
+        this.completableFuture = new CompletableFuture<GExecutionResult>();
     }
 
     @Override
-    public void onSubscribe(Subscription subscription) {
+    public void onSubscribe(Flow.Subscription subscription) {
         this.subscription = subscription;
         subscription.request(1);
     }
@@ -25,7 +25,7 @@ public class SingleSubscriber implements Subscriber {
     @Override
     public void onNext(Object nextValue) {
         subscription.cancel();//Сразу же отписываемся
-        completableFuture.complete((ExecutionResult) nextValue);
+        completableFuture.complete(new GExecutionResult((ExecutionResult) nextValue));
     }
 
     @Override
@@ -38,7 +38,7 @@ public class SingleSubscriber implements Subscriber {
     public void onComplete() {
     }
 
-    public CompletableFuture<ExecutionResult> getCompletableFuture() {
+    public CompletableFuture<GExecutionResult> getCompletableFuture() {
         return completableFuture;
     }
 }
