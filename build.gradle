@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'java-library'
     id 'maven-publish'
     id 'signing'
     id("de.jjohannes.extra-java-module-info") version "0.15"
@@ -11,7 +12,7 @@ if (project.hasProperty('ossrhUsername')) {
 }
 
 group 'com.infomaximum'
-version '1.1.1f7'
+version '1.1.2'
 
 ext.moduleName = 'com.infomaximum.cluster.graphql'
 
@@ -52,7 +53,7 @@ dependencies {
     implementation 'com.infomaximum:cluster:1.1.4f2'
 //    implementation project(':cluster')
 
-    implementation('com.graphql-java:graphql-java:15.0') {
+    api('com.graphql-java:graphql-java:15.0') {
         exclude group: 'org.reactivestreams', module: 'reactive-streams'
     }
 
