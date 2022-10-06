@@ -2,11 +2,8 @@ module com.infomaximum.cluster.graphql {
     requires com.infomaximum.cluster;
     requires org.slf4j;
     requires io.reactivex.rxjava2;
-    requires com.graphqljava.graphqljava;
-    requires com.google.guava.guava;
-    requires org.reflections.reflections;
     requires org.checkerframework.checker.qual;
-    requires org.reactivestreams.reactivestreams;
+    requires com.graphqljava;
 
     exports com.infomaximum.cluster.graphql.struct;
     exports com.infomaximum.cluster.graphql.executor.subscription;

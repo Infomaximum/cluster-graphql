@@ -1,6 +1,5 @@
 package com.infomaximum.cluster.graphql.schema.scalartype;
 
-import com.google.common.collect.ImmutableSet;
 import com.infomaximum.cluster.graphql.schema.GraphQLSchemaType;
 import graphql.schema.Coercing;
 import graphql.schema.GraphQLScalarType;
@@ -34,7 +33,7 @@ public class GraphQLTypeScalar {
 
         this.graphQLScalarType = graphQLScalarType;
 
-        this.associationClasses = ImmutableSet.copyOf(associationClasses);
+        this.associationClasses = Set.copyOf(associationClasses);
     }
 
     public GraphQLTypeScalar(String name, String description, Class associationClass, Coercing coercing) {
@@ -55,7 +54,7 @@ public class GraphQLTypeScalar {
                 .coercing(coercing)
                 .build();
 
-        this.associationClasses = ImmutableSet.copyOf(associationClasses);
+        this.associationClasses = Set.copyOf(associationClasses);
     }
 
     public String getName() {

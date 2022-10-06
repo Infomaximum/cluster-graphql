@@ -1,14 +1,20 @@
 package com.infomaximum.cluster.graphql.schema.scalartype;
 
-import com.google.common.collect.ImmutableSet;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorInvalidSyntaxException;
 import graphql.AssertException;
 import graphql.Scalars;
 import graphql.language.FloatValue;
 import graphql.language.IntValue;
+import graphql.language.StringValue;
 import graphql.schema.Coercing;
+import graphql.schema.CoercingParseLiteralException;
+import graphql.schema.CoercingParseValueException;
+import graphql.schema.CoercingSerializeException;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
+import java.util.Set;
 
 /**
  * Created by kris on 19.01.17.
@@ -17,33 +23,80 @@ public class GraphQLScalarTypeCustom {
 
     public static final GraphQLTypeScalar GraphQLBoolean = new GraphQLTypeScalar(
             Scalars.GraphQLBoolean,
-            ImmutableSet.of(Boolean.class, boolean.class)
+            Set.of(Boolean.class, boolean.class)
+    );
+    public static final GraphQLTypeScalar GraphQLInt = new GraphQLTypeScalar(
+            Scalars.GraphQLInt,
+            Set.of(Integer.class, int.class)
+    );
+    public static final GraphQLTypeScalar GraphQLBigDecimal = new GraphQLTypeScalar(
+            "BigDecimal", "Built-in java.math.BigDecimal",
+            Set.of(Double.class, double.class),
+            new Coercing<BigDecimal, BigDecimal>() {
+
+                private BigDecimal convertImpl(Object input) {
+                    if (isNumberIsh(input)) {
+                        try {
+                            return new BigDecimal(input.toString());
+                        } catch (NumberFormatException e) {
+                            return null;
+                        }
+                    }
+                    return null;
+
+                }
+
+                @Override
+                public BigDecimal serialize(Object input) {
+                    BigDecimal result = convertImpl(input);
+                    if (result == null) {
+                        throw new CoercingSerializeException(
+                                "Expected type 'BigDecimal' but was '" + typeName(input) + "'."
+                        );
+                    }
+                    return result;
+                }
+
+                @Override
+                public BigDecimal parseValue(Object input) {
+                    BigDecimal result = convertImpl(input);
+                    if (result == null) {
+                        throw new CoercingParseValueException(
+                                "Expected type 'BigDecimal' but was '" + typeName(input) + "'."
+                        );
+                    }
+                    return result;
+                }
+
+                @Override
+                public BigDecimal parseLiteral(Object input) {
+                    if (input instanceof StringValue) {
+                        try {
+                            return new BigDecimal(((StringValue) input).getValue());
+                        } catch (NumberFormatException e) {
+                            throw new CoercingParseLiteralException(
+                                    "Unable to turn AST input into a 'BigDecimal' : '" + String.valueOf(input) + "'"
+                            );
+                        }
+                    } else if (input instanceof IntValue) {
+                        return new BigDecimal(((IntValue) input).getValue());
+                    } else if (input instanceof FloatValue) {
+                        return ((FloatValue) input).getValue();
+                    }
+                    throw new CoercingParseLiteralException(
+                            "Expected AST type 'IntValue', 'StringValue' or 'FloatValue' but was '" + typeName(input) + "'."
+                    );
+                }
+            }
     );
 
     public static final GraphQLTypeScalar GraphQLString = new GraphQLTypeScalar(
             Scalars.GraphQLString,
             String.class
     );
-
-    public static final GraphQLTypeScalar GraphQLInt = new GraphQLTypeScalar(
-            Scalars.GraphQLInt,
-            ImmutableSet.of(Integer.class, int.class)
-    );
-
-    public static final GraphQLTypeScalar GraphQLLong = new GraphQLTypeScalar(
-            Scalars.GraphQLLong,
-            ImmutableSet.of(Long.class, long.class)
-    );
-
-    public static final GraphQLTypeScalar GraphQLBigDecimal = new GraphQLTypeScalar(
-            "bigdecimal",
-            Scalars.GraphQLBigDecimal,
-            ImmutableSet.of(Double.class, double.class)
-    );
-
     public static final GraphQLTypeScalar GraphQLFloat = new GraphQLTypeScalar(
             "Float", "Built-in Float",
-            ImmutableSet.of(Float.class, float.class),
+            Set.of(Float.class, float.class),
             new Coercing<Float, Float>() {
 
                 @Override
@@ -73,6 +126,81 @@ public class GraphQLScalarTypeCustom {
                     } else {
                         throw new GraphQLExecutorInvalidSyntaxException("Not support type argument: " + input);
                     }
+                }
+            }
+    );
+    private static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
+    private static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
+    public static final GraphQLTypeScalar GraphQLLong = new GraphQLTypeScalar(
+            "Long", "Long type",
+            Set.of(Long.class, long.class),
+            new Coercing<Long, Long>() {
+
+                private Long convertImpl(Object input) {
+                    if (input instanceof Long) {
+                        return (Long) input;
+                    } else if (isNumberIsh(input)) {
+                        BigDecimal value;
+                        try {
+                            value = new BigDecimal(input.toString());
+                        } catch (NumberFormatException e) {
+                            return null;
+                        }
+                        try {
+                            return value.longValueExact();
+                        } catch (ArithmeticException e) {
+                            return null;
+                        }
+                    } else {
+                        return null;
+                    }
+
+                }
+
+                @Override
+                public Long serialize(Object input) {
+                    Long result = convertImpl(input);
+                    if (result == null) {
+                        throw new CoercingSerializeException(
+                                "Expected type 'Long' but was '" + typeName(input) + "'."
+                        );
+                    }
+                    return result;
+                }
+
+                @Override
+                public Long parseValue(Object input) {
+                    Long result = convertImpl(input);
+                    if (result == null) {
+                        throw new CoercingParseValueException(
+                                "Expected type 'Long' but was '" + typeName(input) + "'."
+                        );
+                    }
+                    return result;
+                }
+
+                @Override
+                public Long parseLiteral(Object input) {
+                    if (input instanceof StringValue) {
+                        try {
+                            return Long.parseLong(((StringValue) input).getValue());
+                        } catch (NumberFormatException e) {
+                            throw new CoercingParseLiteralException(
+                                    "Expected value to be a Long but it was '" + String.valueOf(input) + "'"
+                            );
+                        }
+                    } else if (input instanceof IntValue) {
+                        BigInteger value = ((IntValue) input).getValue();
+                        if (value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0) {
+                            throw new CoercingParseLiteralException(
+                                    "Expected value to be in the Long range but it was '" + value.toString() + "'"
+                            );
+                        }
+                        return value.longValue();
+                    }
+                    throw new CoercingParseLiteralException(
+                            "Expected AST type 'IntValue' or 'StringValue' but was '" + typeName(input) + "'."
+                    );
                 }
             }
     );
@@ -131,5 +259,16 @@ public class GraphQLScalarTypeCustom {
             }
         }
         throw new AssertException("Unexpected case - this call should be protected by a previous call to isNumberIsh()");
+    }
+
+    private static boolean isNumberIsh(Object input) {
+        return input instanceof Number || input instanceof String;
+    }
+
+    private static String typeName(Object input) {
+        if (input == null) {
+            return "null";
+        }
+        return input.getClass().getSimpleName();
     }
 }

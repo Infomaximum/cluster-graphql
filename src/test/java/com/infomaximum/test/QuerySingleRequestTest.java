@@ -1,7 +1,8 @@
 package com.infomaximum.test;
 
 import com.infomaximum.BaseTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 
 public class QuerySingleRequestTest extends BaseTest {
 

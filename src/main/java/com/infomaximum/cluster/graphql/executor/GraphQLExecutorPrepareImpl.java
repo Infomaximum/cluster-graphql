@@ -18,6 +18,7 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.InvalidSyntaxError;
+import graphql.execution.CoercedVariables;
 import graphql.execution.ValuesResolver;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -275,11 +276,11 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             if (rGraphQLObjectTypeField.isPrepare) {
                 HashMap<String, Serializable> arguments = ComponentDataFetcher.filterArguments(
                         field,
-                        new ValuesResolver().getArgumentValues(
+                        ValuesResolver.getArgumentValues(
                                 schema.getCodeRegistry(),
                                 Introspection.getFieldDef(schema, (GraphQLCompositeType) parent, field.getName()).getArguments(),
                                 field.getArguments(),
-                                variables
+                                CoercedVariables.of(variables)
                         ),
                         variables.keySet()
                 );

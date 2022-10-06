@@ -7,8 +7,8 @@ import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.server.Server;
 import com.infomaximum.server.components.frontend.FrontendComponent;
 import graphql.ExecutionInput;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -23,7 +23,7 @@ public abstract class BaseTest {
 
     private static Server server;
 
-    @BeforeClass
+    @BeforeAll
     public static void init() throws ClusterException {
         server = new Server();
     }
@@ -53,9 +53,11 @@ public abstract class BaseTest {
                 .build();
 
         return frontendComponent.getGraphQLExecutor().execute(executionInput);
+
+
     }
 
-    @AfterClass
+    @AfterAll
     public static void destroy() throws IOException {
         if (server != null) {
             server.close();

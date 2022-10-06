@@ -1,6 +1,5 @@
 package com.infomaximum.cluster.graphql.executor.builder;
 
-import com.google.common.base.Strings;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutorImpl;
@@ -23,6 +22,7 @@ import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeMethodArgument;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLTypeOutObjectInterface;
+import com.infomaximum.cluster.graphql.utils.Utils;
 import com.infomaximum.cluster.struct.Component;
 import graphql.GraphQL;
 import graphql.TypeResolutionEnvironment;
@@ -370,7 +370,7 @@ public class GraphQLExecutorBuilder {
                         argumentBuilder.type(getGraphQLInputType(graphQLTypes, argument.type));
                     }
 
-                    if (!Strings.isNullOrEmpty(argument.description)) {
+                    if (!Utils.isNullOrEmpty(argument.description)) {
                         argumentBuilder.description(argument.description);
                     }
 

@@ -1,6 +1,5 @@
 package com.infomaximum.cluster.graphql.executor.component;
 
-import com.google.common.base.Defaults;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
 import com.infomaximum.cluster.graphql.anotation.GraphQLName;
 import com.infomaximum.cluster.graphql.anotation.GraphQLSource;
@@ -19,6 +18,7 @@ import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.graphql.struct.GSubscribeEvent;
+import com.infomaximum.cluster.graphql.utils.Utils;
 import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -183,7 +183,7 @@ public class GraphQLComponentExecutor {
         }
 
         if (inputValue == null) {
-            if (clazz.isPrimitive()) return Defaults.defaultValue(clazz);
+            if (clazz.isPrimitive()) return Utils.defaultValue(clazz);
             if (clazz == GOptional.class) return new GOptional(null, isPresent);
             return null;
         }

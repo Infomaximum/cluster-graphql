@@ -1,10 +1,10 @@
 package com.infomaximum.cluster.graphql.schema;
 
-import com.google.common.base.CaseFormat;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.fieldargument.custom.CustomFieldArgument;
 import com.infomaximum.cluster.graphql.preparecustomfield.PrepareCustomField;
 import com.infomaximum.cluster.graphql.schema.scalartype.GraphQLTypeScalar;
+import com.infomaximum.cluster.graphql.utils.CaseFormat;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,7 +44,7 @@ public class GraphQLSchemaType {
     }
 
     public static String convertToGraphQLName(String name) {
-        return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name);
+        return CaseFormat.toLowerUnderscore(name);
     }
 
 }
