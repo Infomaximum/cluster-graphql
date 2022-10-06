@@ -22,7 +22,6 @@ import com.infomaximum.cluster.struct.Component;
 import com.infomaximum.cluster.utils.ReflectionUtils;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.reflections.Reflections;
-import org.reflections.scanners.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
