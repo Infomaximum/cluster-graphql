@@ -2,7 +2,7 @@ package com.infomaximum.cluster.graphql.executor.struct;
 
 import graphql.ExecutionResult;
 import graphql.GraphQLError;
-import graphql.execution.reactive.CompletionStageMappingPublisher;
+import graphql.execution.reactive.SubscriptionPublisher;
 
 import java.util.List;
 
@@ -15,8 +15,8 @@ public class GExecutionResult {
     }
 
     public <T> T getData() {
-        if (executionResult.getData() instanceof CompletionStageMappingPublisher csmp) {
-            return (T) new GCompletionStageMappingPublisher(csmp);
+        if (executionResult.getData() instanceof SubscriptionPublisher sp) {
+            return (T) new GSubscriptionPublisher(sp);
         } else {
             return executionResult.getData();
         }
