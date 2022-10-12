@@ -13,6 +13,6 @@ public class CaseFormatTest {
         Assertions.assertEquals("get_name", CaseFormat.toLowerUnderscore("GetName"));
         Assertions.assertEquals("get_first_name", CaseFormat.toLowerUnderscore("getFirstName"));
         Assertions.assertEquals("get_first_name", CaseFormat.toLowerUnderscore("get_First_Name"));
-        Assertions.assertEquals("get_afirst_name", CaseFormat.toLowerUnderscore("getAFirstName"));
+        Assertions.assertEquals("get_a_first_name", CaseFormat.toLowerUnderscore("getAFirstName"));
     }
 }
