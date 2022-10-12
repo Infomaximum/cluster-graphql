@@ -7,7 +7,7 @@ public class CaseFormat {
         for (int i = 0; i < value.length(); i++) {
             char ch = value.charAt(i);
             if (Character.isUpperCase(ch)) {
-                if (i > 1 && (value.charAt(i - 1) != '_')) {
+                if (i > 0 && (value.charAt(i - 1) != '_')) {
                     result.append('_');
                 }
                 result.append(Character.toLowerCase(ch));
