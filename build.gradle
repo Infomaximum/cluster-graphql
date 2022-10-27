@@ -10,7 +10,7 @@ if (project.hasProperty('ossrhUsername')) {
 }
 
 group 'com.infomaximum'
-version '1.1.3p5'
+version '1.1.3p6'
 
 ext.moduleName = 'com.infomaximum.cluster.graphql'
 
@@ -51,7 +51,7 @@ dependencies {
     implementation 'com.infomaximum:cluster:1.1.5p2'
 //    implementation project(':cluster')
 
-    api('com.graphql-java:graphql-java:19.2') {
+    implementation('com.graphql-java:graphql-java:19.2') {
         exclude group: 'org.reactivestreams', module: 'reactive-streams'
         exclude group: 'com.graphql-java', module: 'java-dataloader'//from exclude org.slf4j
         exclude group: 'org.slf4j', module: 'slf4j-api'
