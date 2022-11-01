@@ -1,8 +1,8 @@
 package com.infomaximum.server.components.component1;
 
 import com.infomaximum.cluster.Cluster;
-import com.infomaximum.cluster.struct.Component;
 import com.infomaximum.cluster.struct.Info;
+import com.infomaximum.server.sdk.Component;
 
 /**
  * Created by v.bukharkin on 19.05.2017.

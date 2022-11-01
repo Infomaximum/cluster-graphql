@@ -263,12 +263,12 @@ public class TypeGraphQLBuilder {
         List<RGraphQLObjectTypeMethodArgument> arguments = new ArrayList<>();
         Class[] parameterTypes = method.getParameterTypes();
         Annotation[][] parametersAnnotations = method.getParameterAnnotations();
+        AnnotatedType[] annotatedParameterTypes = method.getAnnotatedParameterTypes();
         for (int index = 0; index < parameterTypes.length; index++) {
             //Собираем аннотации
             GraphQLSource aGraphQLTarget = null;
             GraphQLName aGraphQLName = null;
             GraphQLDescription aGraphQLDescription = null;
-            boolean isNotNull = false;
             for (Annotation annotation : parametersAnnotations[index]) {
                 if (annotation.annotationType() == GraphQLSource.class) {
                     if (!RemoteObject.class.isAssignableFrom(parameterTypes[index])) {
@@ -277,12 +277,17 @@ public class TypeGraphQLBuilder {
                     aGraphQLTarget = (GraphQLSource) annotation;
                 } else if (annotation.annotationType() == GraphQLName.class) {
                     aGraphQLName = (GraphQLName) annotation;
-                } else if (annotation.annotationType() == NonNull.class) {
-                    isNotNull = true;
                 } else if (annotation.annotationType() == GraphQLDescription.class) {
                     aGraphQLDescription = (GraphQLDescription) annotation;
                 }
             }
+            boolean isNotNull = false;
+            for (Annotation annotation : annotatedParameterTypes[index].getAnnotations()) {
+                if (annotation.annotationType() == NonNull.class) {
+                    isNotNull = true;
+                }
+            }
+
             if (aGraphQLTarget != null) continue;//В эту переменную будет передаваться объект для которого вызывается
             if (aGraphQLName == null) continue;//В эту переменную будет передаваться внешняя переменная
 

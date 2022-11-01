@@ -5,9 +5,9 @@ import com.infomaximum.cluster.core.service.transport.TransportManager;
 import com.infomaximum.cluster.core.service.transport.executor.ExecutorTransportImpl;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngine;
-import com.infomaximum.cluster.struct.Component;
 import com.infomaximum.cluster.struct.Info;
 import com.infomaximum.server.Server;
+import com.infomaximum.server.sdk.Component;
 
 /**
  * Created by kris.
@@ -32,9 +32,6 @@ public class FrontendComponent extends Component {
         return super.getExecutorTransportBuilder()
                 .withRemoteController(
                         Server.INSTANCE.getGraphQLEngine().buildRemoteControllerGraphQLSubscribe(this, graphQLSubscribeEngine)//Обработчик GraphQL опопвещений подписчиков
-                )
-                .withRemoteController(
-                        Server.INSTANCE.getGraphQLEngine().buildRemoteControllerGraphQLExecutor(this)//Обработчик GraphQL запросов
                 );
     }
 
