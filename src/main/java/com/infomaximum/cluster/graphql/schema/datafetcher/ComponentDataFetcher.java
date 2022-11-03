@@ -112,7 +112,7 @@ public class ComponentDataFetcher implements DataFetcher {
                     @Override
                     public void subscribe(ObservableEmitter emitter) {
                         emitter.onNext(resultSubscribeValue.value);
-                        subscribeEngine.addListener(rTypeGraphQLField.componentUniqueId, resultSubscribeValue.subscribeKey, emitter);
+                        subscribeEngine.subscribe(rTypeGraphQLField.componentUniqueId, resultSubscribeValue.subscribeKey, emitter);
                     }
                 };
                 return Observable.create(observableOnSubscribe).toFlowable(BackpressureStrategy.LATEST);
