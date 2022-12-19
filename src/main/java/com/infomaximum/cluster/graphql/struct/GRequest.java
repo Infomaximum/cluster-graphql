@@ -11,33 +11,17 @@ import java.util.HashMap;
  */
 public class GRequest implements RemoteObject {
 
-    public static class RemoteAddress implements RemoteObject {
-
-        public final String rawRemoteAddress;
-        public final String endRemoteAddress;
-
-        public RemoteAddress(String remoteAddress) {
-            this.rawRemoteAddress = remoteAddress;
-            this.endRemoteAddress = remoteAddress;
-        }
-
-        public RemoteAddress(String rawRemoteAddress, String endRemoteAddress) {
-            this.rawRemoteAddress = rawRemoteAddress;
-            this.endRemoteAddress = endRemoteAddress;
-        }
-    }
-
     private final Instant instant;
-
     private final RemoteAddress remoteAddress;
-
     private final String query;
     private final HashMap<String, Serializable> queryVariables;
+    private final String xTraceId;
 
     public GRequest(
             Instant instant,
             RemoteAddress remoteAddress,
-            String query, HashMap<String, Serializable> queryVariables
+            String query, HashMap<String, Serializable> queryVariables,
+            String xTraceId
     ) {
         this.instant = instant;
 
@@ -45,6 +29,8 @@ public class GRequest implements RemoteObject {
 
         this.query = query;
         this.queryVariables = queryVariables;
+
+        this.xTraceId = xTraceId;
     }
 
     public Instant getInstant() {
@@ -61,6 +47,26 @@ public class GRequest implements RemoteObject {
 
     public HashMap<String, Serializable> getQueryVariables() {
         return queryVariables;
+    }
+
+    public String getXTraceId() {
+        return xTraceId;
+    }
+
+    public static class RemoteAddress implements RemoteObject {
+
+        public final String rawRemoteAddress;
+        public final String endRemoteAddress;
+
+        public RemoteAddress(String remoteAddress) {
+            this.rawRemoteAddress = remoteAddress;
+            this.endRemoteAddress = remoteAddress;
+        }
+
+        public RemoteAddress(String rawRemoteAddress, String endRemoteAddress) {
+            this.rawRemoteAddress = rawRemoteAddress;
+            this.endRemoteAddress = endRemoteAddress;
+        }
     }
 
 }

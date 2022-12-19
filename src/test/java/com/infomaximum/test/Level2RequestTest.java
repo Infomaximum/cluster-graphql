@@ -35,6 +35,7 @@ public class Level2RequestTest extends BaseTest {
         Assertions.assertTrue(true);
 
         GExecutionResult executionResult = grapqhlExecutor("{level2{query_value(k:5)}}");
+        //TODO отремонтировать
         Assertions.assertTrue(executionResult.getErrors().isEmpty());
 
         Map dataResult = executionResult.getData();

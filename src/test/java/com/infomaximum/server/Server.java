@@ -6,6 +6,7 @@ import com.infomaximum.cluster.exception.ClusterException;
 import com.infomaximum.cluster.graphql.GraphQLEngine;
 import com.infomaximum.server.components.component1.Component1;
 import com.infomaximum.server.components.frontend.FrontendComponent;
+import com.infomaximum.server.sdk.GraphQLQueryCustomField;
 
 public class Server implements AutoCloseable  {
 
@@ -41,6 +42,7 @@ public class Server implements AutoCloseable  {
 //                        }
 //                    }
 //                })
+                .withPrepareCustomField(new GraphQLQueryCustomField())
                 .build();
 
         cluster = new Cluster.Builder()
