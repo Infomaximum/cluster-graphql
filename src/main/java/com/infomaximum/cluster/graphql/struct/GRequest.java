@@ -15,12 +15,15 @@ public class GRequest implements RemoteObject {
     private final RemoteAddress remoteAddress;
     private final String query;
     private final HashMap<String, Serializable> queryVariables;
+
+    private final String operationName;
+
     private final String xTraceId;
 
     public GRequest(
             Instant instant,
             RemoteAddress remoteAddress,
-            String query, HashMap<String, Serializable> queryVariables,
+            String query, HashMap<String, Serializable> queryVariables, String operationName,
             String xTraceId
     ) {
         this.instant = instant;
@@ -29,6 +32,7 @@ public class GRequest implements RemoteObject {
 
         this.query = query;
         this.queryVariables = queryVariables;
+        this.operationName = operationName;
 
         this.xTraceId = xTraceId;
     }
@@ -47,6 +51,10 @@ public class GRequest implements RemoteObject {
 
     public HashMap<String, Serializable> getQueryVariables() {
         return queryVariables;
+    }
+
+    public String getOperationName() {
+        return operationName;
     }
 
     public String getXTraceId() {

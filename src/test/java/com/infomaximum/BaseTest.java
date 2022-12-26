@@ -38,7 +38,7 @@ public abstract class BaseTest {
         GRequest gRequest = new GRequest(
                 Instant.now(),
                 new GRequest.RemoteAddress("127.0.0.1"),
-                "{}", new HashMap<>(),
+                "{}", new HashMap<>(), null,
                 "123e4567-e89b-12d3-a456-426655440000"
         );
 
