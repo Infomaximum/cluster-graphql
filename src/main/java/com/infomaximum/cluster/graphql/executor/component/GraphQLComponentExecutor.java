@@ -256,7 +256,9 @@ public class GraphQLComponentExecutor {
     //TODO Ulitin V. Если когда нибудь у нас появится перегрузка методов, переписать
     private Method getMethod(String graphQLTypeName, String graphQLTypeFieldName) {
         Class classSchema = classSchemas.get(graphQLTypeName);
-        if (classSchema == null) throw new RuntimeException("not support scheme: " + classSchema);
+        if (classSchema == null) {
+            throw new RuntimeException("not support scheme from: " + graphQLTypeName);
+        }
 
         Method findMethod = null;
         for (Method method : classSchema.getMethods()) {
@@ -270,8 +272,9 @@ public class GraphQLComponentExecutor {
             }
         }
 
-        if (findMethod == null)
+        if (findMethod == null) {
             throw new RuntimeException("not found method: " + graphQLTypeFieldName + " in " + classSchema);
+        }
         return findMethod;
     }
 }
