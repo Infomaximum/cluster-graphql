@@ -20,6 +20,7 @@ import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField
 import com.infomaximum.cluster.struct.Component;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
+import graphql.parser.ParserOptions;
 
 import java.lang.reflect.Constructor;
 import java.util.Collections;
@@ -101,6 +102,19 @@ public class GraphQLEngine {
         private Set<GraphQLTypeScalar> typeScalars;
 
         public Builder() {
+
+            //TODO DELETE
+            //-----------------DELETE AFTER 01.06.2023------------------
+            ParserOptions parserOptions = ParserOptions.newParserOptions()
+                    .captureIgnoredChars(false)
+                    .captureSourceLocation(true)
+                    .captureLineComments(false) // #comments are not useful in query parsing
+                    .maxTokens(Integer.MAX_VALUE) // to prevent a billion laughs style attacks, we set a default for graphql-java
+                    .maxWhitespaceTokens(Integer.MAX_VALUE)
+                    .build();
+            graphql.parser.ParserOptions.setDefaultOperationParserOptions(parserOptions);
+            //-----------------DELETE AFTER 01.06.2023------------------
+
             typeScalars = new HashSet<GraphQLTypeScalar>();
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLBoolean);
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLString);
