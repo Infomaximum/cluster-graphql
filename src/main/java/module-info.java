@@ -26,4 +26,5 @@ module com.infomaximum.cluster.graphql {
     exports com.infomaximum.cluster.graphql.remote.graphql.executor to com.infomaximum.cluster, com.infomaximum.platform;
     exports com.infomaximum.cluster.graphql.remote.graphql.subscribe to com.infomaximum.cluster;
     exports com.infomaximum.cluster.graphql.executor.struct;
+    exports com.infomaximum.cluster.graphql.executor.datafetcher;
 }
