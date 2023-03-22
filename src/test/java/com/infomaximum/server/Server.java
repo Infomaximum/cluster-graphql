@@ -16,6 +16,13 @@ public class Server implements AutoCloseable  {
     public Server() throws ClusterException {
         INSTANCE = this;
 
+        Thread.UncaughtExceptionHandler uncaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                e.printStackTrace();
+            }
+        };
+
         graphQLEngine = new GraphQLEngine.Builder()
 //                .withQueryPoolExecutor(new QueryPoolExecutor() {
 //                    @Override
@@ -45,7 +52,7 @@ public class Server implements AutoCloseable  {
                 .withPrepareCustomField(new GraphQLQueryCustomField())
                 .build();
 
-        cluster = new Cluster.Builder()
+        cluster = new Cluster.Builder(uncaughtExceptionHandler)
                 .withComponent(
                         new ComponentBuilder(Component1.class)
                 )

@@ -2,7 +2,7 @@ package com.infomaximum.server.components.frontend;
 
 import com.infomaximum.cluster.Cluster;
 import com.infomaximum.cluster.core.service.transport.TransportManager;
-import com.infomaximum.cluster.core.service.transport.executor.ExecutorTransportImpl;
+import com.infomaximum.cluster.core.service.transport.executor.ComponentExecutorTransportImpl;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngine;
 import com.infomaximum.cluster.struct.Info;
@@ -28,7 +28,7 @@ public class FrontendComponent extends Component {
     }
 
     @Override
-    protected ExecutorTransportImpl.Builder getExecutorTransportBuilder() {
+    protected ComponentExecutorTransportImpl.Builder getExecutorTransportBuilder() {
         return super.getExecutorTransportBuilder()
                 .withRemoteController(
                         Server.INSTANCE.getGraphQLEngine().buildRemoteControllerGraphQLSubscribe(this, graphQLSubscribeEngine)//Обработчик GraphQL опопвещений подписчиков
