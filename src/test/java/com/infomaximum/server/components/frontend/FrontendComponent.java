@@ -5,26 +5,20 @@ import com.infomaximum.cluster.core.service.transport.TransportManager;
 import com.infomaximum.cluster.core.service.transport.executor.ComponentExecutorTransportImpl;
 import com.infomaximum.cluster.graphql.executor.GraphQLExecutor;
 import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngine;
-import com.infomaximum.cluster.struct.Info;
 import com.infomaximum.server.Server;
 import com.infomaximum.server.sdk.Component;
 
 /**
  * Created by kris.
  */
+@com.infomaximum.cluster.anotation.Info(uuid = "com.infomaximum.server.components.frontend")
 public class FrontendComponent extends Component {
-
-    public static final Info INFO = new Info.Builder<>("com.infomaximum.server.components.frontend")
-            .withComponentClass(FrontendComponent.class)
-            .build();
 
     private final GraphQLSubscribeEngine graphQLSubscribeEngine;
     private GraphQLExecutor graphQLExecutor;
 
-    public FrontendComponent(Cluster cluster) {
-        super(cluster);
+    public FrontendComponent() {
         this.graphQLSubscribeEngine = Server.INSTANCE.getGraphQLEngine().buildSubscribeEngine();
-
     }
 
     @Override
@@ -36,14 +30,8 @@ public class FrontendComponent extends Component {
     }
 
     @Override
-    public Info getInfo() {
-        return INFO;
-    }
-
-    @Override
-    public void init(TransportManager transportManager) {
-        super.init(transportManager);
-
+    public void init(Cluster cluster, TransportManager transportManager) {
+        super.init(cluster, transportManager);
         this.graphQLExecutor = Server.INSTANCE.getGraphQLEngine().buildExecutor(this, graphQLSubscribeEngine);
     }
 
