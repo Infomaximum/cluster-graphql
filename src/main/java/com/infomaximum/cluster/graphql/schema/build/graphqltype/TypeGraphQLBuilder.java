@@ -176,27 +176,66 @@ public class TypeGraphQLBuilder {
             Set<RGraphQLInputObjectTypeField> fields = new HashSet<RGraphQLInputObjectTypeField>();
 
             //Обрабытываем поля
-            for (Field field : classRTypeGraphQL.getDeclaredFields()) {
-                GraphQLTypeInput aGraphQLTypeInputField = field.getAnnotation(GraphQLTypeInput.class);
-                if (aGraphQLTypeInputField == null) continue;
+            Constructor constructor = com.infomaximum.cluster.graphql.utils.ReflectionUtils.getGConstructor(classRTypeGraphQL);
+            if (constructor != null) {
+                //Поля сразу передаются в конструктор объекта
+                Annotation[][] annotations = constructor.getParameterAnnotations();
+                AnnotatedType[] annotatedType = constructor.getAnnotatedParameterTypes();
+                Type[] fieldTypes = constructor.getGenericParameterTypes();
+                for (int index = 0; index < fieldTypes.length; index++) {
+                    String typeField;
+                    try {
+                        typeField = getGraphQLType(fieldTypes[index]);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Exception build type, constructor: " + constructor + ", argument index: " + index, e);
+                    }
 
-                String typeField;
-                try {
-                    typeField = getGraphQLType(field.getGenericType());
-                } catch (Exception e) {
-                    throw new RuntimeException("Exception build type, class: " + classRTypeGraphQL.getName() + ", field: " + field.getName(), e);
+                    String nameField = null;
+                    for (Annotation iAnnotation : annotations[index]) {
+                        if (iAnnotation.annotationType() == GraphQLName.class) {
+                            nameField = ((GraphQLName) iAnnotation).value();
+                        }
+                    }
+                    if (nameField == null) {
+                        throw new RuntimeException("Exception build type, constructor: " + constructor + ". Not fount annotation GraphQLName, argument index: " + index);
+                    }
+
+                    boolean isNotNull = false;
+                    for (Annotation iAnnotation : annotatedType[index].getAnnotations()) {
+                        if (iAnnotation.annotationType() == NonNull.class) {
+                            isNotNull = true;
+                        }
+                    }
+
+                    fields.add(new RGraphQLInputObjectTypeField(typeField, nameField, nameField, isNotNull));
                 }
+            } else {
+                //TODO - удалить эту ветку - как устаревшую, и разрешить аннотацию GraphQLTypeInput только над классами
+                log.warn("Deprecated description GraphQLTypeInput:" + classRTypeGraphQL.getName());
+                //OLD MODE - поля input объект инициализруется после создания объекта
 
-                String nameField = field.getName();
+                for (Field field : classRTypeGraphQL.getDeclaredFields()) {
+                    GraphQLTypeInput aGraphQLTypeInputField = field.getAnnotation(GraphQLTypeInput.class);
+                    if (aGraphQLTypeInputField == null) continue;
 
-                String graphQLFieldName = aGraphQLTypeInputField.value();
-                if (graphQLFieldName.trim().length() == 0) {
-                    graphQLFieldName = GraphQLSchemaType.convertToGraphQLName(nameField);
+                    String typeField;
+                    try {
+                        typeField = getGraphQLType(field.getGenericType());
+                    } catch (Exception e) {
+                        throw new RuntimeException("Exception build type, class: " + classRTypeGraphQL.getName() + ", field: " + field.getName(), e);
+                    }
+
+                    String nameField = field.getName();
+
+                    String graphQLFieldName = aGraphQLTypeInputField.value();
+                    if (graphQLFieldName.trim().length() == 0) {
+                        graphQLFieldName = GraphQLSchemaType.convertToGraphQLName(nameField);
+                    }
+
+                    boolean isNotNull = (field.getAnnotation(NonNull.class) != null);
+
+                    fields.add(new RGraphQLInputObjectTypeField(typeField, nameField, graphQLFieldName, isNotNull));
                 }
-
-                boolean isNotNull = (field.getAnnotation(NonNull.class) != null);
-
-                fields.add(new RGraphQLInputObjectTypeField(typeField, nameField, graphQLFieldName, isNotNull));
             }
 
             GraphQLDescription aGraphQLDescription = (GraphQLDescription) classRTypeGraphQL.getAnnotation(GraphQLDescription.class);

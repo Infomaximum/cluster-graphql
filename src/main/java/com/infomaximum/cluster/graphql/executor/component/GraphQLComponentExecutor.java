@@ -18,6 +18,7 @@ import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.cluster.graphql.struct.GSubscribeEvent;
+import com.infomaximum.cluster.graphql.utils.ReflectionUtils;
 import com.infomaximum.cluster.graphql.utils.Utils;
 import com.infomaximum.cluster.struct.Component;
 import org.slf4j.Logger;
@@ -232,22 +233,43 @@ public class GraphQLComponentExecutor {
 
             Map<String, Object> fieldValues = (Map<String, Object>) inputValue;
 
-            Constructor constructor = clazz.getConstructor();
-            Object value = constructor.newInstance();
-            for (Field field : clazz.getDeclaredFields()) {
-                GraphQLTypeInput aGraphQLTypeInput = field.getAnnotation(GraphQLTypeInput.class);
-                if (aGraphQLTypeInput == null) continue;
+            Constructor constructor = ReflectionUtils.getGConstructor(clazz);
+            if (constructor != null) {
+                constructor.setAccessible(true);
 
-                //Игнорируем права доступа
-                field.setAccessible(true);
+                Object[] args = new Object[constructor.getParameterCount()];
+                Annotation[][] annotations = constructor.getParameterAnnotations();
+                Type[] fieldTypes = constructor.getGenericParameterTypes();
+                for (int index = 0; index < args.length; index++) {
+                    String nameField = null;
+                    for (Annotation iAnnotation : annotations[index]) {
+                        if (iAnnotation.annotationType() == GraphQLName.class) {
+                            nameField = ((GraphQLName) iAnnotation).value();
+                        }
+                    }
+                    args[index] = getInputValue(fieldTypes[index], fieldValues.get(nameField), fieldValues.containsKey(nameField));
+                }
+                return constructor.newInstance(args);
+            } else {
+                //TODO - удалить эту ветку - как устаревшую, и разрешить аннотацию GraphQLTypeInput только над классами
+                //OLD MODE - поля input объект инициализруется после создания объекта
 
-                String externalName = aGraphQLTypeInput.value();
-                if (externalName == null || externalName.isEmpty()) externalName = field.getName();
+                constructor = clazz.getConstructor();
+                Object value = constructor.newInstance();
+                for (Field field : clazz.getDeclaredFields()) {
+                    GraphQLTypeInput aGraphQLTypeInput = field.getAnnotation(GraphQLTypeInput.class);
+                    if (aGraphQLTypeInput == null) continue;
 
-                field.set(value, getInputValue(field.getGenericType(), fieldValues.get(externalName), fieldValues.containsKey(externalName)));
+                    //Игнорируем права доступа
+                    field.setAccessible(true);
+
+                    String externalName = aGraphQLTypeInput.value();
+                    if (externalName == null || externalName.isEmpty()) externalName = field.getName();
+
+                    field.set(value, getInputValue(field.getGenericType(), fieldValues.get(externalName), fieldValues.containsKey(externalName)));
+                }
+                return value;
             }
-
-            return value;
         } else {
             throw new GraphQLExecutorException("Not support type: " + type);
         }

@@ -7,7 +7,9 @@ import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.server.Server;
 import com.infomaximum.server.components.frontend.FrontendComponent;
 import graphql.ExecutionInput;
+import graphql.GraphQLError;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AssertionFailureBuilder;
 import org.junit.jupiter.api.BeforeAll;
 
 import java.io.IOException;
@@ -71,6 +73,13 @@ public abstract class BaseTest {
     public static void destroy() throws IOException {
         if (server != null) {
             server.close();
+        }
+    }
+
+    public static void assertGraphQLError(GExecutionResult executionResult, Class<? extends GraphQLError> classException) {
+        if (executionResult.getErrors().size() != 1
+                || executionResult.getErrors().get(0).getClass() != classException) {
+            AssertionFailureBuilder.assertionFailure().buildAndThrow();
         }
     }
 }
