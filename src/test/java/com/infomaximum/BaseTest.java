@@ -6,6 +6,7 @@ import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.graphql.struct.GRequest;
 import com.infomaximum.server.Server;
 import com.infomaximum.server.components.frontend.FrontendComponent;
+import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionInput;
 import graphql.GraphQLError;
 import org.junit.jupiter.api.AfterAll;
@@ -79,6 +80,17 @@ public abstract class BaseTest {
     public static void assertGraphQLError(GExecutionResult executionResult, Class<? extends GraphQLError> classException) {
         if (executionResult.getErrors().size() != 1
                 || executionResult.getErrors().get(0).getClass() != classException) {
+            AssertionFailureBuilder.assertionFailure().buildAndThrow();
+        }
+    }
+
+    public static void assertGraphQLDataFetchingError(GExecutionResult executionResult, Class<? extends Exception> classException) {
+        if (executionResult.getErrors().size() != 1
+                || executionResult.getErrors().get(0).getClass() != ExceptionWhileDataFetching.class) {
+            AssertionFailureBuilder.assertionFailure().buildAndThrow();
+        }
+        ExceptionWhileDataFetching dataFetching = (ExceptionWhileDataFetching) executionResult.getErrors().get(0);
+        if (dataFetching.getException().getClass() != classException) {
             AssertionFailureBuilder.assertionFailure().buildAndThrow();
         }
     }

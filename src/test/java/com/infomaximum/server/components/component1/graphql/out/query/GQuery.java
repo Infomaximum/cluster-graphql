@@ -6,6 +6,7 @@ import com.infomaximum.cluster.graphql.anotation.GraphQLTypeOutObject;
 import com.infomaximum.cluster.graphql.struct.GOptional;
 import com.infomaximum.server.components.component1.graphql.out.input.GInputObject1;
 import com.infomaximum.server.components.component1.graphql.out.input.GInputObject2;
+import com.infomaximum.server.components.component1.graphql.out.input.GInputObjectWithException;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
@@ -46,6 +47,11 @@ public class GQuery {
 
     @GraphQLField
     public static int getValue4(@NonNull @GraphQLName("k") final GInputObject2 input) {
+        return (input.getAlias() == null) ? 0 : input.getAlias().length();
+    }
+
+    @GraphQLField
+    public static int getValue5(@NonNull @GraphQLName("k") final GInputObjectWithException input) {
         return (input.getAlias() == null) ? 0 : input.getAlias().length();
     }
 }

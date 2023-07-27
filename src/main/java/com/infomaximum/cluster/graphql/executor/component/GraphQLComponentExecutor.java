@@ -249,7 +249,11 @@ public class GraphQLComponentExecutor {
                     }
                     args[index] = getInputValue(fieldTypes[index], fieldValues.get(nameField), fieldValues.containsKey(nameField));
                 }
-                return constructor.newInstance(args);
+                try {
+                    return constructor.newInstance(args);
+                } catch (InvocationTargetException ite) {
+                    throw new GraphQLExecutorDataFetcherException(ite.getCause());
+                }
             } else {
                 //TODO - удалить эту ветку - как устаревшую, и разрешить аннотацию GraphQLTypeInput только над классами
                 //OLD MODE - поля input объект инициализруется после создания объекта
