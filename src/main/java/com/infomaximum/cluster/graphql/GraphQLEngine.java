@@ -120,6 +120,7 @@ public class GraphQLEngine {
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLString);
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLInt);
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLLong);
+            typeScalars.add(GraphQLScalarTypeCustom.GraphQLDouble);
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLBigDecimal);
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLFloat);
             typeScalars.add(GraphQLScalarTypeCustom.GraphQLInstant);

@@ -10,6 +10,8 @@ import com.infomaximum.subsystems.querypool.QueryTransaction;
 import com.infomaximum.subsystems.querypool.ResourceProvider;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
+import java.math.BigDecimal;
+
 @GraphQLTypeOutObject("query_level2")
 public class GQueryLevel2 {
 
@@ -56,5 +58,23 @@ public class GQueryLevel2 {
                 }
             }
         };
+    }
+
+    @GraphQLField
+    public static Double getValueDouble(@GraphQLName("k") final GOptional<Double> k) {
+        if (k.isPresent()) {
+            return k.get() + 1;
+        } else {
+            return 1d;
+        }
+    }
+
+    @GraphQLField
+    public static BigDecimal getValueBigDecimal(@GraphQLName("k") final GOptional<BigDecimal> k) {
+        if (k.isPresent()) {
+            return k.get().add(new BigDecimal(1));
+        } else {
+            return new BigDecimal(1);
+        }
     }
 }

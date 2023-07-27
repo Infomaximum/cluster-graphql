@@ -31,7 +31,7 @@ public class GraphQLScalarTypeCustom {
     );
     public static final GraphQLTypeScalar GraphQLBigDecimal = new GraphQLTypeScalar(
             "BigDecimal", "Built-in java.math.BigDecimal",
-            Set.of(Double.class, double.class),
+            Set.of(BigDecimal.class),
             new Coercing<BigDecimal, BigDecimal>() {
 
                 private BigDecimal convertImpl(Object input) {
@@ -82,6 +82,67 @@ public class GraphQLScalarTypeCustom {
                         return new BigDecimal(((IntValue) input).getValue());
                     } else if (input instanceof FloatValue) {
                         return ((FloatValue) input).getValue();
+                    }
+                    throw new CoercingParseLiteralException(
+                            "Expected AST type 'IntValue', 'StringValue' or 'FloatValue' but was '" + typeName(input) + "'."
+                    );
+                }
+            }
+    );
+
+    public static final GraphQLTypeScalar GraphQLDouble = new GraphQLTypeScalar(
+            "Double", "Built-in Double",
+            Set.of(Double.class, double.class),
+            new Coercing<Double, Double>() {
+
+                private Double convertImpl(Object input) {
+                    if (isNumberIsh(input)) {
+                        try {
+                            return Double.parseDouble(input.toString());
+                        } catch (NumberFormatException e) {
+                            return null;
+                        }
+                    }
+                    return null;
+
+                }
+
+                @Override
+                public Double serialize(Object input) {
+                    Double result = convertImpl(input);
+                    if (result == null) {
+                        throw new CoercingSerializeException(
+                                "Expected type 'Double' but was '" + typeName(input) + "'."
+                        );
+                    }
+                    return result;
+                }
+
+                @Override
+                public Double parseValue(Object input) {
+                    Double result = convertImpl(input);
+                    if (result == null) {
+                        throw new CoercingParseValueException(
+                                "Expected type 'Double' but was '" + typeName(input) + "'."
+                        );
+                    }
+                    return result;
+                }
+
+                @Override
+                public Double parseLiteral(Object input) {
+                    if (input instanceof StringValue) {
+                        try {
+                            return Double.parseDouble(((StringValue) input).getValue());
+                        } catch (NumberFormatException e) {
+                            throw new CoercingParseLiteralException(
+                                    "Unable to turn AST input into a 'Double' : '" + String.valueOf(input) + "'"
+                            );
+                        }
+                    } else if (input instanceof IntValue) {
+                        return ((IntValue) input).getValue().doubleValue();
+                    } else if (input instanceof FloatValue) {
+                        return ((FloatValue) input).getValue().doubleValue();
                     }
                     throw new CoercingParseLiteralException(
                             "Expected AST type 'IntValue', 'StringValue' or 'FloatValue' but was '" + typeName(input) + "'."
