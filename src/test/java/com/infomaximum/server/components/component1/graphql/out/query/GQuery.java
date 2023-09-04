@@ -27,6 +27,16 @@ public class GQuery {
     }
 
     @GraphQLField
+    public static GInterface getInterface1() {
+        return new GInterfaceImpl1();
+    }
+
+    @GraphQLField
+    public static GInterface getInterface2() {
+        return new GInterfaceImpl2();
+    }
+
+    @GraphQLField
     public static Integer getValue1(@GraphQLName("k") final GOptional<Integer> k) {
         if (k.isPresent()) {
             return 1 + k.get();

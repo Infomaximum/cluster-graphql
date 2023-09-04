@@ -286,6 +286,22 @@ public class GraphQLComponentExecutor {
             throw new RuntimeException("not support scheme from: " + graphQLTypeName);
         }
 
+        Method findMethod = findMethod(classSchema, graphQLTypeFieldName);
+
+        if (findMethod == null) {
+            for (Class subInterface : classSchema.getInterfaces()) {
+                findMethod = findMethod(subInterface, graphQLTypeFieldName);
+                if (findMethod == null) break;
+            }
+        }
+
+        if (findMethod == null) {
+            throw new RuntimeException("not found method: " + graphQLTypeFieldName + " in " + classSchema);
+        }
+        return findMethod;
+    }
+
+    private static Method findMethod(Class classSchema, String graphQLTypeFieldName) {
         Method findMethod = null;
         for (Method method : classSchema.getMethods()) {
             if (method.isSynthetic()) continue; //Игнорируем генерируемые методы
@@ -296,10 +312,6 @@ public class GraphQLComponentExecutor {
                     throw new RuntimeException("not support overload method: " + graphQLTypeFieldName + " in class: " + classSchema);
                 }
             }
-        }
-
-        if (findMethod == null) {
-            throw new RuntimeException("not found method: " + graphQLTypeFieldName + " in " + classSchema);
         }
         return findMethod;
     }

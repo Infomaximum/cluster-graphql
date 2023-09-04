@@ -137,6 +137,19 @@ public class TypeGraphQLBuilder {
                     fields.add(buildRGraphQLObjectTypeField(componentUniqueId, classRTypeGraphQL, method, aGraphQLField));
                 }
 
+                //Собираем статические методы из зависимых интерфейсов
+                for (Class subInterface : classRTypeGraphQL.getInterfaces()) {
+                    for (Method method : subInterface.getMethods()) {
+                        if (method.isSynthetic()) continue;//Игнорируем генерируемые методы
+                        if (!Modifier.isStatic(method.getModifiers())) continue;//Ищем только статические методы
+
+                        GraphQLField aGraphQLField = method.getAnnotation(GraphQLField.class);
+                        if (aGraphQLField == null) continue;
+
+                        fields.add(buildRGraphQLObjectTypeField(componentUniqueId, classRTypeGraphQL, method, aGraphQLField));
+                    }
+                }
+
                 GraphQLDescription aTypeGraphQLDescription = (GraphQLDescription) classRTypeGraphQL.getAnnotation(GraphQLDescription.class);
                 String description = (aTypeGraphQLDescription != null && !aTypeGraphQLDescription.value().isEmpty()) ? aTypeGraphQLDescription.value() : null;
 
