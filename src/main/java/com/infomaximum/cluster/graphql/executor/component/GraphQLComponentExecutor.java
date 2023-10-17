@@ -234,45 +234,27 @@ public class GraphQLComponentExecutor {
             Map<String, Object> fieldValues = (Map<String, Object>) inputValue;
 
             Constructor constructor = ReflectionUtils.getGConstructor(clazz);
-            if (constructor != null) {
-                constructor.setAccessible(true);
+            if (constructor == null) {
+                throw new RuntimeException("Not found constructor from GraphQLTypeInput: " + clazz.getName());
+            }
+            constructor.setAccessible(true);
 
-                Object[] args = new Object[constructor.getParameterCount()];
-                Annotation[][] annotations = constructor.getParameterAnnotations();
-                Type[] fieldTypes = constructor.getGenericParameterTypes();
-                for (int index = 0; index < args.length; index++) {
-                    String nameField = null;
-                    for (Annotation iAnnotation : annotations[index]) {
-                        if (iAnnotation.annotationType() == GraphQLName.class) {
-                            nameField = ((GraphQLName) iAnnotation).value();
-                        }
+            Object[] args = new Object[constructor.getParameterCount()];
+            Annotation[][] annotations = constructor.getParameterAnnotations();
+            Type[] fieldTypes = constructor.getGenericParameterTypes();
+            for (int index = 0; index < args.length; index++) {
+                String nameField = null;
+                for (Annotation iAnnotation : annotations[index]) {
+                    if (iAnnotation.annotationType() == GraphQLName.class) {
+                        nameField = ((GraphQLName) iAnnotation).value();
                     }
-                    args[index] = getInputValue(fieldTypes[index], fieldValues.get(nameField), fieldValues.containsKey(nameField));
                 }
-                try {
-                    return constructor.newInstance(args);
-                } catch (InvocationTargetException ite) {
-                    throw new GraphQLExecutorDataFetcherException(ite.getCause());
-                }
-            } else {
-                //TODO - удалить эту ветку - как устаревшую, и разрешить аннотацию GraphQLTypeInput только над классами
-                //OLD MODE - поля input объект инициализруется после создания объекта
-
-                constructor = clazz.getConstructor();
-                Object value = constructor.newInstance();
-                for (Field field : clazz.getDeclaredFields()) {
-                    GraphQLTypeInput aGraphQLTypeInput = field.getAnnotation(GraphQLTypeInput.class);
-                    if (aGraphQLTypeInput == null) continue;
-
-                    //Игнорируем права доступа
-                    field.setAccessible(true);
-
-                    String externalName = aGraphQLTypeInput.value();
-                    if (externalName == null || externalName.isEmpty()) externalName = field.getName();
-
-                    field.set(value, getInputValue(field.getGenericType(), fieldValues.get(externalName), fieldValues.containsKey(externalName)));
-                }
-                return value;
+                args[index] = getInputValue(fieldTypes[index], fieldValues.get(nameField), fieldValues.containsKey(nameField));
+            }
+            try {
+                return constructor.newInstance(args);
+            } catch (InvocationTargetException ite) {
+                throw new GraphQLExecutorDataFetcherException(ite.getCause());
             }
         } else {
             throw new GraphQLExecutorException("Not support type: " + type);

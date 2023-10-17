@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -29,8 +30,8 @@ public class GraphQLSubscribeEngineImpl implements GraphQLSubscribeEngine {
         }
     }
 
-    public void subscribe(int componentUniqueId, byte[] bSubscribeKey, ObservableEmitter observable) {
-        SubscribeKey subscribeKey = new SubscribeKey(componentUniqueId, bSubscribeKey);
+    public void subscribe(UUID nodeRuntimeId, int componentId, byte[] bSubscribeKey, ObservableEmitter observable) {
+        SubscribeKey subscribeKey = new SubscribeKey(nodeRuntimeId, componentId, bSubscribeKey);
         subscribe(subscribeKey, observable);
     }
 

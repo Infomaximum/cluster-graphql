@@ -70,7 +70,7 @@ public class ComponentDataFetcher implements DataFetcher {
         ContextRequest context = environment.getContext();
         try {
             Object result;
-            if (rTypeGraphQLField.componentUniqueId == null) {
+            if (rTypeGraphQLField.componentId == null) {
                 //У этого объекта нет родительской подсистемы - вызываем прямо тут
 
                 if (rTypeGraphQLField.isPrepare) throw new RuntimeException("Not implemented");
@@ -82,7 +82,7 @@ public class ComponentDataFetcher implements DataFetcher {
                 );
             } else {
                 //Этот объект принадлежит определенной подсистеме - необходимо вызывать метод удаленно именно не родительской подсистеме
-                RControllerGraphQLExecutor rControllerGraphQLExecutor = remotes.getFromCKey(rTypeGraphQLField.componentUniqueId, RControllerGraphQLExecutor.class);
+                RControllerGraphQLExecutor rControllerGraphQLExecutor = remotes.getFromCKey(rTypeGraphQLField.nodeRuntimeId, rTypeGraphQLField.componentId, RControllerGraphQLExecutor.class);
 
                 RemoteObject source = null;
                 if (environment.getSource() instanceof RemoteObject) {
@@ -112,7 +112,7 @@ public class ComponentDataFetcher implements DataFetcher {
                     @Override
                     public void subscribe(ObservableEmitter emitter) {
                         emitter.onNext(resultSubscribeValue.value);
-                        subscribeEngine.subscribe(rTypeGraphQLField.componentUniqueId, resultSubscribeValue.subscribeKey, emitter);
+                        subscribeEngine.subscribe(rTypeGraphQLField.nodeRuntimeId, rTypeGraphQLField.componentId, resultSubscribeValue.subscribeKey, emitter);
                     }
                 };
                 return Observable.create(observableOnSubscribe).toFlowable(BackpressureStrategy.LATEST);

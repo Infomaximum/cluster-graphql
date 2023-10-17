@@ -104,7 +104,7 @@ public class GraphQLEngine {
         public Builder() {
 
             //TODO DELETE
-            //-----------------DELETE AFTER 01.06.2023------------------
+            //-----------------DELETE AFTER 01.05.2024------------------
             ParserOptions parserOptions = ParserOptions.newParserOptions()
                     .captureIgnoredChars(false)
                     .captureSourceLocation(true)

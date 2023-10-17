@@ -211,6 +211,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                             e.getMessage())),
                     instrumentationState
             );
+        } catch (Exception e) {
+            throw new RuntimeException("Not support exception", e);
         }
     }
 
@@ -241,7 +243,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         }
     }
 
-    private void prepareRequest(GraphQLType parent, Node node, Map<String, Object> variables, PrepareFunction prepareFunction, ContextRequest context) throws GraphQLExecutorDataFetcherException {
+    private void prepareRequest(GraphQLType parent, Node node, Map<String, Object> variables, PrepareFunction prepareFunction, ContextRequest context) throws Exception {
 //        String parentName1;
 //        if (parent instanceof GraphQLObjectType) {
 //            GraphQLObjectType parentGraphQLObjectType = (GraphQLObjectType) parent;
@@ -286,7 +288,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                 );
 
                 //Собираем какие ресурсы нам необходимы для лока
-                RControllerGraphQLExecutor rControllerGraphQLExecutor = component.getRemotes().getFromCKey(rGraphQLObjectTypeField.componentUniqueId, RControllerGraphQLExecutor.class);
+                RControllerGraphQLExecutor rControllerGraphQLExecutor = component.getRemotes().getFromCKey(rGraphQLObjectTypeField.nodeRuntimeId, rGraphQLObjectTypeField.componentId, RControllerGraphQLExecutor.class);
                 Serializable prepareRequest = rControllerGraphQLExecutor.prepare(
                         PrepareCustomFieldUtils.getKeyField(field),
                         parentName,

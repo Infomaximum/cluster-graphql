@@ -11,6 +11,6 @@ import java.util.Optional;
  */
 public interface RControllerGraphQLSubscribe extends RController {
 
-    void pushEvent(SubscribeKey subscribeKey, Optional<? extends Serializable> value);
+    void pushEvent(SubscribeKey subscribeKey, Optional<? extends Serializable> value) throws Exception;
 
 }

@@ -5,18 +5,21 @@ import com.infomaximum.cluster.struct.Component;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.UUID;
 
 public class SubscribeKey implements RemoteObject {
 
     private final byte[] key;
 
     public SubscribeKey(Component component, byte[] subscribeKey) {
-        this(component.getUniqueId(), subscribeKey);
+        this(component.getRemotes().cluster.node.getRuntimeId(), component.getId(), subscribeKey);
     }
 
-    public SubscribeKey(int componentUniqueId, byte[] subscribeKey) {
-        key = ByteBuffer.allocate(Integer.BYTES + subscribeKey.length)
-                .putInt(componentUniqueId)
+    public SubscribeKey(UUID nodeRuntimeId, int componentId, byte[] subscribeKey) {
+        key = ByteBuffer.allocate(Long.BYTES + Long.BYTES + Integer.BYTES + subscribeKey.length)
+                .putLong(nodeRuntimeId.getMostSignificantBits())
+                .putLong(nodeRuntimeId.getLeastSignificantBits())
+                .putInt(componentId)
                 .put(subscribeKey)
                 .array();
     }

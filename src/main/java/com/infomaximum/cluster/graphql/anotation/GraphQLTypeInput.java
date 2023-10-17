@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 /**
  * Created by kris on 29.12.16.
  */
-@Target({ElementType.TYPE, ElementType.FIELD})
+@Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface GraphQLTypeInput {
     String value();
