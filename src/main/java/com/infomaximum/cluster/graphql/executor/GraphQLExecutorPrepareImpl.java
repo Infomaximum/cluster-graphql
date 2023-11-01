@@ -1,5 +1,8 @@
 package com.infomaximum.cluster.graphql.executor;
 
+import com.infomaximum.cluster.core.remote.RemoteTarget;
+import com.infomaximum.cluster.core.service.transport.network.LocationRuntimeComponent;
+import com.infomaximum.cluster.exception.ClusterRemotePackerException;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorInvalidSyntaxException;
 import com.infomaximum.cluster.graphql.executor.struct.GExecutionResult;
@@ -288,7 +291,13 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                 );
 
                 //Собираем какие ресурсы нам необходимы для лока
-                RControllerGraphQLExecutor rControllerGraphQLExecutor = component.getRemotes().getFromCKey(rGraphQLObjectTypeField.nodeRuntimeId, rGraphQLObjectTypeField.componentId, RControllerGraphQLExecutor.class);
+                LocationRuntimeComponent runtimeComponentInfo = component.getTransport().getNetworkTransit().getManagerRuntimeComponent().get(rGraphQLObjectTypeField.nodeRuntimeId, rGraphQLObjectTypeField.componentId);
+                if (runtimeComponentInfo == null) {
+                    throw new ClusterRemotePackerException();
+                }
+                RemoteTarget target = new RemoteTarget(rGraphQLObjectTypeField.nodeRuntimeId, rGraphQLObjectTypeField.componentId, runtimeComponentInfo.component().uuid);
+
+                RControllerGraphQLExecutor rControllerGraphQLExecutor = component.getRemotes().getFromCKey(target, RControllerGraphQLExecutor.class);
                 Serializable prepareRequest = rControllerGraphQLExecutor.prepare(
                         PrepareCustomFieldUtils.getKeyField(field),
                         parentName,

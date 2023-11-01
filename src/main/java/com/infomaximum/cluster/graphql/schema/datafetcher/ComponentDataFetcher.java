@@ -1,7 +1,10 @@
 package com.infomaximum.cluster.graphql.schema.datafetcher;
 
+import com.infomaximum.cluster.core.remote.RemoteTarget;
 import com.infomaximum.cluster.core.remote.Remotes;
 import com.infomaximum.cluster.core.remote.struct.RemoteObject;
+import com.infomaximum.cluster.core.service.transport.network.LocationRuntimeComponent;
+import com.infomaximum.cluster.exception.ClusterRemotePackerException;
 import com.infomaximum.cluster.graphql.exception.GraphQLExecutorDataFetcherException;
 import com.infomaximum.cluster.graphql.executor.component.GraphQLComponentExecutor;
 import com.infomaximum.cluster.graphql.executor.subscription.GraphQLSubscribeEngineImpl;
@@ -82,7 +85,13 @@ public class ComponentDataFetcher implements DataFetcher {
                 );
             } else {
                 //Этот объект принадлежит определенной подсистеме - необходимо вызывать метод удаленно именно не родительской подсистеме
-                RControllerGraphQLExecutor rControllerGraphQLExecutor = remotes.getFromCKey(rTypeGraphQLField.nodeRuntimeId, rTypeGraphQLField.componentId, RControllerGraphQLExecutor.class);
+                LocationRuntimeComponent runtimeComponentInfo = remotes.component.getTransport().getNetworkTransit().getManagerRuntimeComponent().get(rTypeGraphQLField.nodeRuntimeId, rTypeGraphQLField.componentId);
+                if (runtimeComponentInfo == null) {
+                    throw new ClusterRemotePackerException();
+                }
+                RemoteTarget target = new RemoteTarget(rTypeGraphQLField.nodeRuntimeId, rTypeGraphQLField.componentId, runtimeComponentInfo.component().uuid);
+
+                RControllerGraphQLExecutor rControllerGraphQLExecutor = remotes.getFromCKey(target, RControllerGraphQLExecutor.class);
 
                 RemoteObject source = null;
                 if (environment.getSource() instanceof RemoteObject) {
