@@ -273,7 +273,7 @@ public class GraphQLComponentExecutor {
         if (findMethod == null) {
             for (Class subInterface : classSchema.getInterfaces()) {
                 findMethod = findMethod(subInterface, graphQLTypeFieldName);
-                if (findMethod == null) break;
+                if (findMethod != null) break;
             }
         }
 
