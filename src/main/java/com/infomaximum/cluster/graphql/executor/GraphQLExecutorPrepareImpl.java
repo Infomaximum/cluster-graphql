@@ -214,6 +214,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                             e.getMessage())),
                     instrumentationState
             );
+        } catch (GraphQLExecutorDataFetcherException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Not support exception", e);
         }
