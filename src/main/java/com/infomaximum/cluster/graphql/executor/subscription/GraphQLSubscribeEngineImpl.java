@@ -36,13 +36,13 @@ public class GraphQLSubscribeEngineImpl implements GraphQLSubscribeEngine {
     }
 
     private void subscribe(SubscribeKey subscribeKey, ObservableEmitter observable) {
+        CopyOnWriteArraySet<ObservableEmitter> observables = subscriber.computeIfAbsent(subscribeKey, s -> new CopyOnWriteArraySet<ObservableEmitter>());
+        observables.add(observable);
+
         //Подписываемся на разрыв соединения и отписку
         observable.setCancellable(() -> {
             unSubscribe(subscribeKey, observable);
         });
-
-        CopyOnWriteArraySet<ObservableEmitter> observables = subscriber.computeIfAbsent(subscribeKey, s -> new CopyOnWriteArraySet<ObservableEmitter>());
-        observables.add(observable);
     }
 
     private void unSubscribe(SubscribeKey subscribeKey, ObservableEmitter observable) {
