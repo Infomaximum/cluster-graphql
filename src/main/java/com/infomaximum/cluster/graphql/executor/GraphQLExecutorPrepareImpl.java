@@ -22,6 +22,7 @@ import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.InvalidSyntaxError;
 import graphql.execution.CoercedVariables;
+import graphql.execution.NonNullableValueCoercedAsNullException;
 import graphql.execution.ValuesResolver;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -212,6 +213,12 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                     new PreparsedDocumentEntry(new InvalidSyntaxError(
                             new SourceLocation(0, 0),
                             e.getMessage())),
+                    instrumentationState
+            );
+        } catch (NonNullableValueCoercedAsNullException e) {
+            return new PrepareDocumentRequest(
+                    executionInput,
+                    new PreparsedDocumentEntry(e),
                     instrumentationState
             );
         } catch (GraphQLExecutorDataFetcherException e) {
