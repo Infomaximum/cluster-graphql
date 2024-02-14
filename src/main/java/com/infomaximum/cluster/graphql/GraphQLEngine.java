@@ -109,8 +109,10 @@ public class GraphQLEngine {
                     .captureIgnoredChars(false)
                     .captureSourceLocation(true)
                     .captureLineComments(false) // #comments are not useful in query parsing
+                    .maxCharacters(Integer.MAX_VALUE)
                     .maxTokens(Integer.MAX_VALUE) // to prevent a billion laughs style attacks, we set a default for graphql-java
                     .maxWhitespaceTokens(Integer.MAX_VALUE)
+                    .maxRuleDepth(Integer.MAX_VALUE)
                     .build();
             graphql.parser.ParserOptions.setDefaultOperationParserOptions(parserOptions);
             //-----------------DELETE AFTER 01.06.2023------------------
