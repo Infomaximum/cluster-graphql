@@ -215,7 +215,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                             e.getMessage())),
                     instrumentationState
             );
-        } catch (NonNullableValueCoercedAsNullException e) {
+        } catch (NonNullableValueCoercedAsNullException | CoercingParseValueException e) {
             return new PrepareDocumentRequest(
                     executionInput,
                     new PreparsedDocumentEntry(e),
