@@ -190,7 +190,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                 } else if (node instanceof FragmentDefinition) {
                     FragmentDefinition fragmentDefinition = (FragmentDefinition) node;
 
-                    GraphQLObjectType parent = schema.getObjectType(fragmentDefinition.getTypeCondition().getName());
+                    GraphQLType parent = schema.getType(fragmentDefinition.getTypeCondition().getName());
                     prepareRequest(
                             parent,
                             node,
