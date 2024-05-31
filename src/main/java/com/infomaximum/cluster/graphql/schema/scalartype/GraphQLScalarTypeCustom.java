@@ -160,33 +160,57 @@ public class GraphQLScalarTypeCustom {
             Set.of(Float.class, float.class),
             new Coercing<Float, Float>() {
 
+                private Float convertImpl(Object input) {
+                    if (isNumberIsh(input)) {
+                        try {
+                            return Float.parseFloat(input.toString());
+                        } catch (NumberFormatException e) {
+                            return null;
+                        }
+                    }
+                    return null;
+                }
+
                 @Override
                 public Float serialize(Object input) {
-                    if (isConvertToNumber(input)) {
-                        return toNumber(input).floatValue();
-                    } else {
-                        throw new RuntimeException("Not support type argument: " + input);
+                    Float result = convertImpl(input);
+                    if (result == null) {
+                        throw new CoercingSerializeException(
+                                "Expected type 'Float' but was '" + typeName(input) + "'."
+                        );
                     }
+                    return result;
                 }
 
                 @Override
                 public Float parseValue(Object input) {
-                    if (isConvertToNumber(input)) {
-                        return toNumber(input).floatValue();
-                    } else {
-                        throw new RuntimeException("Not support type argument: " + input);
+                    Float result = convertImpl(input);
+                    if (result == null) {
+                        throw new CoercingParseValueException(
+                                "Expected type 'Float' but was '" + typeName(input) + "'."
+                        );
                     }
+                    return result;
                 }
 
                 @Override
                 public Float parseLiteral(Object input) {
-                    if (input instanceof IntValue) {
+                    if (input instanceof StringValue) {
+                        try {
+                            return Float.parseFloat(((StringValue) input).getValue());
+                        } catch (NumberFormatException e) {
+                            throw new CoercingParseLiteralException(
+                                    "Unable to turn AST input into a 'Float' : '" + String.valueOf(input) + "'"
+                            );
+                        }
+                    } else if (input instanceof IntValue) {
                         return ((IntValue) input).getValue().floatValue();
                     } else if (input instanceof FloatValue) {
                         return ((FloatValue) input).getValue().floatValue();
-                    } else {
-                        throw new GraphQLExecutorInvalidSyntaxException("Not support type argument: " + input);
                     }
+                    throw new CoercingParseLiteralException(
+                            "Expected AST type 'IntValue', 'StringValue' or 'FloatValue' but was '" + typeName(input) + "'."
+                    );
                 }
             }
     );
