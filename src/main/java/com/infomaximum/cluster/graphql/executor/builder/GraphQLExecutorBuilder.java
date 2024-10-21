@@ -93,9 +93,14 @@ public class GraphQLExecutorBuilder {
                 }
             }
 
-            //Запрашиваем у подсистем
+            //Запрашиваем только у локальных подсистем
+            UUID localNodeRuntimeId = component.getTransport().getCluster().node.getRuntimeId();
             Collection<RControllerGraphQLExecutor> rControllerGraphQLExecutors = component.getRemotes().getControllers(RControllerGraphQLExecutor.class);
             for (RControllerGraphQLExecutor rControllerGraphQLExecutor : rControllerGraphQLExecutors) {
+                //TODO: убрать проверку при переходе на расширяемую graphQl схему
+                if (!localNodeRuntimeId.equals(rControllerGraphQLExecutor.getNodeRuntimeId())) {
+                    continue;
+                }
                 for (RGraphQLType rGraphQLType : rControllerGraphQLExecutor.getGraphQLTypes()) {
                     mergeGraphQLType(
                             buildGraphQLTypeEnums,
