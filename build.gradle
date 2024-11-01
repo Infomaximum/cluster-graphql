@@ -51,7 +51,7 @@ dependencies {
     implementation 'com.infomaximum:cluster:1.1.8p7'
 //    implementation project(':cluster')
 
-    implementation('com.graphql-java:graphql-java:19.8') {
+    implementation('com.graphql-java:graphql-java:19.11') {
         exclude group: 'org.reactivestreams', module: 'reactive-streams'
         exclude group: 'com.graphql-java', module: 'java-dataloader'//from exclude org.slf4j
         exclude group: 'org.slf4j', module: 'slf4j-api'
