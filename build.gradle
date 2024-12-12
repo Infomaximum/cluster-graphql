@@ -16,7 +16,7 @@ ext.moduleName = 'com.infomaximum.cluster.graphql'
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
@@ -48,7 +48,7 @@ sourceSets {
 
 dependencies {
 
-    implementation 'com.infomaximum:cluster:1.1.9'
+    implementation 'com.infomaximum:cluster:1.1.11'
 //    implementation project(':cluster')
 
     implementation('com.graphql-java:graphql-java:19.11') {
