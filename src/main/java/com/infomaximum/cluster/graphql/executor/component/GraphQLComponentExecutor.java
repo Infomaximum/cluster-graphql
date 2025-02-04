@@ -46,19 +46,26 @@ public class GraphQLComponentExecutor {
         build(typeGraphQLBuilder);
     }
 
-    public GraphQLComponentExecutor(String packageName, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType graphQLSchemaType) throws GraphQLExecutorException {
+    public GraphQLComponentExecutor(ArrayList<String> packageNames, TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder, GraphQLSchemaType graphQLSchemaType) throws GraphQLExecutorException {
         this.graphQLSchemaType = graphQLSchemaType;
 
-        TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName, graphQLSchemaType)
-                .withFieldConfigurationBuilder(fieldConfigurationBuilder);
-        build(typeGraphQLBuilder);
+        for (String packageName : packageNames) {
+            TypeGraphQLBuilder typeGraphQLBuilder = new TypeGraphQLBuilder(packageName, graphQLSchemaType)
+                    .withFieldConfigurationBuilder(fieldConfigurationBuilder);
+            build(typeGraphQLBuilder);
+        }
     }
 
     private void build(TypeGraphQLBuilder typeGraphQLBuilder) throws GraphQLExecutorException {
         Map<Class, RGraphQLType> rTypeGraphQLItems = typeGraphQLBuilder.build();
-        rTypeGraphQLs = new ArrayList<>(typeGraphQLBuilder.build().values());
+        if (rTypeGraphQLs == null) {
+            rTypeGraphQLs = new ArrayList<>();
+        }
+        rTypeGraphQLs.addAll(typeGraphQLBuilder.build().values());
 
-        classSchemas = new HashMap<String, Class>();
+        if (classSchemas == null) {
+            classSchemas = new HashMap<>();
+        }
         for (Map.Entry<Class, RGraphQLType> entryTypeGraphQL : rTypeGraphQLItems.entrySet()) {
             Class classRTypeGraphQL = entryTypeGraphQL.getKey();
             RGraphQLType rGraphQLType = entryTypeGraphQL.getValue();

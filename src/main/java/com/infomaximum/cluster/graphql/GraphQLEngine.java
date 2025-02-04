@@ -23,13 +23,11 @@ import graphql.execution.SimpleDataFetcherExceptionHandler;
 import graphql.parser.ParserOptions;
 
 import java.lang.reflect.Constructor;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class GraphQLEngine {
 
-    private final String sdkPackagePath;
+    private final ArrayList<String> sdkPackagePaths;
 
     private final TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
 
@@ -39,7 +37,7 @@ public class GraphQLEngine {
     private final DataFetcherExceptionHandler dataFetcherExceptionHandler;
 
     private GraphQLEngine(
-            String sdkPackagePath,
+            ArrayList<String> sdkPackagePaths,
 
             TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
 
@@ -49,7 +47,7 @@ public class GraphQLEngine {
             DataFetcherExceptionHandler dataFetcherExceptionHandler
     ) {
 
-        this.sdkPackagePath = sdkPackagePath;
+        this.sdkPackagePaths = sdkPackagePaths;
 
         this.fieldConfigurationBuilder = fieldConfigurationBuilder;
 
@@ -70,7 +68,7 @@ public class GraphQLEngine {
     public GraphQLExecutor buildExecutor(Component component, GraphQLSubscribeEngine graphQLSubscribeEngine) throws GraphQLExecutorException {
         return new GraphQLExecutorBuilder(
                 component,
-                sdkPackagePath,
+                sdkPackagePaths,
                 customRemoteDataFetcher,
                 fieldConfigurationBuilder,
                 graphQLSchemaType,
@@ -89,7 +87,7 @@ public class GraphQLEngine {
 
     public static class Builder {
 
-        private String sdkPackagePath;
+        private ArrayList<String> sdkPackagePaths;
 
         private Set<PrepareCustomField> prepareCustomFields;
         private TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
@@ -131,12 +129,18 @@ public class GraphQLEngine {
         }
 
         public Builder withSDKPackage(Package sdkPackage) {
-            this.sdkPackagePath = sdkPackage.getName();
+            if (sdkPackagePaths == null) {
+                sdkPackagePaths = new ArrayList<>();
+            }
+            sdkPackagePaths.add(sdkPackage.getName());
             return this;
         }
 
         public Builder withSDKPackage(String sdkPackagePath) {
-            this.sdkPackagePath = sdkPackagePath;
+            if (sdkPackagePaths == null) {
+                sdkPackagePaths = new ArrayList<>();
+            }
+            sdkPackagePaths.add(sdkPackagePath);
             return this;
         }
 
@@ -182,7 +186,7 @@ public class GraphQLEngine {
 
         public GraphQLEngine build() {
             return new GraphQLEngine(
-                    sdkPackagePath,
+                    sdkPackagePaths,
 
                     fieldConfigurationBuilder,
 

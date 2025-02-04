@@ -40,7 +40,7 @@ import static graphql.schema.GraphQLSchema.newSchema;
 public class GraphQLExecutorBuilder {
 
     private final Component component;
-    private final String sdkPackagePath;
+    private final ArrayList<String> sdkPackagePaths;
     private final Constructor customRemoteDataFetcher;
 
     private final TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder;
@@ -52,7 +52,7 @@ public class GraphQLExecutorBuilder {
 
     public GraphQLExecutorBuilder(
             Component component,
-            String sdkPackagePath,
+            ArrayList<String> sdkPackagePaths,
             Constructor customRemoteDataFetcher,
             TypeGraphQLFieldConfigurationBuilder fieldConfigurationBuilder,
             GraphQLSchemaType graphQLSchemaType,
@@ -60,7 +60,7 @@ public class GraphQLExecutorBuilder {
             DataFetcherExceptionHandler dataFetcherExceptionHandler
     ) {
         this.component = component;
-        this.sdkPackagePath = sdkPackagePath;
+        this.sdkPackagePaths = sdkPackagePaths;
         this.customRemoteDataFetcher = customRemoteDataFetcher;
         this.fieldConfigurationBuilder = fieldConfigurationBuilder;
         this.graphQLSchemaType = graphQLSchemaType;
@@ -78,9 +78,9 @@ public class GraphQLExecutorBuilder {
             Map<String, Set<RGraphQLInputObjectTypeField>> buildGraphQLTypeInObjects = new HashMap<String, Set<RGraphQLInputObjectTypeField>>();
 
             //Собираем встроенные
-            if (sdkPackagePath != null) {
+            if (sdkPackagePaths != null && !sdkPackagePaths.isEmpty()) {
                 sdkGraphQLItemExecutor = new GraphQLComponentExecutor(
-                        sdkPackagePath, fieldConfigurationBuilder, graphQLSchemaType
+                        sdkPackagePaths, fieldConfigurationBuilder, graphQLSchemaType
                 );
                 for (RGraphQLType rGraphQLType : sdkGraphQLItemExecutor.getGraphQLTypes()) {
                     mergeGraphQLType(
