@@ -17,12 +17,10 @@ import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField
 import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.graphql.utils.ExceptionUtils;
 import com.infomaximum.cluster.struct.Component;
-import graphql.ExecutionInput;
-import graphql.ExecutionResult;
-import graphql.GraphQL;
-import graphql.InvalidSyntaxError;
+import graphql.*;
 import graphql.execution.CoercedVariables;
 import graphql.execution.NonNullableValueCoercedAsNullException;
+import graphql.execution.UnknownOperationException;
 import graphql.execution.ValuesResolver;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -238,6 +236,10 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
 
             return new GExecutionResult(completableFuture.join());
         } catch (ReflectiveOperationException e) {
+            if (e instanceof InvocationTargetException ite &&
+                    ite.getCause() instanceof UnknownOperationException uoe) {
+                return new GExecutionResult(new ExecutionResultImpl(uoe));
+            }
             throw new RuntimeException("Изменилась реализация библиотеки GraphQL", e);
         }
     }
