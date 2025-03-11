@@ -36,6 +36,8 @@ public class GraphQLEngine {
     private final Constructor customRemoteDataFetcher;
     private final DataFetcherExceptionHandler dataFetcherExceptionHandler;
 
+    private boolean introspectionDisabled = true;
+
     private GraphQLEngine(
             ArrayList<String> sdkPackagePaths,
 
@@ -63,6 +65,14 @@ public class GraphQLEngine {
 
     public GraphQLSubscribeEngine buildSubscribeEngine() {
         return new GraphQLSubscribeEngineImpl();
+    }
+
+    public void setIntrospectionDisabled(boolean introspectionDisabled) {
+        this.introspectionDisabled = introspectionDisabled;
+    }
+
+    public boolean isIntrospectionDisabled() {
+        return introspectionDisabled;
     }
 
     public GraphQLExecutor buildExecutor(Component component, GraphQLSubscribeEngine graphQLSubscribeEngine) throws GraphQLExecutorException {
