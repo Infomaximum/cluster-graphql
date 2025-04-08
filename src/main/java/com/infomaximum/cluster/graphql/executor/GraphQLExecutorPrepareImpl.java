@@ -60,7 +60,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
 
     private final static Logger log = LoggerFactory.getLogger(GraphQLExecutorPrepareImpl.class);
 
-    private final static String GRAPHQL_TYPE = "__Type";
+    private final static String GRAPHQL_TYPE = "__type";
     private final static String GRAPHQL_INPUT_VALUE = "__InputValue";
     private final static String GRAPHQL_FIELD_SCHEME = "__schema";
     private final static String GRAPHQL_FIELD_TYPENAME = "__typename";
@@ -271,8 +271,14 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
 
         if (node instanceof graphql.language.Field) {
             graphql.language.Field field = (graphql.language.Field) node;
-            if (GRAPHQL_FIELD_SCHEME.equals(field.getName())) return;
             if (GRAPHQL_FIELD_TYPENAME.equals(field.getName())) return;
+            if (GRAPHQL_FIELD_SCHEME.equals(field.getName()) || GRAPHQL_TYPE.equals(field.getName())) {
+                prepareFunction.prepare(
+                        new RGraphQLObjectTypeField(null, null, true, false,
+                                field.getClass().getTypeName(), field.getName(), field.getName(), null, null, null),
+                        null);
+                return;
+            }
 
             GraphQLNamedSchemaElement parentGraphQLNamedSchemaElement = (GraphQLNamedSchemaElement) parent;
             String parentName = parentGraphQLNamedSchemaElement.getName();
