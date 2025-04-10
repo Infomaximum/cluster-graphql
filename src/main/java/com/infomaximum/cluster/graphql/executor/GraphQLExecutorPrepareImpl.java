@@ -39,8 +39,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -75,11 +77,13 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         public final ExecutionInput executionInput;
         public final PreparsedDocumentEntry preparsedDocumentEntry;
         public final InstrumentationState instrumentationState;
+        public final EngineRunningState engineRunningState;
 
-        public PrepareDocumentRequest(ExecutionInput executionInput, PreparsedDocumentEntry preparsedDocumentEntry, InstrumentationState instrumentationState) {
+        public PrepareDocumentRequest(ExecutionInput executionInput, PreparsedDocumentEntry preparsedDocumentEntry, InstrumentationState instrumentationState, EngineRunningState engineRunningState) {
             this.executionInput = executionInput;
             this.preparsedDocumentEntry = preparsedDocumentEntry;
             this.instrumentationState = instrumentationState;
+            this.engineRunningState = engineRunningState;
         }
     }
 
@@ -114,7 +118,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             methodParseAndValidate = graphQL.getClass().getDeclaredMethod("parseAndValidate", AtomicReference.class, GraphQLSchema.class, InstrumentationState.class);
             methodParseAndValidate.setAccessible(true);
 
-            methodExecute = graphQL.getClass().getDeclaredMethod("execute", ExecutionInput.class, Document.class, GraphQLSchema.class, InstrumentationState.class);
+            methodExecute = graphQL.getClass().getDeclaredMethod("execute", ExecutionInput.class, Document.class, GraphQLSchema.class, InstrumentationState.class, EngineRunningState.class);
             methodExecute.setAccessible(true);
 
         } catch (ReflectiveOperationException e) {
@@ -132,16 +136,17 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
         }
 
         //Код вырезан из: GraphQL.executeAsync(ExecutionInput executionInput)
+        EngineRunningState engineRunningState = new EngineRunningState(executionInput);
         InstrumentationState instrumentationState = instrumentation.createState(new InstrumentationCreateStateParameters(schema, executionInput));
 
-        InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInput, schema, instrumentationState);
-        executionInput = instrumentation.instrumentExecutionInput(executionInput, inputInstrumentationParameters);
+        InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInput, schema);
+        executionInput = instrumentation.instrumentExecutionInput(executionInput, inputInstrumentationParameters, instrumentationState);
 
-        InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, schema, instrumentationState);
-        instrumentation.beginExecution(instrumentationParameters);
+        InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, schema);
+        instrumentation.beginExecution(instrumentationParameters, instrumentationState);
 
         AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
-        PreparsedDocumentEntry preparsedDocumentEntry = preparsedDocumentProvider.getDocument(executionInput, function -> {
+        CompletableFuture<PreparsedDocumentEntry> preparsedDoc = preparsedDocumentProvider.getDocumentAsync(executionInput, function -> {
             try {
                 return (PreparsedDocumentEntry) methodParseAndValidate.invoke(graphQL, executionInputRef, schema, instrumentationState);
             } catch (InvocationTargetException ite) {
@@ -150,13 +155,21 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                 throw new RuntimeException("Изменилась реализация библиотеки GraphQL", e);
             }
         });
-
+        PreparsedDocumentEntry preparsedDocumentEntry;
+        try {
+            preparsedDocumentEntry = preparsedDoc.get();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e.getCause());
+        }
         if (preparsedDocumentEntry.hasErrors()) {
             //Произошла ошибка парсинга
             return new PrepareDocumentRequest(
                     executionInput,
                     preparsedDocumentEntry,
-                    instrumentationState
+                    instrumentationState,
+                    engineRunningState
             );
         }
 
@@ -202,7 +215,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             return new PrepareDocumentRequest(
                     executionInput,
                     preparsedDocumentEntry,
-                    instrumentationState
+                    instrumentationState,
+                    engineRunningState
             );
         } catch (GraphQLExecutorInvalidSyntaxException e) {
             //Произошла ошибка парсинга
@@ -211,13 +225,15 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                     new PreparsedDocumentEntry(new InvalidSyntaxError(
                             new SourceLocation(0, 0),
                             e.getMessage())),
-                    instrumentationState
+                    instrumentationState,
+                    engineRunningState
             );
         } catch (NonNullableValueCoercedAsNullException | CoercingParseValueException e) {
             return new PrepareDocumentRequest(
                     executionInput,
                     new PreparsedDocumentEntry(e),
-                    instrumentationState
+                    instrumentationState,
+                    engineRunningState
             );
         } catch (GraphQLExecutorDataFetcherException e) {
             throw e;
@@ -232,7 +248,8 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                     prepareDocumentRequest.executionInput,
                     prepareDocumentRequest.preparsedDocumentEntry.getDocument(),
                     schema,
-                    prepareDocumentRequest.instrumentationState);
+                    prepareDocumentRequest.instrumentationState,
+                    prepareDocumentRequest.engineRunningState);
 
             return new GExecutionResult(completableFuture.join());
         } catch (ReflectiveOperationException e) {
@@ -302,7 +319,9 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
                                 schema.getCodeRegistry(),
                                 Introspection.getFieldDef(schema, (GraphQLCompositeType) parent, field.getName()).getArguments(),
                                 field.getArguments(),
-                                CoercedVariables.of(variables)
+                                CoercedVariables.of(variables),
+                                GraphQLContext.getDefault(),
+                                Locale.getDefault()
                         ),
                         variables.keySet()
                 );
