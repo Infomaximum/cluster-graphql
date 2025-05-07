@@ -23,12 +23,13 @@ public class RGraphQLObjectTypeField implements RemoteObject {
     public final RemoteObject configuration;
     public final String description;
     public final String deprecated;
+    public final int priority;
 
-    public RGraphQLObjectTypeField(UUID nodeRuntimeId, Integer componentId, boolean isField, boolean isPrepare, String type, String name, String externalName, RemoteObject configuration, String description, String deprecated) {
-        this(nodeRuntimeId, componentId, isField, isPrepare, type, name, externalName, null, configuration, description, deprecated);
+    public RGraphQLObjectTypeField(UUID nodeRuntimeId, Integer componentId, boolean isField, boolean isPrepare, String type, String name, String externalName, RemoteObject configuration, String description, String deprecated, int priority) {
+        this(nodeRuntimeId, componentId, isField, isPrepare, type, name, externalName, null, configuration, description, deprecated, priority);
     }
 
-    public RGraphQLObjectTypeField(UUID nodeRuntimeId, Integer componentId, boolean isField, boolean isPrepare, String type, String name, String externalName, List<RGraphQLObjectTypeMethodArgument> arguments, RemoteObject configuration, String description, String deprecated) {
+    public RGraphQLObjectTypeField(UUID nodeRuntimeId, Integer componentId, boolean isField, boolean isPrepare, String type, String name, String externalName, List<RGraphQLObjectTypeMethodArgument> arguments, RemoteObject configuration, String description, String deprecated, int priority) {
         this.nodeRuntimeId = nodeRuntimeId;
         this.componentId = componentId;
 
@@ -42,6 +43,7 @@ public class RGraphQLObjectTypeField implements RemoteObject {
         this.configuration = configuration;
         this.description = description;
         this.deprecated = deprecated;
+        this.priority = priority;
     }
 
     @Override

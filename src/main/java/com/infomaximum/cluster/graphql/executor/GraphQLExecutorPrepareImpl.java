@@ -292,7 +292,7 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             if (GRAPHQL_FIELD_SCHEME.equals(field.getName()) || GRAPHQL_TYPE.equals(field.getName())) {
                 prepareFunction.prepare(
                         new RGraphQLObjectTypeField(null, null, true, false,
-                                field.getClass().getTypeName(), field.getName(), field.getName(), null, null, null),
+                                field.getClass().getTypeName(), field.getName(), field.getName(), null, null, null, 100),
                         null);
                 return;
             }

@@ -15,4 +15,7 @@ public @interface GraphQLField {
     String value() default "";
     String deprecated() default "";
 
+    //При одинаковом value, приоритет будет отдаваться полям с большим priority
+    int priority() default 100;
+
 }
