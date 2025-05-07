@@ -127,7 +127,7 @@ public class TypeGraphQLBuilder {
                     GraphQLDescription aGraphQLDescription = field.getAnnotation(GraphQLDescription.class);
                     String description = (aGraphQLDescription != null && !aGraphQLDescription.value().isEmpty()) ? aGraphQLDescription.value() : null;
 
-                    fields.add(new RGraphQLObjectTypeField(nodeRuntimeId, componentId, true, false, typeField, nameField, graphQLFieldName, fieldConfiguration, description, graphQLFieldDeprecated));
+                    fields.add(new RGraphQLObjectTypeField(nodeRuntimeId, componentId, true, false, typeField, nameField, graphQLFieldName, fieldConfiguration, description, graphQLFieldDeprecated, aGraphQLField.priority()));
                 }
 
                 //Обрабатываем методы
@@ -340,7 +340,7 @@ public class TypeGraphQLBuilder {
         GraphQLDescription aGraphQLDescription = method.getAnnotation(GraphQLDescription.class);
         String description = (aGraphQLDescription != null && !aGraphQLDescription.value().isEmpty()) ? aGraphQLDescription.value() : null;
 
-        return new RGraphQLObjectTypeField(nodeRuntimeId, componentId, false, isPrepereField, typeField, nameMethod, graphQLFieldName, arguments, fieldConfiguration, description, graphQLFieldDeprecated);
+        return new RGraphQLObjectTypeField(nodeRuntimeId, componentId, false, isPrepereField, typeField, nameMethod, graphQLFieldName, arguments, fieldConfiguration, description, graphQLFieldDeprecated, aGraphQLField.priority());
     }
 
     private String getGraphQLType(Type type) throws ClassNotFoundException {

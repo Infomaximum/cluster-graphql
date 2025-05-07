@@ -1,5 +1,6 @@
 package com.infomaximum.cluster.graphql.schema.build;
 
+import com.infomaximum.cluster.graphql.exception.GraphQLExecutorException;
 import com.infomaximum.cluster.graphql.schema.struct.out.RGraphQLObjectTypeField;
 
 import java.util.*;
@@ -15,9 +16,14 @@ public class MergeGraphQLTypeOutObject extends MergeGraphQLType {
         this.interfaceGraphQLTypeNames = new HashSet<>();
     }
 
-    public void mergeFields(Set<RGraphQLObjectTypeField> rTypeGraphQLFields) {
-        for (RGraphQLObjectTypeField field: rTypeGraphQLFields) {
-            fieldsByExternalName.put(field.externalName, field);
+    public void mergeFields(Set<RGraphQLObjectTypeField> rTypeGraphQLFields) throws GraphQLExecutorException {
+        for (RGraphQLObjectTypeField field : rTypeGraphQLFields) {
+            RGraphQLObjectTypeField fieldFromMap = fieldsByExternalName.get(field.externalName);
+            if (fieldFromMap != null && fieldFromMap.priority == field.priority) {
+                throw new GraphQLExecutorException("Not unique priority value GraphQLField: " + field.name);
+            } else if (fieldFromMap == null || field.priority > fieldFromMap.priority) {
+                fieldsByExternalName.put(field.externalName, field);
+            }
         }
     }
 
