@@ -122,6 +122,10 @@ public class ComponentDataFetcher implements DataFetcher {
                     public void subscribe(ObservableEmitter emitter) {
                         emitter.onNext(resultSubscribeValue.value);
                         subscribeEngine.subscribe(rTypeGraphQLField.nodeRuntimeId, rTypeGraphQLField.componentId, resultSubscribeValue.subscribeKey, emitter);
+                        if (!resultSubscribeValue.subscribeFuture.isDone()) {
+                            Thread.ofVirtual().start(() ->
+                                    resultSubscribeValue.subscribeFuture.complete(resultSubscribeValue.value));
+                        }
                     }
                 };
                 return Observable.create(observableOnSubscribe).toFlowable(BackpressureStrategy.LATEST);
