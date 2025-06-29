@@ -313,18 +313,23 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
             }
 
             if (rGraphQLObjectTypeField.isPrepare) {
-                HashMap<String, Serializable> arguments = ComponentDataFetcher.filterArguments(
-                        field,
-                        ValuesResolver.getArgumentValues(
-                                schema.getCodeRegistry(),
-                                Introspection.getFieldDef(schema, (GraphQLCompositeType) parent, field.getName()).getArguments(),
-                                field.getArguments(),
-                                CoercedVariables.of(variables),
-                                GraphQLContext.getDefault(),
-                                Locale.getDefault()
-                        ),
-                        variables.keySet()
-                );
+                HashMap<String, Serializable> arguments;
+                try {
+                    arguments = ComponentDataFetcher.filterArguments(
+                            field,
+                            ValuesResolver.getArgumentValues(
+                                    schema.getCodeRegistry(),
+                                    Introspection.getFieldDef(schema, (GraphQLCompositeType) parent, field.getName()).getArguments(),
+                                    field.getArguments(),
+                                    CoercedVariables.of(variables),
+                                    GraphQLContext.getDefault(),
+                                    Locale.getDefault()
+                            ),
+                            variables.keySet()
+                    );
+                } catch (AssertException e) {
+                    throw new GraphQLExecutorInvalidSyntaxException(e);
+                }
 
                 //Собираем какие ресурсы нам необходимы для лока
                 LocationRuntimeComponent runtimeComponentInfo = component.getTransport().getNetworkTransit().getManagerRuntimeComponent().get(rGraphQLObjectTypeField.nodeRuntimeId, rGraphQLObjectTypeField.componentId);
