@@ -21,6 +21,7 @@ import com.infomaximum.cluster.graphql.struct.GSubscribeEvent;
 import com.infomaximum.cluster.graphql.utils.ReflectionUtils;
 import com.infomaximum.cluster.graphql.utils.Utils;
 import com.infomaximum.cluster.struct.Component;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -248,6 +249,7 @@ public class GraphQLComponentExecutor {
 
             Object[] args = new Object[constructor.getParameterCount()];
             Annotation[][] annotations = constructor.getParameterAnnotations();
+            AnnotatedType[] annotatedType = constructor.getAnnotatedParameterTypes();
             Type[] fieldTypes = constructor.getGenericParameterTypes();
             for (int index = 0; index < args.length; index++) {
                 String nameField = null;
@@ -256,7 +258,13 @@ public class GraphQLComponentExecutor {
                         nameField = ((GraphQLName) iAnnotation).value();
                     }
                 }
-                args[index] = getInputValue(fieldTypes[index], fieldValues.get(nameField), fieldValues.containsKey(nameField));
+                Object valueField = fieldValues.get(nameField);
+                for (Annotation iAnnotation : annotatedType[index].getAnnotations()) {
+                    if (iAnnotation.annotationType() == NonNull.class && valueField == null) {
+                        throw new GraphQLExecutorInvalidSyntaxException();
+                    }
+                }
+                args[index] = getInputValue(fieldTypes[index], valueField, fieldValues.containsKey(nameField));
             }
             try {
                 return constructor.newInstance(args);
