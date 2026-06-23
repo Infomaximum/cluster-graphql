@@ -26,10 +26,13 @@ import com.infomaximum.cluster.graphql.utils.Utils;
 import com.infomaximum.cluster.struct.Component;
 import graphql.GraphQL;
 import graphql.TypeResolutionEnvironment;
+import graphql.analysis.MaxQueryComplexityInstrumentation;
+import graphql.analysis.MaxQueryDepthInstrumentation;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.AsyncSerialExecutionStrategy;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.SubscriptionExecutionStrategy;
+import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.schema.*;
 
 import java.lang.reflect.Constructor;
@@ -38,6 +41,17 @@ import java.util.*;
 import static graphql.schema.GraphQLSchema.newSchema;
 
 public class GraphQLExecutorBuilder {
+
+    /**
+     * Максимально допустимая глубина вложенности GraphQL-запроса.
+     */
+    public static final int MAX_QUERY_DEPTH = 15;
+
+    /**
+     * Максимально допустимая сложность GraphQL-запроса — суммарное количество
+     * запрошенных полей.
+     */
+    public static final int MAX_QUERY_COMPLEXITY = 1000;
 
     private final Component component;
     private final ArrayList<String> sdkPackagePaths;
@@ -194,6 +208,10 @@ public class GraphQLExecutorBuilder {
                     .queryExecutionStrategy(new AsyncExecutionStrategy(dataFetcherExceptionHandler))
                     .mutationExecutionStrategy(new AsyncSerialExecutionStrategy(dataFetcherExceptionHandler))
                     .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy(dataFetcherExceptionHandler))
+                    .instrumentation(new ChainedInstrumentation(
+                            new MaxQueryDepthInstrumentation(MAX_QUERY_DEPTH),
+                            new MaxQueryComplexityInstrumentation(MAX_QUERY_COMPLEXITY)
+                    ))
                     .build();
 
             if (graphQLSchemaType.prepareCustomFields == null || graphQLSchemaType.prepareCustomFields.isEmpty()) {

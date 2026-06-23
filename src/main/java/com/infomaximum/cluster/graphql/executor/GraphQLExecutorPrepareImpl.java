@@ -18,6 +18,7 @@ import com.infomaximum.cluster.graphql.struct.ContextRequest;
 import com.infomaximum.cluster.graphql.utils.ExceptionUtils;
 import com.infomaximum.cluster.struct.Component;
 import graphql.*;
+import graphql.execution.AbortExecutionException;
 import graphql.execution.CoercedVariables;
 import graphql.execution.NonNullableValueCoercedAsNullException;
 import graphql.execution.UnknownOperationException;
@@ -42,6 +43,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -137,7 +139,13 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
 
         //Код вырезан из: GraphQL.executeAsync(ExecutionInput executionInput)
         EngineRunningState engineRunningState = new EngineRunningState(executionInput);
-        InstrumentationState instrumentationState = instrumentation.createState(new InstrumentationCreateStateParameters(schema, executionInput));
+        //createState синхронный устарел: ChainedInstrumentation (и др. составные)
+        //создают состояние только через createStateAsync — иначе state == null и
+        //составная инструментация падает NPE. Повторяем поведение executeAsync.
+        CompletableFuture<InstrumentationState> instrumentationStateFuture =
+                instrumentation.createStateAsync(new InstrumentationCreateStateParameters(schema, executionInput));
+        InstrumentationState instrumentationState =
+                (instrumentationStateFuture == null) ? null : instrumentationStateFuture.join();
 
         InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInput, schema);
         executionInput = instrumentation.instrumentExecutionInput(executionInput, inputInstrumentationParameters, instrumentationState);
@@ -253,11 +261,26 @@ public class GraphQLExecutorPrepareImpl implements GraphQLExecutor {
 
             return new GExecutionResult(completableFuture.join());
         } catch (ReflectiveOperationException e) {
-            if (e instanceof InvocationTargetException ite &&
-                    ite.getCause() instanceof UnknownOperationException uoe) {
-                return new GExecutionResult(new ExecutionResultImpl(uoe));
+            if (e instanceof InvocationTargetException ite) {
+                Throwable target = ite.getTargetException();
+                if (target instanceof UnknownOperationException uoe) {
+                    return new GExecutionResult(new ExecutionResultImpl(uoe));
+                }
+                //Лимиты depth/complexity прерывают выполнение AbortExecutionException
+                //в beginExecuteOperation. Внешний executeAsync graphql-java, который
+                //обычно ловит abort и конвертирует в errors[], здесь обойдён рефлексией,
+                //поэтому конвертируем сами — иначе наружу полетит сырое исключение.
+                if (target instanceof AbortExecutionException aee) {
+                    return new GExecutionResult(aee.toExecutionResult());
+                }
             }
             throw new RuntimeException("Изменилась реализация библиотеки GraphQL", e);
+        } catch (CompletionException e) {
+            //Тот же abort, но прилетевший асинхронно через completableFuture.join().
+            if (e.getCause() instanceof AbortExecutionException aee) {
+                return new GExecutionResult(aee.toExecutionResult());
+            }
+            throw e;
         }
     }
 

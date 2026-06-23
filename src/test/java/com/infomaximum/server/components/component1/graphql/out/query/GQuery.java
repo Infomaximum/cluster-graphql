@@ -27,6 +27,11 @@ public class GQuery {
     }
 
     @GraphQLField
+    public static Class<GRecursive> getRecursive() {
+        return GRecursive.class;
+    }
+
+    @GraphQLField
     public static GInterface getInterface1() {
         return new GInterfaceImpl1();
     }
