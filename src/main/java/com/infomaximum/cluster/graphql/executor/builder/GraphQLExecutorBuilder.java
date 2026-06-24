@@ -45,7 +45,7 @@ public class GraphQLExecutorBuilder {
     /**
      * Максимально допустимая глубина вложенности GraphQL-запроса.
      */
-    public static final int MAX_QUERY_DEPTH = 15;
+    public static final int MAX_QUERY_DEPTH = 30;
 
     /**
      * Максимально допустимая сложность GraphQL-запроса — суммарное количество

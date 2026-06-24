@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Проверяет лимиты GraphQL по глубине (depth=15) и сложности (complexity=1000)
+ * Проверяет лимиты GraphQL по глубине (depth=30) и сложности (complexity=1000)
  * на обоих путях исполнения: регулярном ({@link GraphQLExecutorImpl}) и
  * prepared ({@link GraphQLExecutorPrepareImpl}.
  */
@@ -96,10 +96,10 @@ public class QueryLimitTest extends BaseTest {
 
     // ---- Регулярный путь (GraphQLExecutorImpl) ----
 
-    /** Запрос глубиной 22 (> лимита 15) на регулярном пути отклоняется ошибкой превышения глубины. */
+    /** Запрос глубиной 42 (> лимита 30) на регулярном пути отклоняется ошибкой превышения глубины. */
     @Test
     public void regularPathRejectsDeepQuery() throws Exception {
-        GExecutionResult result = regularExecutor().execute(executionInput(nestedQuery(20)));
+        GExecutionResult result = regularExecutor().execute(executionInput(nestedQuery(40)));
         assertLimitError(result, "maximum query depth exceeded");
     }
 
@@ -112,10 +112,10 @@ public class QueryLimitTest extends BaseTest {
 
     // ---- Prepared путь (GraphQLExecutorPrepareImpl, prepare + execute) ----
 
-    /** Запрос глубиной 22 на боевом prepared-пути отклоняется ошибкой в errors[], без проброса исключения. */
+    /** Запрос глубиной 32 на боевом prepared-пути отклоняется ошибкой в errors[], без проброса исключения. */
     @Test
     public void preparedPathRejectsDeepQuery() throws Exception {
-        GExecutionResult result = executePrepared(nestedQuery(20));
+        GExecutionResult result = executePrepared(nestedQuery(30));
         assertLimitError(result, "maximum query depth exceeded");
     }
 
@@ -128,11 +128,11 @@ public class QueryLimitTest extends BaseTest {
 
     // ---- Граница: запрос в пределах лимитов проходит (оба пути) ----
 
-    /** Запрос глубиной ровно 15 (на границе лимита) на регулярном пути выполняется без ошибок. */
+    /** Запрос глубиной ровно 30 (на границе лимита) на регулярном пути выполняется без ошибок. */
     @Test
     public void regularPathAllowsQueryAtDepthLimit() throws Exception {
-        GExecutionResult result = regularExecutor().execute(executionInput(nestedQuery(13)));
-        Assertions.assertTrue(result.getErrors().isEmpty(), "запрос глубины 15 не должен отклоняться: " + result.getErrors());
+        GExecutionResult result = regularExecutor().execute(executionInput(nestedQuery(28)));
+        Assertions.assertTrue(result.getErrors().isEmpty(), "запрос глубины 30 не должен отклоняться: " + result.getErrors());
     }
 
     /** Запрос с ровно 1000 полями (на границе лимита) на регулярном пути выполняется без ошибок. */
@@ -142,11 +142,11 @@ public class QueryLimitTest extends BaseTest {
         Assertions.assertTrue(result.getErrors().isEmpty(), "запрос сложности 1000 не должен отклоняться: " + result.getErrors());
     }
 
-    /** Запрос глубиной ровно 15 на боевом prepared-пути выполняется без ошибок. */
+    /** Запрос глубиной ровно 30 на боевом prepared-пути выполняется без ошибок. */
     @Test
     public void preparedPathAllowsQueryWithinLimits() throws Exception {
-        GExecutionResult result = executePrepared(nestedQuery(13));
-        Assertions.assertTrue(result.getErrors().isEmpty(), "запрос глубины 15 не должен отклоняться: " + result.getErrors());
+        GExecutionResult result = executePrepared(nestedQuery(28));
+        Assertions.assertTrue(result.getErrors().isEmpty(), "запрос глубины 30 не должен отклоняться: " + result.getErrors());
     }
 
     /** Запрос с ровно 1000 полями на боевом prepared-пути выполняется без ошибок. */
