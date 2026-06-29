@@ -18,11 +18,15 @@ public class GraphQLSubscribeEngineImpl implements GraphQLSubscribeEngine {
 
     private final ConcurrentMap<SubscribeKey, CopyOnWriteArraySet<ObservableEmitter>> subscriber;
 
+    private final SubscriptionReplayBuffer replayBuffer;
+
     public GraphQLSubscribeEngineImpl() {
         this.subscriber = new ConcurrentHashMap<>();
+        this.replayBuffer = new SubscriptionReplayBuffer();
     }
 
     public void pushEvent(SubscribeKey subscribeKey, Optional<? extends Serializable> value) {
+        replayBuffer.retain(subscribeKey, value);
         CopyOnWriteArraySet<ObservableEmitter> observables = subscriber.get(subscribeKey);
         if (observables == null || observables.isEmpty()) return;
         for (ObservableEmitter emitter : observables) {
@@ -38,6 +42,10 @@ public class GraphQLSubscribeEngineImpl implements GraphQLSubscribeEngine {
     private void subscribe(SubscribeKey subscribeKey, ObservableEmitter observable) {
         CopyOnWriteArraySet<ObservableEmitter> observables = subscriber.computeIfAbsent(subscribeKey, s -> new CopyOnWriteArraySet<ObservableEmitter>());
         observables.add(observable);
+
+        //Реплеим удержанное значение ТОЛЬКО после регистрации слушателя — иначе
+        //событие, пришедшее между чтением и регистрацией, потерялось бы.
+        replayBuffer.replayTo(subscribeKey, observable);
 
         //Подписываемся на разрыв соединения и отписку
         observable.setCancellable(() -> {
