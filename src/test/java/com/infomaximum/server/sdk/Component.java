@@ -1,7 +1,5 @@
 package com.infomaximum.server.sdk;
 
-import com.infomaximum.cluster.Cluster;
-import com.infomaximum.cluster.core.service.transport.TransportManager;
 import com.infomaximum.cluster.core.service.transport.executor.ComponentExecutorTransportImpl;
 import com.infomaximum.cluster.graphql.remote.graphql.executor.RControllerGraphQLExecutorImpl;
 import com.infomaximum.server.Server;
@@ -9,12 +7,6 @@ import com.infomaximum.server.Server;
 public class Component extends com.infomaximum.cluster.struct.Component {
 
     private RControllerGraphQLExecutorImpl rControllerGraphQLExecutor;
-
-    @Override
-    public void init(Cluster cluster, TransportManager transportManager) {
-        super.init(cluster, transportManager);
-        super.start();
-    }
 
     @Override
     protected void registerComponent() {

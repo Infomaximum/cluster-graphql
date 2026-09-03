@@ -47,7 +47,7 @@ sourceSets {
 
 dependencies {
 
-    implementation 'com.infomaximum:cluster:1.1.21'
+    implementation 'com.infomaximum:cluster:1.1.12'
 //    implementation project(':cluster')
 
     api('com.graphql-java:graphql-java:23.1') {
